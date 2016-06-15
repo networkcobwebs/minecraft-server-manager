@@ -1,4 +1,5 @@
 .architect
+.idea
 bootstrap.json
 build/
 ext/
