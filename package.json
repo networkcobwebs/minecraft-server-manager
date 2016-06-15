@@ -1,0 +1,18 @@
+{
+  "name": "MinecraftServerManager",
+  "version": "1.10.0",
+  "description": "Minecraft Server Manager",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:nickrnet/minecraft-server-manager.git"
+  },
+  "author": {
+    "name": "nickrnet",
+    "url": "https://github.com/nickrnet/minecraft-server-manager"
+  },
+  "dependencies": {
+    "express": "^@4.13.4",
+    "body-parser": "@1.15.1"
+  }
+}
