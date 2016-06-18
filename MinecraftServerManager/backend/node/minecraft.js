@@ -1,16 +1,14 @@
-// CONFIGURE THESE VALUES FIRST
-// ----------------------------
-
 // Your server's public IP address
 // TODO: Make the address configurable
 var IP_ADDRESS = '127.0.0.1';
 
-var spawn = require('child_process').spawn;
-var express = require('express');
 var bodyParser = require('body-parser');
+var express = require('express');
+var path = require('path');
+var spawn = require('child_process').spawn;
 
-var lastCommand = '';
-var lastOutput = '';
+var lastCommand = '',
+    lastOutput = '';
 
 // Our Minecraft multiplayer server process
 // TODO: Make the Java args configurable
@@ -21,33 +19,42 @@ var minecraftServerProcess = spawn('java', [
     '-jar',
     'minecraft_server.jar',
     'nogui'
-]);
+], {
+    cwd: './minecraft_server'
+});
 
-// Log server output to stdout
+// Log process output to stdout
 function log(data) {
     process.stdout.write(data.toString());
 }
 minecraftServerProcess.stdout.on('data', log);
 minecraftServerProcess.stderr.on('data', log);
+
+// Make sure the Minecraft server dies with this process
 minecraftServerProcess.on('exit', function() {
     process.exit();
+});
+process.on('exit', function() {
+    minecraftServerProcess.kill();
 });
 
 // Create an express web app
 var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
+// Simple 'show me what just happened' landing page
 app.get('/', function(request, response) {
     // Delay for a bit, then send a response with the latest server output
     setTimeout(function() {
         response.type('text/plain');
-        response.send('Last command was:\n' + lastCommand + '\n' + 'with output of\n' + lastOutput);
-        lastCommand = '';
-        lastOutput = '';
+        response.send('Last command was:\n' +
+            '    ' + lastCommand + '\n' +
+            'with output of:\n' +
+            '    ' + lastOutput + '\n');
     }, 250);
 });
 
-// Handle Admin Command requests
+// Handle Minecraft Server Command requests
 app.post('/command', function(request, response) {
     // Cancel processing if the message was not sent by an admin
     // TODO: Make this use server admins instead of twilio
@@ -61,6 +68,11 @@ app.post('/command', function(request, response) {
 
     if (command.Body) {
         lastCommand = command = command.Body;
+        lastOutput = '';
+
+        // TODO: Have our own custom commands (showOps, serverProps, resetAndNuke, etc).
+        // TODO: Some commands will be available to app admins, some only to ops, etc.etc.
+        // TODO: This means we need a permissions model, oof.
 
         minecraftServerProcess.stdin.write(command + '\n');
 
@@ -94,8 +106,3 @@ app.post('/command', function(request, response) {
 // Listen for incoming HTTP requests on port 3000
 // TODO: Make the listen port configurable
 app.listen(3000);
-
-// Make sure the Minecraft server dies with this process
-process.on('exit', function() {
-    minecraftServerProcess.kill();
-});
