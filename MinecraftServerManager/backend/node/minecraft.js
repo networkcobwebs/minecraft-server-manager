@@ -9,12 +9,15 @@ var spawn = require('child_process').spawn;
 var express = require('express');
 var bodyParser = require('body-parser');
 
+var lastCommand = '';
+var lastOutput = '';
+
 // Our Minecraft multiplayer server process
 // TODO: Make the Java args configurable
 // TODO: Make the path to the minecraft_server.jar configurable
 var minecraftServerProcess = spawn('java', [
     '-Xmx1G',
-    '-Xms256M',
+    '-Xms512M',
     '-jar',
     'minecraft_server.jar',
     'nogui'
@@ -26,10 +29,23 @@ function log(data) {
 }
 minecraftServerProcess.stdout.on('data', log);
 minecraftServerProcess.stderr.on('data', log);
+minecraftServerProcess.on('exit', function() {
+    process.exit();
+});
 
 // Create an express web app
 var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
+
+app.get('/', function(request, response) {
+    // Delay for a bit, then send a response with the latest server output
+    setTimeout(function() {
+        response.type('text/plain');
+        response.send('Last command was:\n' + lastCommand + '\n' + 'with output of\n' + lastOutput);
+        lastCommand = '';
+        lastOutput = '';
+    }, 250);
+});
 
 // Handle Admin Command requests
 app.post('/command', function(request, response) {
@@ -40,31 +56,39 @@ app.post('/command', function(request, response) {
     //     return;
     // }
 
-    // Get the admin command and send it to the Minecraft server
-    var command = request.param('Body');
-    minecraftServerProcess.stdin.write(command+'\n');
+    // Get the issued command and send it to the Minecraft server
+    var command = request.body;
 
-    // buffer output for a quarter of a second, then reply to HTTP request
-    var buffer = [];
-    var collector = function(data) {
-        data = data.toString();
-        // Split to omit timestamp and junk from Minecraft server output
-        buffer.push(data.split(']: ')[1]);
-    };
-    minecraftServerProcess.stdout.on('data', collector);
+    if (command.Body) {
+        lastCommand = command = command.Body;
 
-    // Delay for a bit, then send a response with the latest server output
-    setTimeout(function() {
-        minecraftServerProcess.stdout.removeListener('data', collector);
+        minecraftServerProcess.stdin.write(command + '\n');
 
-        // create a TwiML response with the output of the Minecraft server
-        // TODO: Make this update a web element on the page instead of twilio
-        // var twiml = new twilio.TwimlResponse();
-        // twiml.message(buffer.join(''));
-        //
-        // response.type('text/xml');
-        // response.send(twiml.toString());
-    }, 250);
+        // buffer output for a quarter of a second, then reply to HTTP request
+        var buffer = [];
+        var collector = function(data) {
+            data = data.toString();
+            // Split to omit timestamp and junk from Minecraft server output
+            buffer.push(data.split(']: ')[1]);
+        };
+
+        minecraftServerProcess.stdout.on('data', collector);
+
+        // Delay for a bit, then send a response with the latest server output
+        setTimeout(function() {
+            minecraftServerProcess.stdout.removeListener('data', collector);
+
+            // create a TwiML response with the output of the Minecraft server
+            // TODO: Make this update a web element on the page instead of twilio
+            // var twiml = new twilio.TwimlResponse();
+            // twiml.message(buffer.join(''));
+            //
+            response.type('text/xml');
+            // response.send(twiml.toString());
+            response.send(buffer.join(''));
+            lastOutput = lastOutput + buffer.join('');
+        }, 250);
+    }
 });
 
 // Listen for incoming HTTP requests on port 3000
