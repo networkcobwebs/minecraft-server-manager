@@ -41,6 +41,13 @@ process.on('exit', function() {
 // Create an express web app
 var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(function(req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:1841');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    next();
+});
 
 // Simple 'show me what just happened' landing page
 app.get('/', function(request, response) {
@@ -64,10 +71,11 @@ app.post('/command', function(request, response) {
     // }
 
     // Get the issued command and send it to the Minecraft server
-    var command = request.body;
+    var command = request.query;
+    var command = request.query;
 
-    if (command.Body) {
-        lastCommand = command = command.Body;
+    if (command.command) {
+        lastCommand = command = command.command;
         lastOutput = '';
 
         // TODO: Have our own custom commands (showOps, serverProps, resetAndNuke, etc).
@@ -95,11 +103,20 @@ app.post('/command', function(request, response) {
             // var twiml = new twilio.TwimlResponse();
             // twiml.message(buffer.join(''));
             //
-            response.type('text/xml');
-            // response.send(twiml.toString());
-            response.send(buffer.join(''));
+            //response.type('text/xml');
+            response.contentType('json');
+            response.json({
+                response: buffer.join('')
+            });
             lastOutput = lastOutput + buffer.join('');
         }, 250);
+    } else {
+        console.log('Got command with nothing to do.');
+        //response.type('text/xml');
+        response.contentType('json');
+        response.json({
+            response: 'Invalid command'
+        });
     }
 });
 
