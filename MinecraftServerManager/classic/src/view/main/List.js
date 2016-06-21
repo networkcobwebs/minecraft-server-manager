@@ -1,27 +1,17 @@
-/**
- * This view is an example list of people.
- */
+
+var playerStore = Ext.create('MinecraftServerManager.store.Players');
+
 Ext.define('MinecraftServerManager.view.main.List', {
     extend: 'Ext.grid.Panel',
     xtype: 'mainlist',
 
-    requires: [
-        'MinecraftServerManager.store.Personnel'
-    ],
+    title: 'Players',
+    alias: 'playersgrid',
+    id: 'playersGrid',
 
-    title: 'Personnel',
-
-    store: {
-        type: 'personnel'
-    },
+    store: playerStore,
 
     columns: [
-        { text: 'Name',  dataIndex: 'name' },
-        { text: 'Email', dataIndex: 'email', flex: 1 },
-        { text: 'Phone', dataIndex: 'phone', flex: 1 }
-    ],
-
-    listeners: {
-        select: 'onItemSelected'
-    }
+        { text: 'Name',  dataIndex: 'name' }
+    ]
 });

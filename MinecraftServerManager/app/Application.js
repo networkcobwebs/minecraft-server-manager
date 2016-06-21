@@ -9,7 +9,8 @@ Ext.define('MinecraftServerManager.Application', {
     name: 'MinecraftServerManager',
 
     stores: [
-        // TODO: add global / shared stores here
+        'Players'
+        // 'Ops'
     ],
     
     launch: function () {
