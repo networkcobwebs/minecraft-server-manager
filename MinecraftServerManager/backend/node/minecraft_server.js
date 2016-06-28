@@ -1,9 +1,11 @@
+
 // Your server's public IP address
 // TODO: Make the address configurable
 var IP_ADDRESS = '127.0.0.1';
 
 var bodyParser = require('body-parser');
 var express = require('express');
+var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
 
@@ -20,7 +22,7 @@ var minecraftServerProcess = spawn('java', [
     'minecraft_server.jar',
     'nogui'
 ], {
-    cwd: './minecraft_server'
+    cwd: '../minecraft_server'
 });
 
 // Log process output to stdout
@@ -30,7 +32,7 @@ function log(data) {
 minecraftServerProcess.stdout.on('data', log);
 minecraftServerProcess.stderr.on('data', log);
 
-// Make sure the Minecraft server dies with this process
+// Make sure the Minecraft server quits with this process
 minecraftServerProcess.on('exit', function() {
     process.exit();
 });
@@ -64,14 +66,13 @@ app.get('/', function(request, response) {
 // Handle Minecraft Server Command requests
 app.post('/command', function(request, response) {
     // Cancel processing if the message was not sent by an admin
-    // TODO: Make this use server admins instead of twilio
+    // TODO: Make this use server admins
     // if (request.param('From') !==  ADMIN_PHONE ){
     //     response.status(403).send('you are not an admin :(');
     //     return;
     // }
 
     // Get the issued command and send it to the Minecraft server
-    var command = request.query;
     var command = request.query;
 
     if (command.command) {
@@ -82,34 +83,46 @@ app.post('/command', function(request, response) {
         // TODO: Some commands will be available to app admins, some only to ops, etc.etc.
         // TODO: This means we need a permissions model, oof.
 
-        minecraftServerProcess.stdin.write(command + '\n');
-
-        // buffer output for a quarter of a second, then reply to HTTP request
-        var buffer = [];
-        var collector = function(data) {
-            data = data.toString();
-            // Split to omit timestamp and junk from Minecraft server output
-            buffer.push(data.split(']: ')[1]);
-        };
-
-        minecraftServerProcess.stdout.on('data', collector);
-
-        // Delay for a bit, then send a response with the latest server output
-        setTimeout(function() {
-            minecraftServerProcess.stdout.removeListener('data', collector);
-
-            // create a TwiML response with the output of the Minecraft server
-            // TODO: Make this update a web element on the page instead of twilio
-            // var twiml = new twilio.TwimlResponse();
-            // twiml.message(buffer.join(''));
-            //
-            //response.type('text/xml');
+        if (command === '/getOps') {
+            // read in and return ops.json
+            // ../minecraft_server -> path from minecraftServerProcess above
+            var ops = JSON.parse(fs.readFileSync('../minecraft_server/ops.json', 'utf8'));
             response.contentType('json');
             response.json({
-                response: buffer.join('')
+                response: ops
             });
-            lastOutput = lastOutput + buffer.join('');
-        }, 250);
+            lastOutput = lastOutput + ops;
+        } else {
+            // minecraftServerProcess.stdout.removeListener('data', collector);
+            minecraftServerProcess.stdin.write(command + '\n');
+
+            // buffer output for a quarter of a second, then reply to HTTP request
+            var buffer = [];
+            var collector = function (data) {
+                data = data.toString();
+                // Split to omit timestamp and junk from Minecraft server output
+                buffer.push(data.split(']: ')[1]);
+            };
+
+            minecraftServerProcess.stdout.on('data', collector);
+
+            // Delay for a bit, then send a response with the latest server output
+            setTimeout(function () {
+                minecraftServerProcess.stdout.removeListener('data', collector);
+
+                // create a TwiML response with the output of the Minecraft server
+                // TODO: Make this update a web element on the page instead of twilio
+                // var twiml = new twilio.TwimlResponse();
+                // twiml.message(buffer.join(''));
+                //
+                //response.type('text/xml');
+                response.contentType('json');
+                response.json({
+                    response: buffer.join('')
+                });
+                lastOutput = lastOutput + buffer.join('');
+            }, 250);
+        }
     } else {
         console.log('Got command with nothing to do.');
         //response.type('text/xml');
