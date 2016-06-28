@@ -1,5 +1,7 @@
-
-Ext.define('MinecraftServerManager.model.Player', {
+/**
+ * Created by nickrogers on 6/27/16.
+ */
+Ext.define('MinecraftServerManager.model.Op', {
     extend: 'Ext.data.Model',
 
     fields: [
@@ -7,8 +9,6 @@ Ext.define('MinecraftServerManager.model.Player', {
         { name: 'uuid',     type: 'string' },
         { name: 'name',     type: 'string' },
         { name: 'level',    type: 'string' },
-        { name: 'bypassesPlayerLimit', type: 'boolean' },
-        { name: 'isOp',     type: 'boolean' },
-        { name: 'isOnline', type: 'boolean' }
+        { name: 'bypassesPlayerLimit:', type: 'string' }
     ]
 });
