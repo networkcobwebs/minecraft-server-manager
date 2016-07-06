@@ -4,3 +4,4 @@ bootstrap.*
 classic.json
 build/
 ext/
+/MinecraftServerManager/classic.json
