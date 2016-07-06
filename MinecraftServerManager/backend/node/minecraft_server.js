@@ -73,7 +73,9 @@ app.post('/command', function(request, response) {
     // }
 
     // Get the issued command and send it to the Minecraft server
-    var command = request.query;
+    var command = request.query,
+        theDate = new Date(),
+        ops;
 
     if (command.command) {
         lastCommand = command = command.command;
@@ -84,14 +86,36 @@ app.post('/command', function(request, response) {
         // TODO: This means we need a permissions model, oof.
 
         if (command === '/getOps') {
-            // read in and return ops.json
-            // ../minecraft_server -> path from minecraftServerProcess above
-            var ops = JSON.parse(fs.readFileSync('../minecraft_server/ops.json', 'utf8'));
-            response.contentType('json');
-            response.json({
-                response: ops
-            });
-            lastOutput = lastOutput + ops;
+            try {
+                // read in and return ops.json
+                // ../minecraft_server -> path from minecraftServerProcess above
+                ops = JSON.parse(fs.readFileSync('../minecraft_server/ops.json', 'utf8'));
+                response.contentType('json');
+                response.json({
+                    response: ops
+                });
+                lastOutput = lastOutput + ops;
+                console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Got ops');
+            }
+            catch (e) {
+                console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Failed to get ops:', e);
+            }
+        } else if (command === '/getStatus') {
+            if (minecraftServerProcess) {
+                response.contentType('json');
+                response.json({
+                    response: true
+                });
+                lastOutput = lastOutput + '{ response: true }';
+                console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Got status');
+            } else {
+                response.contentType('json');
+                response.json({
+                    response: false
+                });
+                lastOutput = lastOutput + '{ response: false }';
+                console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Failed to get status');
+            }
         } else {
             // minecraftServerProcess.stdout.removeListener('data', collector);
             minecraftServerProcess.stdin.write(command + '\n');
@@ -101,7 +125,8 @@ app.post('/command', function(request, response) {
             var collector = function (data) {
                 data = data.toString();
                 // Split to omit timestamp and junk from Minecraft server output
-                buffer.push(data.split(']: ')[1]);
+                // buffer.push(data.split(']: ')[1]);
+                buffer.push(data);
             };
 
             minecraftServerProcess.stdout.on('data', collector);

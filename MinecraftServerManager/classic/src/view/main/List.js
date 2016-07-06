@@ -1,15 +1,20 @@
 
-var playerStore = Ext.create('MinecraftServerManager.store.Players');
-
 Ext.define('MinecraftServerManager.view.main.List', {
     extend: 'Ext.grid.Panel',
     xtype: 'mainlist',
+    requires: [
+        'Ext.data.StoreManager'
+    ],
 
     title: 'Players',
     alias: 'playersgrid',
     id: 'playersGrid',
 
-    store: playerStore,
+    store: 'playersStore',
+
+    // forceFit : true,
+    // bufferedRenderer: true,
+    height: 500,
 
     columns: [
         { text: 'Name', sortable: false, hideable: false, dataIndex: 'name', flex: 1 },
@@ -18,8 +23,9 @@ Ext.define('MinecraftServerManager.view.main.List', {
                 sortable: false,
                 hideable: false,
                 hideHeaders: true,
+                align: 'center',
                 renderer: function(value, metaData, record) {
-                    if (record.data.isOp) {
+                    if (record.get('isOp')) {
                         return '<img src="resources/images/DiamondSword-16.png" />';
                     } else {
                         return '&nbsp;';
@@ -29,8 +35,9 @@ Ext.define('MinecraftServerManager.view.main.List', {
                 sortable: false,
                 hideable: false,
                 hideHeaders: true,
+                align: 'center',
                 renderer: function(value, metaData, record) {
-                    if (record.data.isOnline) {
+                    if (record.get('isOnline')) {
                         return '<img src="resources/images/Online2.png" alt="Online" />';
                     } else {
                         return '<img src="resources/images/Offline2.png" alt="Offline" />';
@@ -39,18 +46,43 @@ Ext.define('MinecraftServerManager.view.main.List', {
             }
         ]},
         { text: 'Actions', sortable: false, hideable: false, columns: [
-                {
-                    sortable: false,
-                    hideable: false,
-                    hideHeaders: true,
-                    renderer: function(value, metaData, record){
-                        if (record.isOp) {
-                            return '<img src="resources/images/DiamondSword-16.png" />';
-                        } else {
-                            return '&nbsp;';
-                        }
+            {
+                sortable: false,
+                hideable: false,
+                hideHeaders: true,
+                align: 'center',
+                width: 150,
+                renderer: function(value ,meta, record) {
+                    var id = Ext.id();
+                    if (record.get('isOp')) {
+                        Ext.defer(function() {
+                            Ext.widget('button', {
+                                renderTo: id,
+                                text: 'DeOp Player',
+                                icon: 'resources/images/GunPowder_Item-16.png',
+                                scale: 'small',
+                                handler: function() {
+                                    record.deopPlayer();
+                                }
+                            });
+                        }, 200);
+                        return Ext.String.format('<div id="{0}"></div>', id);
+                    } else {
+                        Ext.defer(function() {
+                            Ext.widget('button', {
+                                renderTo: id,
+                                text: 'Op Player',
+                                icon: 'resources/images/RedstoneDust-16.png',
+                                scale: 'small',
+                                handler: function() {
+                                    record.opPlayer();
+                                }
+                            });
+                        }, 200);
+                        return Ext.String.format('<div id="{0}"></div>', id);
                     }
                 }
-            ]}
+            }
+        ]}
     ]
 });

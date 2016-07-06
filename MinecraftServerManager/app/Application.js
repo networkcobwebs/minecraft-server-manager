@@ -9,8 +9,8 @@ Ext.define('MinecraftServerManager.Application', {
     name: 'MinecraftServerManager',
 
     stores: [
+        'Ops',
         'Players'
-        // 'Ops'
     ],
     
     launch: function () {

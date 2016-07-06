@@ -1,6 +1,4 @@
-/**
- * Created by nickrogers on 6/27/16.
- */
+
 Ext.define('MinecraftServerManager.model.Op', {
     extend: 'Ext.data.Model',
 
