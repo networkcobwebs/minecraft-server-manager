@@ -1,47 +1,105 @@
 
-var opsStore, playersPanel, playerStore;
+var debug = false,
+    debugOpsCheck = false,
+    debugPlayersCheck = false,
+    minecraftStatus = false,
+    opsStore, playersStore,
+    runner = new Ext.util.TaskRunner(),
+    getMinecraftStatusTask, getOpsTask, getPlayersTask;
 
 Ext.define('MinecraftServerManager.view.main.MainController', {
     extend: 'Ext.app.ViewController',
     requires: [
-        'Ext.util.TaskRunner',
-        'MinecraftServerManager.model.Op',
-        'MinecraftServerManager.store.Ops',
-        'MinecraftServerManager.model.Player',
-        'MinecraftServerManager.model.Preferences'
+        'Ext.data.StoreManager'
     ],
 
     alias: 'controller.main',
     
     init: function () {
-        var me = this,
-            runner = new Ext.util.TaskRunner(),
-            task;
+        var me = this;
 
-        opsStore = Ext.create('MinecraftServerManager.store.Ops');
-        playersPanel = Ext.getCmp('playersGrid');
-        playerStore = playersPanel.store;
+        opsStore = Ext.data.StoreManager.lookup('opsStore');
+        playersStore = Ext.data.StoreManager.lookup('playersStore');
 
-        // Get Minecraft server ops
-        me.getOps();
-        // Get Minecraft players
-        // me.getPlayers();
-
-        // Query Minecraft server for player list, periodically
-        task = runner.newTask({
+        // Initial Minecraft server status check
+        getMinecraftStatusTask = runner.newTask({
             run: function() {
-                me.getPlayers();
+                me.checkMinecraftStatus();
+            },
+            scope: me,
+            interval: 50,
+            fireOnStart: true,
+            repeat: 1
+        });
+        getMinecraftStatusTask.start();
+
+        // Initial Minecraft op player check
+        getOpsTask = runner.newTask({
+            run: function() {
+                opsStore.getOps();
+            },
+            // scope: opsStore,
+            interval: 1000,
+            fireOnStart: true,
+            repeat: 1
+        });
+        getOpsTask.start();
+
+        // Initial Minecraft server player check
+        getPlayersTask = runner.newTask({
+            run: function() {
+                playersStore.getPlayers();
+            },
+            // scope: playersStore,
+            interval: 2000,
+            fireOnStart: true,
+            repeat: 1
+        });
+        getPlayersTask.start();
+
+        Ext.Function.defer(function() {
+            me.scheduleTasks()
+        }, 2500, me);
+    },
+
+    scheduleTasks: function() {
+        var me = this;
+        
+        // Schedule Minecraft server status check
+        getMinecraftStatusTask = runner.newTask({
+            run: function() {
+                me.checkMinecraftStatus();
             },
             scope: me,
             interval: 5000,
-            fireOnStart: true
+            fireOnStart: false
         });
-        task.start();
+        getMinecraftStatusTask.start();
+
+        // Schedule Minecraft op player check
+        getOpsTask = runner.newTask({
+            run: function() {
+                opsStore.getOps();
+            },
+            scope: opsStore,
+            interval: 20000,
+            fireOnStart: false
+        });
+        getOpsTask.start();
+
+        // Schedule Minecraft server player check
+        getPlayersTask = runner.newTask({
+            run: function() {
+                playersStore.getPlayers();
+            },
+            // scope: me,
+            interval: 10000,
+            fireOnStart: false
+        });
+        getPlayersTask.start();
     },
 
-    getOps: function() {
-        var me = this;
-
+    checkMinecraftStatus: function() {
         Ext.Ajax.request({
             url: 'http://localhost:3000/command',
             method: 'POST',
@@ -49,123 +107,23 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
                 'Content-Type': 'application/json'
             },
             params: {
-                command: '/getOps'
+                command: '/getStatus'
             },
             jsonData: {
-                command: '/getOps'
+                command: '/getStatus'
             },
-            scope: me,
             timeout: 5000,
-            success: function(response, request, options, eOpts) {
-                var result = JSON.parse(response.responseText),
-                    opsList = result.response,
-                    found;
-                // opsList = [Player, Player, Player, ...]
-                opsList.forEach(function(op) {
-                    // Make sure we don't already have this player op'ed
-                    found = false;
-                    opsStore.each(function (gameOp) {
-                        if (op.name === gameOp.name) {
-                            found = true;
-                        }
-                    });
-                    if (!found) {
-                        opsStore.add(op);
-                    }
-                });
-            },
-            failure: function(response, request, options, eOpts) {
-                console.log('Failed to get ops list:', response);
-            }
-        });
-    },
-
-    getPlayers: function() {
-        var me = this;
-
-        Ext.Ajax.request({
-            url: 'http://localhost:3000/command',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            params: {
-                command: '/list'
-            },
-            jsonData: {
-                command: '/list'
-            },
-            scope: this,
-            timeout: 5000,
-            success: function(response, request, options, eOpts) {
-                var result = JSON.parse(response.responseText),
-                    playerList = result.response,
-                    found = false,
-                    player, players, playerName, playerNames, summary;
-
-                // First line is the summary,
-                // followed by player names, comma+space separated
-                players = playerList.split(/\n/);
-                summary = players.shift();
-                // Remove trailing ':'
-                summary = summary.slice(0, -1);
-                playersPanel.setTitle('Players - ' + summary);
-
-                // Flag offline players accordingly
-                playerStore.each(function (player) {
-                    found = false;
-                    for (var i = 0; i < players.length; i++) {
-                        playerNames = players[i].split(',');
-                        for (var p = 0; p < playerNames.length; p++) {
-                            playerName = playerNames[p].trim();
-                            if (playerName && (player.data.name === playerName)) {
-                                found = true;
-                            }
-                        }
-                    }
-
-                    player.data.isOnline = found;
-                    player.commit();
-                });
-
-                playerStore.commitChanges();
-
-                // Add new players to the list accordingly:
-                for (var i = 0; i < players.length; i++) {
-                    playerNames = players[i].split(',');
-                    for (var p = 0; p < playerNames.length; p++) {
-                        found = false;
-                        playerName = playerNames[p].trim();
-                        if (playerName) {
-                            // Make sure we don't already have this player displayed
-                            playerStore.each(function (player) {
-                                if (player.data.name === playerName) {
-                                    found = true;
-                                }
-                            });
-                            if (!found) {
-                                player = Ext.create('MinecraftServerManager.model.Player', {
-                                    name: playerName
-                                });
-                                me.isOp(player);
-                                player.data.isOnline = true;
-                                playerStore.add(player);
-                            }
-                        }
-                    }
+            success: function() {
+                minecraftStatus = true;
+                if (debug) {
+                    console.log('Minecraft Server online.');
                 }
             },
-
-            failure: function(conn, response, options, eOpts) {
-                console.log('Failed to get user list:', response);
-            }
-        });
-    },
-
-    isOp: function(player) {
-        opsStore.each(function(op) {
-            if (op.data.name === player.data.name) {
-                player.data.isOp = true;
+            failure: function() {
+                minecraftStatus = false;
+                if (debug) {
+                    console.log('Minecraft Server offline.');
+                }
             }
         });
     }
