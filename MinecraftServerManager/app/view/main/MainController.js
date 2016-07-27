@@ -1,7 +1,7 @@
 
 var debug = false,
     debugOpsCheck = false,
-    debugPlayersCheck = false,
+    debugPlayersCheck = true,
     debugMinecraftProperties = false,
     minecraftStatus = false,
     minecraftServerOpsStore, minecraftPlayersStore, minecraftServerPropertiesStore,
@@ -40,7 +40,6 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
             run: function() {
                 minecraftServerOpsStore.getOps();
             },
-            // scope: opsStore,
             interval: 1000,
             fireOnStart: true,
             repeat: 1
@@ -95,7 +94,7 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
             run: function() {
                 minecraftServerOpsStore.getOps();
             },
-            scope: opsStore,
+            scope: minecraftServerOpsStore,
             interval: 20000,
             fireOnStart: false
         });

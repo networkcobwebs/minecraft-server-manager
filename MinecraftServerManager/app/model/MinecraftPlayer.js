@@ -1,6 +1,6 @@
 
-var opsStore = Ext.data.StoreManager.lookup('opsStore'),
-    playersStore = Ext.data.StoreManager.lookup('playersStore');
+var minecraftServerOpsStore = Ext.data.StoreManager.lookup('minecraftServerOpsStore'),
+    minecraftPlayersStore = Ext.data.StoreManager.lookup('minecraftPlayersStore');
 
 Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     extend: 'Ext.data.Model',
@@ -37,8 +37,8 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
                 success: function() {
                     player.set('isOp', false);
                     player.commit();
-                    opsStore.getOps();
-                    playersStore.getPlayers();
+                    minecraftServerOpsStore.getOps();
+                    minecraftPlayersStore.getPlayers();
                 }
             });
         }
@@ -66,8 +66,8 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
                 success: function() {
                     player.set('isOp', true);
                     player.commit();
-                    opsStore.getOps();
-                    playersStore.getPlayers();
+                    minecraftServerOpsStore.getOps();
+                    minecraftPlayersStore.getPlayers();
                 }
             });
         }
@@ -78,10 +78,10 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
         var player = this;
 
         // Make sure we have ops at all
-        if (opsStore.count() == 0) {
-            opsStore.getOps();
+        if (minecraftServerOpsStore.count() == 0) {
+            minecraftServerOpsStore.getOps();
         }
-        opsStore.each(function(op) {
+        minecraftServerOpsStore.each(function(op) {
             if (debugOpsCheck) {
                 console.log('checkOpStatus: comparing op.name "' + op.get('name') + '" with player "'+ player.get('name') + '"');
             }
