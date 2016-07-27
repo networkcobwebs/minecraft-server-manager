@@ -1,19 +1,13 @@
-/**
- * This class is the main view for the application. It is specified in app.js as the
- * "mainView" property. That setting automatically applies the "viewport"
- * plugin causing this view to become the body element (i.e., the viewport).
- */
+
 Ext.define('MinecraftServerManager.view.main.Main', {
     extend: 'Ext.tab.Panel',
     xtype: 'app-main',
 
     requires: [
-        'Ext.plugin.Viewport',
-        'Ext.window.MessageBox',
-
         'MinecraftServerManager.view.main.MainController',
         'MinecraftServerManager.view.main.MainModel',
-        'MinecraftServerManager.view.main.List'
+        'MinecraftServerManager.view.main.List',
+        'MinecraftServerManager.view.minecraftserver.ServerProperties'
     ],
 
     controller: 'main',
@@ -29,15 +23,12 @@ Ext.define('MinecraftServerManager.view.main.Main', {
         layout: {
             align: 'stretchmax'
         },
-        backgroundImage: 'resources/images/header-banner1.33f7482083dc.jpg',
         title: {
             bind: {
-                text: '{name}'
+                text: '<img src="resources/images/header-banner1.33f7482083dc.jpg" width="270px" height="107px"/>' //+ '<br />{name}'
             },
             flex: 0
-        },
-        // icon: 'resources/images/header-banner1.33f7482083dc.jpg'
-        iconCls: 'fa-th-list'
+        }
     },
 
     tabBar: {
@@ -82,23 +73,32 @@ Ext.define('MinecraftServerManager.view.main.Main', {
         items: [{
             xtype: 'mainlist'
         }]
-    }, {
-        title: 'Users',
-        iconCls: 'fa-user',
-        bind: {
-            html: '{loremIpsum}'
+        }, {
+            title: 'Server Properties',
+            iconCls: 'fa-cog',
+            items: [{
+                xtype: 'minecraftserverpropertieslist'
+            }]
+        },
+        {
+            title: 'Users',
+            iconCls: 'fa-user',
+            bind: {
+                html: '{loremIpsum}'
+            }
+        },
+        {
+            title: 'Groups',
+            iconCls: 'fa-users',
+            bind: {
+                html: '{loremIpsum}'
+            }
+        }, {
+            title: 'Settings',
+            iconCls: 'fa-cog',
+            bind: {
+                html: '{loremIpsum}'
+            }
         }
-    }, {
-        title: 'Groups',
-        iconCls: 'fa-users',
-        bind: {
-            html: '{loremIpsum}'
-        }
-    }, {
-        title: 'Settings',
-        iconCls: 'fa-cog',
-        bind: {
-            html: '{loremIpsum}'
-        }
-    }]
+    ]
 });

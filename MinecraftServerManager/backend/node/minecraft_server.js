@@ -14,7 +14,7 @@ var lastCommand = '',
 
 // Our Minecraft multiplayer server process
 // TODO: Make the Java args configurable
-// TODO: Make the path to the minecraft_server.jar configurable
+// TODO: Make the path to the minecraft_server.jar configurable (cwd)
 var minecraftServerProcess = spawn('java', [
     '-Xmx1G',
     '-Xms512M',
@@ -33,12 +33,34 @@ minecraftServerProcess.stdout.on('data', log);
 minecraftServerProcess.stderr.on('data', log);
 
 // Make sure the Minecraft server quits with this process
-minecraftServerProcess.on('exit', function() {
-    process.exit();
-});
 process.on('exit', function() {
     minecraftServerProcess.kill();
 });
+
+// Convert name=value properties to JSON
+function jsonifyProps(props) {
+    var properties = [],
+        incomingProps = props.split(/\n/),
+        line, lineNumber, property;
+    // ignore items that don't have name=value
+    for (lineNumber = 0; lineNumber < incomingProps.length; lineNumber++) {
+        // console.log('jsonifyProps: incomingProps line[' + lineNumber + ']:', incomingProps[lineNumber]);
+        if (incomingProps[lineNumber]) {
+            line = incomingProps[lineNumber].split('=');
+            // console.log('jsonifyProps: line:', line);
+            if (line.length == 2) {
+                // got name=value pair
+                // TODO: Ignore commented out values: '//'
+                property = {};
+                property.name = line[0];
+                property.value= line[1];
+                properties.push(property);
+            }
+        }
+    }
+    // console.log('jsonifyProps: properties:', properties);
+    return properties;
+}
 
 // Create an express web app
 var app = express();
@@ -75,7 +97,7 @@ app.post('/command', function(request, response) {
     // Get the issued command and send it to the Minecraft server
     var command = request.query,
         theDate = new Date(),
-        ops;
+        ops, props;
 
     if (command.command) {
         lastCommand = command = command.command;
@@ -100,26 +122,62 @@ app.post('/command', function(request, response) {
             catch (e) {
                 console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Failed to get ops:', e);
             }
+        } else if (command === '/getProps') {
+            try {
+                // read in and return server.properties as JSON
+                // ../minecraft_server -> path from minecraftServerProcess above
+                props = fs.readFileSync('../minecraft_server/server.properties', 'utf8');
+                props = JSON.parse(JSON.stringify(jsonifyProps(props)));
+                response.contentType('json');
+                response.json({
+                    response: props
+                });
+                lastOutput = lastOutput + props;
+                console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Got properties');
+            }
+            catch (e) {
+                console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Failed to get properties:', e);
+            }
         } else if (command === '/getStatus') {
             if (minecraftServerProcess) {
                 response.contentType('json');
                 response.json({
                     response: true
                 });
-                lastOutput = lastOutput + '{ response: true }';
+                lastOutput = lastOutput + '{ ' +
+                    '    response: true' +
+                    '}';
                 console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Got status');
             } else {
                 response.contentType('json');
                 response.json({
                     response: false
                 });
-                lastOutput = lastOutput + '{ response: false }';
+                lastOutput = lastOutput + '{' +
+                    '    response: false' +
+                    '}';
                 console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Failed to get status');
             }
+        } else if (command === '/start') {
+            console.log('Gonna start Minecraft now.');
+            // start minecraft if not already running (we don't want a rash or port conflicts, now do we?
+            // see getOps above
+            console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Started Minecraft server');
+        } else if (command === '/stop') {
+            console.log('Gonna stop Minecraft now.');
+            // stop minecraft server - rework how it's tied to this process
+            console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Stopped Minecraft server');
+        } else if (command === '/nukeTheWorld') {
+            console.log('Gonna nuke the planet. Literally.');
+            // stop minecraft server - rework how it's tied to this process
+            // get server.properties
+            // find world name -> 'level-name' from server.properties
+            // optional: back it up?
+            // rm world name directory
+            // start minecraft
+            // see getProps command above
+            console.log('[' + theDate.getHours() + ':' + theDate.getMinutes() + ':' + theDate.getSeconds() + '] [Server thread/INFO]: Nuked Minecraft server');
         } else {
-            // minecraftServerProcess.stdout.removeListener('data', collector);
-            minecraftServerProcess.stdin.write(command + '\n');
-
             // buffer output for a quarter of a second, then reply to HTTP request
             var buffer = [];
             var collector = function (data) {
@@ -128,8 +186,9 @@ app.post('/command', function(request, response) {
                 // buffer.push(data.split(']: ')[1]);
                 buffer.push(data);
             };
-
+            minecraftServerProcess.stdout.removeListener('data', collector);
             minecraftServerProcess.stdout.on('data', collector);
+            minecraftServerProcess.stdin.write(command + '\n');
 
             // Delay for a bit, then send a response with the latest server output
             setTimeout(function () {
@@ -150,7 +209,6 @@ app.post('/command', function(request, response) {
         }
     } else {
         console.log('Got command with nothing to do.');
-        //response.type('text/xml');
         response.contentType('json');
         response.json({
             response: 'Invalid command'

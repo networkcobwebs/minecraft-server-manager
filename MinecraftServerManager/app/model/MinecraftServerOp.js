@@ -1,5 +1,5 @@
 
-Ext.define('MinecraftServerManager.model.Op', {
+Ext.define('MinecraftServerManager.model.MinecraftServerOp', {
     extend: 'Ext.data.Model',
 
     fields: [

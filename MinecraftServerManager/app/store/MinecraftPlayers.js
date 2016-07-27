@@ -1,14 +1,14 @@
 
-Ext.define('MinecraftServerManager.store.Players', {
-    storeId: 'playersStore',
+Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
+    storeId: 'minecraftPlayersStore',
     extend: 'Ext.data.Store',
     autoLoad: true,
 
     requires: [
-        'MinecraftServerManager.model.Player'
+        'MinecraftServerManager.model.MinecraftPlayer'
     ],
 
-    model: 'MinecraftServerManager.model.Player',
+    model: 'MinecraftServerManager.model.MinecraftPlayer',
 
     getPlayers: function() {
         var me = this;
@@ -66,7 +66,7 @@ Ext.define('MinecraftServerManager.store.Players', {
                                     // accidentally in the buffer at the same time we
                                     // queried, etc.
                                     testData = somePlayerName.split(' ');
-                                    if (testData.length < 2) {
+                                    if (testData.length <= 2) {
                                         playerNames.push(somePlayerName.trim());
                                     }
                                 }
@@ -78,7 +78,7 @@ Ext.define('MinecraftServerManager.store.Players', {
                     }
 
                     // Flag players accordingly
-                    playersStore.each(function(player) {
+                    me.each(function(player) {
                         if (debugPlayersCheck) {
                             console.log('Checking properties of player:', player);
                         }
@@ -95,7 +95,7 @@ Ext.define('MinecraftServerManager.store.Players', {
 
                         if (player.get('dirty')) {
                             player.commit();
-                            playersStore.commitChanges();
+                            me.commitChanges();
                         }
                     });
 
@@ -104,20 +104,20 @@ Ext.define('MinecraftServerManager.store.Players', {
                         found = false;
                         playerName = playerNames[i];
                         // Make sure we don't already have this player displayed
-                        playersStore.each(function (player) {
+                        me.each(function (player) {
                             if (player.get('name') === playerName) {
                                 found = true;
                             }
                         });
                         if (!found) {
-                            player = Ext.create('MinecraftServerManager.model.Player', {
+                            player = Ext.create('MinecraftServerManager.model.MinecraftPlayer', {
                                 name: playerName
                             });
                             player.set('isOnline', true);
                             player.checkOpStatus();
                             player.commit();
-                            playersStore.add(player);
-                            playersStore.commitChanges();
+                            me.add(player);
+                            me.commitChanges();
                             if (debugPlayersCheck) {
                                 console.log('getPlayers: added player: ', player);
                             }

@@ -1,14 +1,14 @@
 
-Ext.define('MinecraftServerManager.store.Ops', {
-    storeId: 'opsStore',
+Ext.define('MinecraftServerManager.store.MinecraftServerOps', {
+    storeId: 'minecraftServerOpsStore',
     extend: 'Ext.data.Store',
     autoLoad: true,
 
     requires: [
-        'MinecraftServerManager.model.Op'
+        'MinecraftServerManager.model.MinecraftServerOp'
     ],
     
-    model: 'MinecraftServerManager.model.Op',
+    model: 'MinecraftServerManager.model.MinecraftServerOp',
 
     getOps: function() {
         var me = this;

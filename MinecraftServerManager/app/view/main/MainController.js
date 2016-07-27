@@ -2,10 +2,11 @@
 var debug = false,
     debugOpsCheck = false,
     debugPlayersCheck = false,
+    debugMinecraftProperties = false,
     minecraftStatus = false,
-    opsStore, playersStore,
+    minecraftServerOpsStore, minecraftPlayersStore, minecraftServerPropertiesStore,
     runner = new Ext.util.TaskRunner(),
-    getMinecraftStatusTask, getOpsTask, getPlayersTask;
+    getMinecraftStatusTask, getOpsTask, getPlayersTask, getMinecraftPropertiesTask;
 
 Ext.define('MinecraftServerManager.view.main.MainController', {
     extend: 'Ext.app.ViewController',
@@ -18,8 +19,9 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
     init: function () {
         var me = this;
 
-        opsStore = Ext.data.StoreManager.lookup('opsStore');
-        playersStore = Ext.data.StoreManager.lookup('playersStore');
+        minecraftServerOpsStore = Ext.data.StoreManager.lookup('minecraftServerOpsStore');
+        minecraftPlayersStore = Ext.data.StoreManager.lookup('minecraftPlayersStore');
+        minecraftServerPropertiesStore = Ext.data.StoreManager.lookup('minecraftServerPropertiesStore');
 
         // Initial Minecraft server status check
         getMinecraftStatusTask = runner.newTask({
@@ -36,7 +38,7 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
         // Initial Minecraft op player check
         getOpsTask = runner.newTask({
             run: function() {
-                opsStore.getOps();
+                minecraftServerOpsStore.getOps();
             },
             // scope: opsStore,
             interval: 1000,
@@ -48,7 +50,7 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
         // Initial Minecraft server player check
         getPlayersTask = runner.newTask({
             run: function() {
-                playersStore.getPlayers();
+                minecraftPlayersStore.getPlayers();
             },
             // scope: playersStore,
             interval: 2000,
@@ -56,6 +58,18 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
             repeat: 1
         });
         getPlayersTask.start();
+
+        // Schedule Minecraft server property check
+        getMinecraftPropertiesTask = runner.newTask({
+            run: function() {
+                minecraftServerPropertiesStore.getMinecraftProperties();
+            },
+            scope: me,
+            interval: 2000,
+            fireOnStart: true,
+            repeat: 1
+        });
+        getMinecraftPropertiesTask.start();
 
         Ext.Function.defer(function() {
             me.scheduleTasks()
@@ -79,7 +93,7 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
         // Schedule Minecraft op player check
         getOpsTask = runner.newTask({
             run: function() {
-                opsStore.getOps();
+                minecraftServerOpsStore.getOps();
             },
             scope: opsStore,
             interval: 20000,
@@ -90,13 +104,24 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
         // Schedule Minecraft server player check
         getPlayersTask = runner.newTask({
             run: function() {
-                playersStore.getPlayers();
+                minecraftPlayersStore.getPlayers();
             },
             // scope: me,
             interval: 10000,
             fireOnStart: false
         });
         getPlayersTask.start();
+
+        // Schedule Minecraft server property check
+        getMinecraftPropertiesTask = runner.newTask({
+            run: function() {
+                minecraftServerPropertiesStore.getMinecraftProperties();
+            },
+            scope: me,
+            interval: 60000,
+            fireOnStart: false
+        });
+        getMinecraftPropertiesTask.start();
     },
 
     checkMinecraftStatus: function() {

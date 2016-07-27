@@ -2,7 +2,7 @@
 var opsStore = Ext.data.StoreManager.lookup('opsStore'),
     playersStore = Ext.data.StoreManager.lookup('playersStore');
 
-Ext.define('MinecraftServerManager.model.Player', {
+Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     extend: 'Ext.data.Model',
 
     fields: [
