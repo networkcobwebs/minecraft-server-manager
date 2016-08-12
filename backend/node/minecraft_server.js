@@ -242,7 +242,7 @@ app.post('/command', function(request, response) {
                 // TODO: need to wait for async kill to finish before moving on, really.
             }
             if (command.backup) {
-                // optional: back it up?
+                // TODO: back it up?
             }
 
             try {
@@ -252,18 +252,13 @@ app.post('/command', function(request, response) {
                     function (err) {
                         if (!err) {
                             // del the sucker all destructive-like
-                            //fs.rmdirSync(pathToMinecraftDirectory + '/' + worldName);
-                            console.log('I would have deleted the world here');
-                        } else {
-                            console.log('=========== FS PROBLEMS ==========');
-                            console.log(err);
+                            fs.rmdirSync(pathToMinecraftDirectory + '/' + worldName);
                         }
                     }
                 );
             }
             catch (e) {
-                console.log('=========== FS THREW UP ===========');
-                console.log(e);
+                //
             }
             startMinecraft();
 

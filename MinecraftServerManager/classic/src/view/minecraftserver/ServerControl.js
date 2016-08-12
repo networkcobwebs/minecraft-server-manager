@@ -9,6 +9,7 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerControl', {
     ],
 
     tbar: [{
+        // TODO: prompt for destructive bits
         xtype: 'buttongroup',
         items: [
             {

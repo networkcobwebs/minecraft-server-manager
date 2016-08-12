@@ -3,10 +3,9 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerStatus', {
     extend: 'Ext.panel.Panel',
     xtype: 'minecraft-server-status',
 
-    // title: 'Minecraft Server Status: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <img src="' + onlineIcon + '" />',
-    html: '<br/>',
-
     title: 'Minecraft Server Status',
+
+    height: 100,
 
     items: [{
         xtype:'box',
