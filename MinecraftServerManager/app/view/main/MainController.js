@@ -1,11 +1,12 @@
 
-var debug = false,
+var runner = new Ext.util.TaskRunner(),
+    debug = false,
     debugOpsCheck = false,
-    debugPlayersCheck = true,
+    debugPlayersCheck = false,
     debugMinecraftProperties = false,
-    minecraftStatus = false,
+    debugMinecraftStatus = false,
+    minecraftServer = new MinecraftServerManager.view.minecraftserver.ServerController(),
     minecraftServerOpsStore, minecraftPlayersStore, minecraftServerPropertiesStore,
-    runner = new Ext.util.TaskRunner(),
     getMinecraftStatusTask, getOpsTask, getPlayersTask, getMinecraftPropertiesTask;
 
 Ext.define('MinecraftServerManager.view.main.MainController', {
@@ -19,14 +20,14 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
     init: function () {
         var me = this;
 
-        minecraftServerOpsStore = Ext.data.StoreManager.lookup('minecraftServerOpsStore');
         minecraftPlayersStore = Ext.data.StoreManager.lookup('minecraftPlayersStore');
+        minecraftServerOpsStore = Ext.data.StoreManager.lookup('minecraftServerOpsStore');
         minecraftServerPropertiesStore = Ext.data.StoreManager.lookup('minecraftServerPropertiesStore');
 
         // Initial Minecraft server status check
         getMinecraftStatusTask = runner.newTask({
             run: function() {
-                me.checkMinecraftStatus();
+                minecraftServer.checkStatus();
             },
             scope: me,
             interval: 50,
@@ -81,7 +82,35 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
         // Schedule Minecraft server status check
         getMinecraftStatusTask = runner.newTask({
             run: function() {
-                me.checkMinecraftStatus();
+                minecraftServer.checkStatus();
+                if (minecraftServer.minecraftStatus) {
+                    try {
+                        Ext.getCmp('main_status_img').getEl().dom.src = 'resources/images/online-icon-16.png';
+                    }
+                    catch (e) {
+                        //
+                    }
+                    try {
+                        Ext.getCmp('minecraft_status_img').getEl().dom.src = 'resources/images/online-icon-16.png';
+                    }
+                    catch (e) {
+                        //
+                    }
+                } else {
+                    try {
+                        Ext.getCmp('main_status_img').getEl().dom.src = 'resources/images/offline-icon-16.png';
+                    }
+                    catch (e) {
+                        //
+                    }
+                    try {
+                        Ext.getCmp('minecraft_status_img').getEl().dom.src = 'resources/images/offline-icon-16.png';
+                    }
+                    catch (e) {
+                        //
+                    }
+
+                }
             },
             scope: me,
             interval: 5000,
@@ -121,34 +150,5 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
             fireOnStart: false
         });
         getMinecraftPropertiesTask.start();
-    },
-
-    checkMinecraftStatus: function() {
-        Ext.Ajax.request({
-            url: 'http://localhost:3000/command',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            params: {
-                command: '/getStatus'
-            },
-            jsonData: {
-                command: '/getStatus'
-            },
-            timeout: 5000,
-            success: function() {
-                minecraftStatus = true;
-                if (debug) {
-                    console.log('Minecraft Server online.');
-                }
-            },
-            failure: function() {
-                minecraftStatus = false;
-                if (debug) {
-                    console.log('Minecraft Server offline.');
-                }
-            }
-        });
     }
 });

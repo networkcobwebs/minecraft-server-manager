@@ -13,7 +13,7 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
     getPlayers: function() {
         var me = this;
 
-        if (minecraftStatus) {
+        if (minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -36,90 +36,95 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
                         player, players, playerName, somePlayerName, somePlayerNames, testData, summary,
                         i, p;
 
-                    // First line is the summary,
-                    // followed by player names, comma+space separated
-                    players = playerList.split(/\n/);
-                    summary = players.shift();
-                    // Remove trailing ':'
-                    summary = summary.slice(0, -1);
-                    // Remove preceding timestamp/server info
-                    summary = summary.split(']: ')[1];
-                    me.updateSummary(summary);
+                    if (playerList.includes('Fail')) {
+                        // Squelch for now
+                        console.log(playerList);
+                    } else {
+                        // First line is the summary,
+                        // followed by player names, comma+space separated
+                        players = playerList.split(/\n/);
+                        summary = players.shift();
+                        // Remove trailing ':'
+                        summary = summary.slice(0, -1);
+                        // Remove preceding timestamp/server info
+                        summary = summary.split(']: ')[1];
+                        me.updateSummary(summary);
 
-                    // Get playerNames
-                    for (i = 0; i < players.length; i++) {
-                        // Remove preceding timestamp & server info
-                        somePlayerNames = players[i].split(']: ')[1];
-                        if (debugPlayersCheck) {
-                            console.log('somePlayerNames:', somePlayerNames);
-                        }
-                        if (somePlayerNames) {
-                            somePlayerNames = somePlayerNames.split(',');
+                        // Get playerNames
+                        for (i = 0; i < players.length; i++) {
+                            // Remove preceding timestamp & server info
+                            somePlayerNames = players[i].split(']: ')[1];
                             if (debugPlayersCheck) {
                                 console.log('somePlayerNames:', somePlayerNames);
                             }
-                            for (p = 0; p < somePlayerNames.length; p++) {
-                                somePlayerName = somePlayerNames[p];
-                                if (somePlayerName) {
-                                    // Make sure we check for multiple spaces so as to
-                                    // ignore any bad data like things that were
-                                    // accidentally in the buffer at the same time we
-                                    // queried, etc.
-                                    testData = somePlayerName.split(' ');
-                                    if (testData.length <= 2) {
-                                        playerNames.push(somePlayerName.trim());
+                            if (somePlayerNames) {
+                                somePlayerNames = somePlayerNames.split(',');
+                                if (debugPlayersCheck) {
+                                    console.log('somePlayerNames:', somePlayerNames);
+                                }
+                                for (p = 0; p < somePlayerNames.length; p++) {
+                                    somePlayerName = somePlayerNames[p];
+                                    if (somePlayerName) {
+                                        // Make sure we check for multiple spaces so as to
+                                        // ignore any bad data like things that were
+                                        // accidentally in the buffer at the same time we
+                                        // queried, etc.
+                                        testData = somePlayerName.split(' ');
+                                        if (testData.length <= 2) {
+                                            playerNames.push(somePlayerName.trim());
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    if (debugPlayersCheck) {
-                        console.log('playerNames discovered:', playerNames);
-                    }
-
-                    // Flag players accordingly
-                    me.each(function(player) {
                         if (debugPlayersCheck) {
-                            console.log('Checking properties of player:', player);
+                            console.log('playerNames discovered:', playerNames);
                         }
-                        found = false;
-                        for (i = 0; i < playerNames.length; i++) {
-                            if (player.get('name') === playerNames[i]) {
-                                found = true;
-                            }
-                        }
-                        if (player.get('isOnline') !== found) {
-                            player.set('isOnline', found);
-                        }
-                        player.checkOpStatus();
 
-                        if (player.get('dirty')) {
-                            player.commit();
-                            me.commitChanges();
-                        }
-                    });
-
-                    // Add new players to the list accordingly:
-                    for (i = 0; i < playerNames.length; i++) {
-                        found = false;
-                        playerName = playerNames[i];
-                        // Make sure we don't already have this player displayed
+                        // Flag players accordingly
                         me.each(function (player) {
-                            if (player.get('name') === playerName) {
-                                found = true;
+                            if (debugPlayersCheck) {
+                                console.log('Checking properties of player:', player);
+                            }
+                            found = false;
+                            for (i = 0; i < playerNames.length; i++) {
+                                if (player.get('name') === playerNames[i]) {
+                                    found = true;
+                                }
+                            }
+                            if (player.get('isOnline') !== found) {
+                                player.set('isOnline', found);
+                            }
+                            player.checkOpStatus();
+
+                            if (player.get('dirty')) {
+                                player.commit();
+                                me.commitChanges();
                             }
                         });
-                        if (!found) {
-                            player = Ext.create('MinecraftServerManager.model.MinecraftPlayer', {
-                                name: playerName
+
+                        // Add new players to the list accordingly:
+                        for (i = 0; i < playerNames.length; i++) {
+                            found = false;
+                            playerName = playerNames[i];
+                            // Make sure we don't already have this player displayed
+                            me.each(function (player) {
+                                if (player.get('name') === playerName) {
+                                    found = true;
+                                }
                             });
-                            player.set('isOnline', true);
-                            player.checkOpStatus();
-                            player.commit();
-                            me.add(player);
-                            me.commitChanges();
-                            if (debugPlayersCheck) {
-                                console.log('getPlayers: added player: ', player);
+                            if (!found) {
+                                player = Ext.create('MinecraftServerManager.model.MinecraftPlayer', {
+                                    name: playerName
+                                });
+                                player.set('isOnline', true);
+                                player.checkOpStatus();
+                                player.commit();
+                                me.add(player);
+                                me.commitChanges();
+                                if (debugPlayersCheck) {
+                                    console.log('getPlayers: added player: ', player);
+                                }
                             }
                         }
                     }

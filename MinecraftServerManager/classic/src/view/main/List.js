@@ -1,7 +1,7 @@
 
 Ext.define('MinecraftServerManager.view.main.List', {
     extend: 'Ext.grid.Panel',
-    xtype: 'mainlist',
+    xtype: 'player-list',
 
     title: 'Players',
     alias: 'playersgrid',

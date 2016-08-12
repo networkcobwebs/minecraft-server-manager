@@ -1,7 +1,8 @@
-.architect
 .idea
-/MinecraftServerManager/bootstrap.css
-/MinecraftServerManager/bootstrap.js
-/MinecraftServerManager/classic.json
+MinecraftServerManager/bootstrap.css
+MinecraftServerManager/bootstrap.js
+MinecraftServerManager/classic.json
+backend/minecraft_server/
+backend/node/node_modules/
 build/
 ext/

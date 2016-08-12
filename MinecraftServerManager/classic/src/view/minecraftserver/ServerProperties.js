@@ -1,11 +1,7 @@
 
 Ext.define('MinecraftServerManager.view.minecraftserver.ServerProperties', {
     extend: 'Ext.grid.Panel',
-    xtype: 'minecraftserverpropertieslist',
-
-    title: 'Minecraft Server Properties',
-    alias: 'minecraftserverpropertieslist',
-    id: 'minecraftserverpropertieslist',
+    xtype: 'minecraft-server-properties-list',
 
     store: 'minecraftServerPropertiesStore',
     height: 500,

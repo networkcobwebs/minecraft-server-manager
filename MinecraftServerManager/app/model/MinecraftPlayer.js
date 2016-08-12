@@ -19,7 +19,7 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     deopPlayer: function() {
         // var me = this;
         var player = this;
-        if (minecraftStatus) {
+        if (minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -48,7 +48,7 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     opPlayer: function() {
         // var me = this;
         var player = this;
-        if (minecraftStatus) {
+        if (minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
