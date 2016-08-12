@@ -9,14 +9,14 @@ Ext.application({
     extend: 'MinecraftServerManager.Application',
 
     requires: [
-        'MinecraftServerManager.view.main.Main'
+        'MinecraftServerManager.view.main.Tabs'
     ],
 
     // The name of the initial view to create. With the classic toolkit this class
     // will gain a "viewport" plugin if it does not extend Ext.Viewport. With the
     // modern toolkit, the main view will be added to the Viewport.
     //
-    mainView: 'MinecraftServerManager.view.main.Main'
+    mainView: 'MinecraftServerManager.view.main.Tabs'
 	
     //-------------------------------------------------------------------------
     // Most customizations should be made to MinecraftServerManager.Application. If you need to

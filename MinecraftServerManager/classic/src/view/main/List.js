@@ -1,37 +1,19 @@
 
 Ext.define('MinecraftServerManager.view.main.List', {
     extend: 'Ext.grid.Panel',
-    xtype: 'mainlist',
-    requires: [
-        'Ext.data.StoreManager'
-    ],
+    xtype: 'player-list',
 
     title: 'Players',
     alias: 'playersgrid',
     id: 'playersGrid',
 
-    store: 'playersStore',
-
-    // forceFit : true,
-    // bufferedRenderer: true,
+    store: 'minecraftPlayersStore',
     height: 500,
 
     columns: [
         { text: 'Name', sortable: false, hideable: false, dataIndex: 'name', flex: 1 },
         { text: 'Properties', sortable: false, hideable: false, columns: [
             {
-                sortable: false,
-                hideable: false,
-                hideHeaders: true,
-                align: 'center',
-                renderer: function(value, metaData, record) {
-                    if (record.get('isOp')) {
-                        return '<img src="resources/images/DiamondSword-16.png" />';
-                    } else {
-                        return '&nbsp;';
-                    }
-                }
-            },{
                 sortable: false,
                 hideable: false,
                 hideHeaders: true,
