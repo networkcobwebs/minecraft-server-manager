@@ -28,8 +28,10 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
                 command: '/getStatus'
             },
             timeout: 5000,
-            success: function() {
-                me.minecraftStatus = true;
+            success: function(response) {
+                var result = JSON.parse(response.responseText);
+
+                me.minecraftStatus = result.response;
                 if (debugMinecraftStatus) {
                     console.log('Minecraft Server online:', me.minecraftStatus);
                 }

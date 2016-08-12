@@ -83,36 +83,17 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
         getMinecraftStatusTask = runner.newTask({
             run: function() {
                 minecraftServer.checkStatus();
-                if (minecraftServer.minecraftStatus) {
-                    try {
-                        Ext.getCmp('main_status_img').getEl().dom.src = 'resources/images/online-icon-16.png';
-                    }
-                    catch (e) {
-                        //
-                    }
-                    try {
-                        Ext.getCmp('minecraft_status_img').getEl().dom.src = 'resources/images/online-icon-16.png';
-                    }
-                    catch (e) {
-                        //
-                    }
-                } else {
-                    try {
-                        Ext.getCmp('main_status_img').getEl().dom.src = 'resources/images/offline-icon-16.png';
-                    }
-                    catch (e) {
-                        //
-                    }
-                    try {
-                        Ext.getCmp('minecraft_status_img').getEl().dom.src = 'resources/images/offline-icon-16.png';
-                    }
-                    catch (e) {
-                        //
-                    }
-
+                try {
+                    Ext.getCmp('main_status_img').getEl().dom.src = minecraftServer.minecraftStatus ? 'resources/images/online-icon-16.png' : 'resources/images/offline-icon-16.png';
+                } catch (e) {
+                    //
+                }
+                try {
+                    Ext.getCmp('minecraft_status_img').getEl().dom.src = minecraftServer.minecraftStatus ? 'resources/images/online-icon-16.png' : 'resources/images/offline-icon-16.png';
+                } catch (e) {
+                    //
                 }
             },
-            scope: me,
             interval: 5000,
             fireOnStart: false
         });
