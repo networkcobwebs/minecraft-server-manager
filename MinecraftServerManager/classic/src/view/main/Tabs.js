@@ -1,15 +1,17 @@
 
 Ext.define('MinecraftServerManager.view.main.Tabs', {
     extend: 'Ext.tab.Panel',
-    xtype: 'app-main-tabs',
+    plugins: 'viewport',
 
     requires: [
+        'Ext.plugin.Viewport',
+        'MinecraftServerManager.view.main.Main',
         'MinecraftServerManager.view.main.MainController',
         'MinecraftServerManager.view.main.MainModel',
-        'MinecraftServerManager.view.main.Main',
         'MinecraftServerManager.view.minecraftserver.Main'
     ],
 
+    xtype: 'app-main-tabs',
     controller: 'main',
     viewModel: 'main',
 
@@ -70,7 +72,6 @@ Ext.define('MinecraftServerManager.view.main.Tabs', {
         {
             title: 'Players',
             iconCls: 'fa-user',
-            // The following grid shares a store with the classic version's grid as well!
             items: [{
                 xtype: 'app-main'
             }]

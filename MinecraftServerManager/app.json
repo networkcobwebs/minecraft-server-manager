@@ -558,17 +558,17 @@
             "sass": {
                 // "save": "classic/sass/save.scss"
             }
-        },
-
-        "modern": {
-            "toolkit": "modern",
-            
-            "theme": "theme-triton",
-            
-            "sass": {
-                // "save": "modern/sass/save.scss"
-            }
         }
+
+        // "modern": {
+            // "toolkit": "modern",
+            
+            // "theme": "theme-triton",
+            
+            // "sass": {
+                // "save": "modern/sass/save.scss"
+            // }
+        // }
     },
     
 
