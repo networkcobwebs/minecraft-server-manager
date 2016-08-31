@@ -19,9 +19,5 @@ node minecraft_server.js
 **Be careful how changes to the minecraft_server.js script are committed
 back -- make sure paths aren't all silly with usernames and such in them**
 
-4. Then things are as simple as
-```
-cd minecraft-server-manager/MinecraftServerManager
-sencha app watch
-```
-and develop away!
+That should allow the MinecraftServerManager pieces communicate with the
+jar using AJAX calls.
