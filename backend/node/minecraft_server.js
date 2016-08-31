@@ -12,7 +12,10 @@ var spawn = require('child_process').spawn;
 var lastCommand = '',
     lastOutput = '',
     pathToMinecraftDirectory = '../minecraft_server',
-    minecraftServerProcess;
+    minecraftServerJar = 'minecraft_server.1.10.2.jar',
+    minecraftServerProcess,
+    webServerAddress = 'localhost',
+    webServerPort = '1841';
 
 // Log process output to stdout
 function log(data) {
@@ -33,7 +36,7 @@ function startMinecraft() {
         '-Xmx1G',
         '-Xms512M',
         '-jar',
-        'minecraft_server.jar',
+        minecraftServerJar,
         'nogui'
     ], {
         cwd: pathToMinecraftDirectory
@@ -82,7 +85,7 @@ app.use(function(request, response, next) {
         + ('0' + (theDate.getMinutes()+1)).slice(-2) + ':'
         + ('0' + (theDate.getSeconds())).slice(-2);
 
-    response.setHeader('Access-Control-Allow-Origin', 'http://localhost:1841');
+    response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
     response.setHeader('Access-Control-Allow-Credentials', true);
