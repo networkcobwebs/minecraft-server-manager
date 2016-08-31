@@ -4,6 +4,7 @@
 minecraft-server-manager/backend/node/minecraft_server.js
 ```
 see the Readme.md there
+
 2. Install Sencha Cmd
 3. Start app watch
 ```
