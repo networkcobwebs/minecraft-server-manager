@@ -2,8 +2,10 @@
 MinecraftServerManager/bootstrap.css
 MinecraftServerManager/bootstrap.js
 MinecraftServerManager/classic.json
-MinecraftServerManager/sass/example/
-backend/minecraft_server/
-backend/node/node_modules/
-build/
-ext/
+MinecraftServerManager/sass/example
+backend/minecraft_server
+backend/node/node_modules
+build
+ext
+
+npm-debug.log
