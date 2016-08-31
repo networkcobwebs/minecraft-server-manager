@@ -1,12 +1,13 @@
 # Development
-1. Start by configuring your Node.js things in
+Start by configuring your Node.js things in
 ```
 minecraft-server-manager/backend/node/minecraft_server.js
 ```
 see the Readme.md there
 
-2. Install Sencha Cmd
-3. Start app watch
+Install Sencha Cmd
+
+Start app watch
 ```
 cd minecraft-server-manager/MinecraftServerManager
 sencha app watch
