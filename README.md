@@ -24,12 +24,12 @@ by the user that owns the Minecraft Server jar.
 
 ## Running Minecraft Server Manager
 1. Edit the ```backend/node/minecraft_server.js``` script and:
-    * Set the path to the directory containing the Minecraft server jar
+    * Set the path to the directory containing the Minecraft Server jar
     in ```pathToMinecraftDirectory```
-    * Set the name of the minecraft_server-x.jar in ```minecraftServerJar```
-2. In the backend/node directory
+    * Set the name of the Minecraft Server jar in ```minecraftServerJar```
+2. In the ```backend/node``` directory
     * ```npm install```
-3. Execute the Node.js script in ```backend/node/minecraft_server.js```
+3. Execute the ```minecraft_server.js``` Node.js script in ```backend/node```
 4. Place the web app in your web server
 5. Navigate to your web server's URL: ```http://localhost/MinecraftServerManager```
 
@@ -40,6 +40,11 @@ Current testing has been with:
 * Ubuntu 14.04 (EOL'ed, btw) and Ubuntu 16.04.1
 * Apache2 installed from their repository
 * Node.js 4.5.0
+
+Make sure if your Minecraft Server is running as a normal user that the
+same normal user executes the Node.js ```minecraft_server.js``` script
+provided in order for the web interface to be able to read the ops,
+properties, and most importantly, the jar to be able to manage chunks.
 
 The web interface assumes the Node.js script that controls the Minecraft
 server Java process is listening on localhost:3000 for now.
