@@ -12,7 +12,7 @@ var spawn = require('child_process').spawn;
 var lastCommand = '',
     lastOutput = '',
     pathToMinecraftDirectory = '../minecraft_server',
-    minecraftServerJar = 'minecraft_server.1.10.2.jar',
+    minecraftServerJar = 'minecraft_server.jar',
     minecraftServerProcess,
     webServerAddress = 'localhost',
     webServerPort = '1841';
