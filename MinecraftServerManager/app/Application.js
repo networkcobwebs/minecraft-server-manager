@@ -22,10 +22,11 @@ Ext.define('MinecraftServerManager.Application', {
     minecraftOpsPollInterval: 5 * 1000,
     minecraftPlayersPollInterval: 5 * 1000,
 
+    debug: false,
     debugMinecraftStatus: true,
-    debugOpsCheck: true,
-    debugPlayersCheck: true,
-    debugMinecraftProperties: true,
+    debugOpsCheck: false,
+    debugPlayersCheck: false,
+    debugMinecraftProperties: false,
 
     // Schedule Minecraft server property check
     getMinecraftPropertiesTask: {
@@ -53,7 +54,7 @@ Ext.define('MinecraftServerManager.Application', {
         // Initial Minecraft op player check
         me.getOpsTask = {
             run: function() {
-                var opsStore = Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
+                Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
             },
             interval: me.minecraftOpsPollInterval,
             scope: me,

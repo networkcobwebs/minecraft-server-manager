@@ -19,7 +19,7 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     deopPlayer: function() {
         // var me = this;
         var player = this;
-        if (minecraftServer.minecraftStatus) {
+        if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -37,8 +37,8 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
                 success: function() {
                     player.set('isOp', false);
                     player.commit();
-                    minecraftServerOpsStore.getOps();
-                    minecraftPlayersStore.getPlayers();
+                    Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
+                    Ext.data.StoreManager.lookup('minecraftPlayersStore').getPlayers();
                 }
             });
         }
@@ -48,7 +48,7 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     opPlayer: function() {
         // var me = this;
         var player = this;
-        if (minecraftServer.minecraftStatus) {
+        if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -66,8 +66,8 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
                 success: function() {
                     player.set('isOp', true);
                     player.commit();
-                    minecraftServerOpsStore.getOps();
-                    minecraftPlayersStore.getPlayers();
+                    Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
+                    Ext.data.StoreManager.lookup('minecraftPlayersStore').getPlayers();
                 }
             });
         }
@@ -78,15 +78,15 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
         var player = this;
 
         // Make sure we have ops at all
-        if (minecraftServerOpsStore.count() == 0) {
-            minecraftServerOpsStore.getOps();
+        if (Ext.data.StoreManager.lookup('minecraftServerOpsStore').count() == 0) {
+            Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
         }
-        minecraftServerOpsStore.each(function(op) {
-            if (debugOpsCheck) {
+        Ext.data.StoreManager.lookup('minecraftServerOpsStore').each(function(op) {
+            if (MinecraftServerManager.app.debugOpsCheck) {
                 console.log('checkOpStatus: comparing op.name "' + op.get('name') + '" with player "'+ player.get('name') + '"');
             }
             if (op.get('name') === player.get('name')) {
-                if (debugOpsCheck) {
+                if (MinecraftServerManager.app.debugOpsCheck) {
                     console.log('checkOpStatus: setting player "' + player.get('name') + '" as op.');
                 }
                 if (!player.get('isOp')) {

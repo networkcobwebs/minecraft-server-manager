@@ -3,8 +3,6 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.server',
 
-    // debugMinecraftStatus: MinecraftServerManager.app.debugMinecraftStatus || false,
-
     minecraftStatus: false,
 
     init: function() {
@@ -52,7 +50,7 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
     newWorld: function() {
         var worldName = '';
         // Get world name from minecraftServerPropertiesStore
-        minecraftServerPropertiesStore.each(function (property) {
+        Ext.data.StoreManager.lookup('minecraftServerPropertiesStore').each(function (property) {
             // find level-name
             if (property.data.name === 'level-name'){
                 worldName = property.data.value;
@@ -74,12 +72,12 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
             },
             timeout: 5000,
             success: function() {
-                if (debug) {
+                if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server online.');
                 }
             },
             failure: function() {
-                if (debug) {
+                if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server offline.');
                 }
             }
@@ -101,13 +99,13 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
             },
             timeout: 5000,
             success: function() {
-                if (debug) {
+                if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server online.');
                 }
                 console.log('Minecraft Server started.');
             },
             failure: function() {
-                if (debug) {
+                if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server offline.');
                 }
                 console.log('Minecraft Server unreachable?');
@@ -130,13 +128,13 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
             },
             timeout: 5000,
             success: function() {
-                if (debug) {
+                if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server online.');
                 }
                 console.log('Minecraft Server stopped.');
             },
             failure: function() {
-                if (debug) {
+                if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server offline.');
                 }
                 console.log('Minecraft Server unreachable?');
