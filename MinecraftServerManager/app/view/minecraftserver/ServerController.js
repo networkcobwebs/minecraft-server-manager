@@ -3,7 +3,7 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.server',
 
-    // requires: ['MinecraftServerManager.view.minecraftserver.ServerStatus'],
+    // debugMinecraftStatus: MinecraftServerManager.app.debugMinecraftStatus || false,
 
     minecraftStatus: false,
 
@@ -14,6 +14,10 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
 
     checkStatus: function() {
         var me = this;
+
+        if (MinecraftServerManager.app.debugMinecraftStatus) {
+            console.log('Checking Minecraft server state...');
+        }
 
         Ext.Ajax.request({
             url: 'http://localhost:3000/command',
@@ -32,13 +36,13 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
                 var result = JSON.parse(response.responseText);
 
                 me.minecraftStatus = result.response;
-                if (debugMinecraftStatus) {
+                if (MinecraftServerManager.app.debugMinecraftStatus) {
                     console.log('Minecraft Server online:', me.minecraftStatus);
                 }
             },
             failure: function() {
                 me.minecraftStatus = false;
-                if (debugMinecraftStatus) {
+                if (MinecraftServerManager.app.debugMinecraftStatus) {
                     console.log('Minecraft Server online: ', me.minecraftStatus);
                 }
             }

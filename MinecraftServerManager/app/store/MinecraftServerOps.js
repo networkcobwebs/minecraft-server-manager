@@ -13,7 +13,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerOps', {
     getOps: function() {
         var me = this;
 
-        if (minecraftServer.minecraftStatus) {
+        if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -45,7 +45,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerOps', {
                                 }
                             });
                             if (!found) {
-                                if (debugOpsCheck) {
+                                if (MinecraftServerManager.app.debugOpsCheck) {
                                     console.log('Removing ' + op.get('name') + ' from tracked ops.');
                                 }
                                 me.remove(op, false, true);
@@ -62,7 +62,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerOps', {
                                 }
                             });
                             if (!found) {
-                                if (debugOpsCheck) {
+                                if (MinecraftServerManager.app.debugOpsCheck) {
                                     console.log('Tracking op:', player.name);
                                 }
                                 me.add(player);
@@ -72,7 +72,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerOps', {
                     }
                 },
                 failure: function (response) {
-                    if (debugOpsCheck) {
+                    if (MinecraftServerManager.app.debugOpsCheck) {
                         console.log('Failed to get ops list:', response);
                     }
                 }

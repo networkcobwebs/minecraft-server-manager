@@ -57,7 +57,7 @@ Ext.define('MinecraftServerManager.view.main.List', {
                 }
             }
         }]
-    }],
+    }]
     /** ,
     { text: 'Actions', sortable: false, hideable: false, flex: 1, columns: [
         {
