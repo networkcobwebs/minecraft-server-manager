@@ -26,7 +26,7 @@ Ext.define('MinecraftServerManager.Application', {
     devmode: true,
 
     debug: false,
-    debugMinecraftStatus: true,
+    debugMinecraftStatus: false,
     debugOpsCheck: false,
     debugPlayersCheck: false,
     debugMinecraftProperties: false,

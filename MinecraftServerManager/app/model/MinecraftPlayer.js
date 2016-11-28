@@ -7,18 +7,28 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
 
     fields: [
         // Some of these fields come from Minecraft's ops.json file, so they may change:
-        { name: 'uuid',     type: 'string' },
-        { name: 'name',     type: 'string' },
-        { name: 'level',    type: 'string' },
+        { name: 'uuid', type: 'string' },
+        { name: 'name', type: 'string' },
+        { name: 'level', type: 'string' },
         { name: 'bypassesPlayerLimit', type: 'boolean' },
-        { name: 'isOp',     type: 'boolean' },
-        { name: 'isOnline', type: 'boolean' }
+        { name: 'isOp', type: 'boolean' },
+        { name: 'isOnline', type: 'boolean' },
+        { name: 'isBanned', type: 'boolean' },
+        { name: 'isWhitelisted', type: 'boolean' },
+        { name: 'actionvalue', type: 'string' },
+        { name: 'isDev', type: 'boolean' }
     ],
+
+    showActions: function () {
+        var player = this;
+        debugger;
+        return [player.get('isOp')?1:0, 0, player.get('isBanned')?1:0, player.get('isWhitelisted')?1:0];
+    },
 
     // Deops a player on the Minecraft server
     deopPlayer: function() {
-        // var me = this;
         var player = this;
+
         if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
@@ -46,8 +56,8 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
 
     // Ops a player on the Minecraft server
     opPlayer: function() {
-        // var me = this;
         var player = this;
+
         if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',

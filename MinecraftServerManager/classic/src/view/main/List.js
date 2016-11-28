@@ -4,7 +4,10 @@ Ext.define('MinecraftServerManager.view.main.List', {
     requires: [
         'Ext.button.Segmented',
         'Ext.container.ButtonGroup',
-        'Ext.grid.column.Action'
+        'Ext.form.Label',
+        'Ext.grid.column.Action',
+        'Ext.grid.column.Widget',
+        'Ext.panel.Panel'
     ],
 
     xtype: 'player-list',
@@ -20,10 +23,17 @@ Ext.define('MinecraftServerManager.view.main.List', {
         text: 'Name',
         sortable: false,
         hideable: false,
-        dataIndex: 'name',
         width: 100,
         flex: 1,
-        align: 'left'
+        align: 'left',
+        xtype: 'widgetcolumn',
+        widget: {
+            xtype: 'panel',
+            header: false,
+            bind: {
+                html: '{record.name}'
+            }
+        }
     }, {
         text: 'Properties',
         sortable: false,
@@ -60,9 +70,10 @@ Ext.define('MinecraftServerManager.view.main.List', {
         width: 100,
         flex: 1,
         align: 'center',
-        xtype:'widgetcolumn',
+        xtype: 'widgetcolumn',
         widget: {
             xtype: 'panel',
+            header: false,
             tbar: [{
                 xtype: 'buttongroup',
                 border: false,
@@ -70,169 +81,36 @@ Ext.define('MinecraftServerManager.view.main.List', {
                 items: [{
                     xtype: 'segmentedbutton',
                     allowMultiple: true,
-                    // TODO add handlers for these states
+                    // TODO add listeners for these state changes
                     items:[{
-                        text: 'Op/DeOp'
+                        text: 'Op/DeOp',
+                        value: 'isOp'
                     }, {
-                        text: 'Kick'
+                        text: 'Kick',
+                        value: 'kick'
                     }, {
-                        text: 'Ban'
+                        text: 'Ban',
+                        value: 'isBanned'
                     }, {
-                        text: 'Whitelist'
-                    }]
+                        text: 'Whitelist',
+                        value: 'isWhitelisted'
+                    }],
+                    // bind: {
+                    //     value: function(record) {
+                    //         debugger;
+                    //         return [record.get('isOp')?1:0, 0, record.get('isBanned')?1:0, record.get('isWhitelisted')?1:0];
+                    //     } //JSON.parse('{record.actionvalue}')
+                    //
+                    // }
+                    value: [0,3]
                 }]
             }]
         }
-    }]
-    /** ,
-    { text: 'Actions', sortable: false, hideable: false, flex: 1, columns: [
-        {
-            sortable: false,
-            hideable: false,
-            hideHeaders: true,
-            align: 'center',
-            width: 150,
-            renderer: function(value ,meta, record) {
-                var id = Ext.id();
-                if (record.get('isOp')) {
-                    Ext.defer(function() {
-                        Ext.widget('button', {
-                            renderTo: id,
-                            text: 'DeOp Player',
-                            icon: 'resources/images/GunPowder_Item-16.png',
-                            scale: 'small',
-                            handler: function() {
-                                record.deopPlayer();
-                            }
-                        });
-                    }, 200);
-                    return Ext.String.format('<div id="{0}"></div>', id);
-                } else {
-                    Ext.defer(function() {
-                        Ext.widget('button', {
-                            renderTo: id,
-                            text: 'Op Player',
-                            icon: 'resources/images/RedstoneDust-16.png',
-                            scale: 'small',
-                            handler: function() {
-                                record.opPlayer();
-                            }
-                        });
-                    }, 200);
-                    return Ext.String.format('<div id="{0}"></div>', id);
-                }
-            }
-        },
-        {
-            sortable: false,
-            hideable: false,
-            hideHeaders: true,
-            align: 'center',
-            width: 150,
-            renderer: function(value ,meta, record) {
-                var id = Ext.id();
-                Ext.defer(function() {
-                    Ext.widget('button', {
-                        renderTo: id,
-                        text: 'Whitelist Player',
-                        icon: 'resources/images/RedstoneDust-16.png',
-                        scale: 'small',
-                        handler: function() {
-                            record.opPlayer();
-                        }
-                    });
-                }, 200);
-                return Ext.String.format('<div id="{0}"></div>', id);
-            }
-        },
-        {
-            sortable: false,
-            hideable: false,
-            hideHeaders: true,
-            align: 'center',
-            width: 150,
-            renderer: function(value ,meta, record) {
-                var id = Ext.id();
-                Ext.defer(function() {
-                    Ext.widget('button', {
-                        renderTo: id,
-                        text: 'De-Whitelist Player',
-                        icon: 'resources/images/RedstoneDust-16.png',
-                        scale: 'small',
-                        handler: function() {
-                            record.opPlayer();
-                        }
-                    });
-                }, 200);
-                return Ext.String.format('<div id="{0}"></div>', id);
-            }
-        },
-        {
-            sortable: false,
-            hideable: false,
-            hideHeaders: true,
-            align: 'center',
-            width: 150,
-            renderer: function(value ,meta, record) {
-                var id = Ext.id();
-                Ext.defer(function() {
-                    Ext.widget('button', {
-                        renderTo: id,
-                        text: 'Kick Player',
-                        icon: 'resources/images/RedstoneDust-16.png',
-                        scale: 'small',
-                        handler: function() {
-                            record.opPlayer();
-                        }
-                    });
-                }, 200);
-                return Ext.String.format('<div id="{0}"></div>', id);
-            }
-        },
-        {
-            sortable: false,
-            hideable: false,
-            hideHeaders: true,
-            align: 'center',
-            width: 150,
-            renderer: function(value ,meta, record) {
-                var id = Ext.id();
-                Ext.defer(function() {
-                    Ext.widget('button', {
-                        renderTo: id,
-                        text: 'Ban Player',
-                        icon: 'resources/images/RedstoneDust-16.png',
-                        scale: 'small',
-                        handler: function() {
-                            record.opPlayer();
-                        }
-                    });
-                }, 200);
-                return Ext.String.format('<div id="{0}"></div>', id);
-            }
-        },
-        {
-            sortable: false,
-            hideable: false,
-            hideHeaders: true,
-            align: 'center',
-            width: 150,
-            renderer: function(value ,meta, record) {
-                var id = Ext.id();
-                Ext.defer(function() {
-                    Ext.widget('button', {
-                        renderTo: id,
-                        text: 'Un-Ban Player',
-                        icon: 'resources/images/RedstoneDust-16.png',
-                        scale: 'small',
-                        handler: function() {
-                            record.opPlayer();
-                        }
-                    });
-                }, 200);
-                return Ext.String.format('<div id="{0}"></div>', id);
-            }
-        }
-    ]}
-     */
+    }],
+
+    setActionButtons: function () {
+        var me = this;
+        debugger;
+        return [];
+    }
 });

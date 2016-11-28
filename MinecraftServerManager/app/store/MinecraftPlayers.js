@@ -17,6 +17,9 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
         bypassesPlayerLimit: true,
         isOp: true,
         isOnline: true,
+        isBanned: false,
+        isWhitelisted: true,
+        actionvalue: JSON.stringify(["isOp", "isWhiteListed"]),
         isDev: true
     },{
         uuid: 'blarg',
@@ -25,6 +28,9 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
         bypassesPlayerLimit: true,
         isOp: false,
         isOnline: false,
+        isBanned: true,
+        isWhitelisted: false,
+        actionvalue: JSON.stringify(["isBanned"]),
         isDev: true
     }],
 
@@ -158,6 +164,12 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
                 }
             });
         }
+    },
+
+    showActions: function () {
+        var player = this;
+        debugger;
+        return [player.get('isOp')?1:0, 0, player.get('isBanned')?1:0, player.get('isWhitelisted')?1:0];
     },
 
     updateSummary: function(summary) {
