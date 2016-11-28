@@ -10,6 +10,29 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
 
     model: 'MinecraftServerManager.model.MinecraftPlayer',
 
+    data: [{
+        uuid: 'blarg',
+        name: 'your_mom',
+        level: 'über level',
+        bypassesPlayerLimit: true,
+        isOp: true,
+        isOnline: true,
+        isDev: true
+    },{
+        uuid: 'blarg',
+        name: 'your_dad',
+        level: 'über level',
+        bypassesPlayerLimit: true,
+        isOp: false,
+        isOnline: false,
+        isDev: true
+    }],
+
+    filters: [{
+        property: 'isDev',
+        value: true
+    }],
+
     getPlayers: function() {
         var me = this;
 

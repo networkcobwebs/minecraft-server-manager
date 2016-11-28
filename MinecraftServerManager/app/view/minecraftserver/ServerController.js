@@ -6,45 +6,78 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
     minecraftStatus: false,
 
     init: function() {
-        var me = this;
-        me.checkStatus();
+        // var me = this;
+        // me.checkStatus();
     },
 
     checkStatus: function() {
-        var me = this;
+        var me = this,
+            debugStatusTask = MinecraftServerManager.app.debugMinecraftStatus || true,
+            statusTask = MinecraftServerManager.app.getMinecraftStatusTask;
 
-        if (MinecraftServerManager.app.debugMinecraftStatus) {
+        if (debugStatusTask) {
             console.log('Checking Minecraft server state...');
         }
 
-        Ext.Ajax.request({
-            url: 'http://localhost:3000/command',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            params: {
-                command: '/getStatus'
-            },
-            jsonData: {
-                command: '/getStatus'
-            },
-            timeout: 5000,
-            success: function(response) {
-                var result = JSON.parse(response.responseText);
+        if (statusTask && !statusTask.stopped) {
+            Ext.Ajax.request({
+                url: 'http://localhost:3000/command',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                params: {
+                    command: '/getStatus'
+                },
+                jsonData: {
+                    command: '/getStatus'
+                },
+                timeout: 5000,
+                success: function (response) {
+                    var result = JSON.parse(response.responseText);
 
-                me.minecraftStatus = result.response;
-                if (MinecraftServerManager.app.debugMinecraftStatus) {
-                    console.log('Minecraft Server online:', me.minecraftStatus);
+                    me.minecraftStatus = result.response;
+                    if (debugStatusTask) {
+                        console.log('Minecraft Server online:', me.minecraftStatus);
+                    }
+
+                    if (!me.minecraftStatus) {
+                        // Increase time of polling task
+                        if (debugStatusTask) {
+                            console.log('status task interval was ' + statusTask.interval);
+                        }
+                        statusTask.restart(statusTask.interval + 10000);
+                        if (debugStatusTask) {
+                            console.log('status task interval is ' + statusTask.interval);
+                        }
+                    } else if (me.minecraftStatus && statusTask.interval !== MinecraftServerManager.app.minecraftStatusPollInterval) {
+                        // Reset time of polling task if needed
+                        if (debugStatusTask) {
+                            console.log('Resetting Minecraft server poller time from ' + statusTask.interval + ' to default ' + MinecraftServerManager.app.minecraftStatusPollInterval + '...');
+                        }
+                        statusTask.restart(MinecraftServerManager.app.minecraftStatusPollInterval);
+                        if (debugStatusTask) {
+                            console.log('Done resetting Minecraft server poller time.');
+                        }
+                    }
+                },
+                failure: function () {
+                    me.minecraftStatus = false;
+                    if (debugStatusTask) {
+                        console.log('Minecraft Server online: ', me.minecraftStatus);
+                    }
+
+                    // Increase time of polling task
+                    if (debugStatusTask) {
+                        console.log('status task interval was ' + statusTask.interval);
+                    }
+                    statusTask.restart(statusTask.interval + 10000);
+                    if (debugStatusTask) {
+                        console.log('status task interval is ' + statusTask.interval);
+                    }
                 }
-            },
-            failure: function() {
-                me.minecraftStatus = false;
-                if (MinecraftServerManager.app.debugMinecraftStatus) {
-                    console.log('Minecraft Server online: ', me.minecraftStatus);
-                }
-            }
-        });
+            });
+        }
     },
 
     newWorld: function() {
@@ -100,9 +133,11 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
             timeout: 5000,
             success: function() {
                 if (MinecraftServerManager.app.debug) {
-                    console.log('Minecraft Server online.');
+                    console.log('Minecraft Server started.');
                 }
-                console.log('Minecraft Server started.');
+                Ext.TaskManager.start(MinecraftServerManager.app.getMinecraftStatusTask);
+                Ext.TaskManager.start(MinecraftServerManager.app.getOpsTask);
+                Ext.TaskManager.start(MinecraftServerManager.app.getPlayersTask);
             },
             failure: function() {
                 if (MinecraftServerManager.app.debug) {
@@ -129,15 +164,21 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
             timeout: 5000,
             success: function() {
                 if (MinecraftServerManager.app.debug) {
-                    console.log('Minecraft Server online.');
+                    console.log('Minecraft Server stopped.');
                 }
                 console.log('Minecraft Server stopped.');
+                Ext.TaskManager.stop(MinecraftServerManager.app.getMinecraftStatusTask);
+                Ext.TaskManager.stop(MinecraftServerManager.app.getOpsTask);
+                Ext.TaskManager.stop(MinecraftServerManager.app.getPlayersTask);
             },
             failure: function() {
                 if (MinecraftServerManager.app.debug) {
                     console.log('Minecraft Server offline.');
                 }
                 console.log('Minecraft Server unreachable?');
+                Ext.TaskManager.stop(MinecraftServerManager.app.getMinecraftStatusTask);
+                Ext.TaskManager.stop(MinecraftServerManager.app.getOpsTask);
+                Ext.TaskManager.stop(MinecraftServerManager.app.getPlayersTask);
             }
         });
     }

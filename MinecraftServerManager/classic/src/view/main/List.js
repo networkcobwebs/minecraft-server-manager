@@ -2,9 +2,10 @@
 Ext.define('MinecraftServerManager.view.main.List', {
     extend: 'Ext.grid.Panel',
     requires: [
-        'Ext.button.Split',
+        'Ext.button.Segmented',
         'Ext.container.ButtonGroup',
-        'Ext.grid.column.Action'],
+        'Ext.grid.column.Action'
+    ],
 
     xtype: 'player-list',
 
@@ -59,55 +60,29 @@ Ext.define('MinecraftServerManager.view.main.List', {
         width: 100,
         flex: 1,
         align: 'center',
-        // xtype:'actioncolumn',
-        // items: [{
-        //     segmentedbutton: {
-        //         allowMultiple: true,
-        //         items: [{
-        //             text: 'Op',
-        //             getClass: function(v, meta, rec, rowIndex, colIndex, store) {
-        //                 if (rec.get('isOp')) {
-        //                     return 'x-fa fa-arrow-up'
-        //                 } else {
-        //                     return 'x-fa fa-arrow-down';
-        //                 }
-        //             }
-        //         }]
-        //     }
-        // },{
-        //     xtype:'splitbutton',
-        //     text: 'Adjust Player...',
-        //     // scale: 'large',
-        //     // iconCls: 'add',
-        //     // iconAlign: 'top',
-        //     arrowAlign:'right',
-        //     menu: [{ text: 'Op/DeOp' }]
-        // }]
-        xtype: 'actioncolumn',
-        items: [{
-            xtype: 'buttongroup',
-            border: false,
-            frame: false,
-            items: [{
-                xtype: 'splitbutton',
-                text: 'Adjust Player...',
-                menu: [{ text: 'Op/DeOp' }, {text: 'Kick'}, {text: 'Ban/Whitelist'}]
+        xtype:'widgetcolumn',
+        widget: {
+            xtype: 'panel',
+            tbar: [{
+                xtype: 'buttongroup',
+                border: false,
+                frame: false,
+                items: [{
+                    xtype: 'segmentedbutton',
+                    allowMultiple: true,
+                    // TODO add handlers for these states
+                    items:[{
+                        text: 'Op/DeOp'
+                    }, {
+                        text: 'Kick'
+                    }, {
+                        text: 'Ban'
+                    }, {
+                        text: 'Whitelist'
+                    }]
+                }]
             }]
-        }]
-        // xtype:'widgetcolumn',
-        // widget: {
-        //     xtype: 'panel',
-        //     tbar: [{
-        //         xtype: 'buttongroup',
-        //         border: false,
-        //         frame: false,
-        //         items: [{
-        //             xtype: 'splitbutton',
-        //             text: 'Adjust Player...',
-        //             menu: [{ text: 'Op/DeOp' }, {text: 'Kick'}, {text: 'Ban/Whitelist'}]
-        //         }]
-        //     }]
-        // }
+        }
     }]
     /** ,
     { text: 'Actions', sortable: false, hideable: false, flex: 1, columns: [

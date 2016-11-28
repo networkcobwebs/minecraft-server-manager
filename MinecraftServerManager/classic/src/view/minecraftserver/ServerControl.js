@@ -15,17 +15,20 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerControl', {
             {
                 text: 'Stop',
                 handler: function() {
-                    minecraftServer.stopMinecraft();
+                    MinecraftServerManager.app.minecraftServer.stopMinecraft();
                 }
             }, {
                 text: 'Start',
                 handler: function() {
-                    minecraftServer.startMinecraft();
+                    MinecraftServerManager.app.minecraftServer.startMinecraft();
+                    MinecraftServerManager.app.taskManager.start(MinecraftServerManager.app.getMinecraftStatusTask);
+                    MinecraftServerManager.app.taskManager.start(MinecraftServerManager.app.getOpsTask);
+                    MinecraftServerManager.app.taskManager.start(MinecraftServerManager.app.getPlayersTask);
                 }
             }, {
                 text: 'New World',
                 handler: function() {
-                    minecraftServer.newWorld();
+                    MinecraftServerManager.app.minecraftServer.newWorld();
                 }
             }
         ]
