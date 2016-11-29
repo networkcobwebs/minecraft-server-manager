@@ -19,7 +19,6 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
         isOnline: true,
         isBanned: false,
         isWhitelisted: true,
-        actionvalue: JSON.stringify(["isOp", "isWhiteListed"]),
         isDev: true
     },{
         uuid: 'blarg',
@@ -30,7 +29,6 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
         isOnline: false,
         isBanned: true,
         isWhitelisted: false,
-        actionvalue: JSON.stringify(["isBanned"]),
         isDev: true
     }],
 

@@ -1,6 +1,7 @@
 
 // Your server's public IP address
 // TODO: Make the address configurable
+// TODO: lockdown some controls to this?
 var IP_ADDRESS = '127.0.0.1';
 
 var bodyParser = require('body-parser');
@@ -56,6 +57,7 @@ function jsonifyProps(props) {
     var properties = [],
         incomingProps = props.split(/\n/),
         line, lineNumber, property;
+
     // ignore items that don't have name=value
     for (lineNumber = 0; lineNumber < incomingProps.length; lineNumber++) {
         if (incomingProps[lineNumber]) {
@@ -128,31 +130,19 @@ app.post('/command', function(request, response) {
 
     var command = request.query,
         theDate = new Date(),
-        ops, props, worldName;
+        ops, props, worldName, backupWorld;
 
     theDate = ('0' + theDate.getHours()).slice(-2) + ':'
         + ('0' + (theDate.getMinutes()+1)).slice(-2) + ':'
         + ('0' + (theDate.getSeconds())).slice(-2);
 
-    // if (minecraftServerProcess.killed && request.query.command !== '/start' && request.query.command !== '/getOps' && request.query.command !== '/getProps' && request.query.command !== '/getStatus' && request.query.command !== '/newWorld') {
-    //     response.contentType('json');
-    //     response.json({
-    //         response: 'Failed to connect to Minecraft Server'
-    //     });
-    //     lastOutput = lastOutput + '{\n' +
-    //         '    response: Failed to connect to Minecraft Server\n' +
-    //         '}';
-    //     console.log('[' + theDate + '] [Server thread/INFO]: Failed to connect to Minecraft Server');
-    //     return;
-    // }
-
     if (command.command) {
         lastCommand = command = command.command;
         lastOutput = '';
 
-        // TODO: Have our own custom commands (showOps, serverProps, resetAndNuke, etc).
         // TODO: Some commands will be available to app admins, some only to ops, etc.etc.
-        // TODO: This means we need a permissions model, oof.
+        // TODO: This means we need a permissions model
+        //     linked between this server and the webapp making these requests - oof.
 
         if (command === '/getOps') {
             try {
@@ -238,14 +228,15 @@ app.post('/command', function(request, response) {
             console.log('Gonna nuke the planet. Literally.');
             console.log('request.query:', request.query);
             worldName = request.query.worldName || 'world';
+            backupWorld = request.query.backup || false;
             console.log('path to be deleted: ', __dirname + '/' + pathToMinecraftDirectory + '/' + worldName);
             if (!minecraftServerProcess.killed) {
                 stopMinecraft();
                 console.log('[' + theDate + '] [Server thread/INFO]: Stopped Minecraft server');
                 // TODO: need to wait for async kill to finish before moving on, really.
             }
-            if (command.backup) {
-                // TODO: back it up?
+            if (backupWorld) {
+                // TODO: back it up
             }
 
             try {

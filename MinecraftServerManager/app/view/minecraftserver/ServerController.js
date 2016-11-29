@@ -43,11 +43,11 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
                     if (!me.minecraftStatus) {
                         // Increase time of polling task
                         if (debugStatusTask) {
-                            console.log('status task interval was ' + statusTask.interval);
+                            console.log('Minecraft server poller interval was ' + statusTask.interval);
                         }
                         statusTask.restart(statusTask.interval + 10000);
                         if (debugStatusTask) {
-                            console.log('status task interval is ' + statusTask.interval);
+                            console.log('Minecraft server poller interval is ' + statusTask.interval);
                         }
                     } else if (me.minecraftStatus && statusTask.interval !== MinecraftServerManager.app.minecraftStatusPollInterval) {
                         // Reset time of polling task if needed
@@ -73,11 +73,11 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
 
                     // Increase time of polling task
                     if (debugStatusTask) {
-                        console.log('status task interval was ' + statusTask.interval);
+                        console.log('Minecraft server poller interval was ' + statusTask.interval);
                     }
                     statusTask.restart(statusTask.interval + 10000);
                     if (debugStatusTask) {
-                        console.log('status task interval is ' + statusTask.interval);
+                        console.log('Minecraft server poller interval is ' + statusTask.interval);
                     }
                 }
             });
@@ -85,7 +85,9 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
     },
 
     newWorld: function() {
-        var worldName = '';
+        var me = this,
+            worldName = '';
+
         // Get world name from minecraftServerPropertiesStore
         Ext.data.StoreManager.lookup('minecraftServerPropertiesStore').each(function (property) {
             // find level-name
@@ -93,33 +95,36 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerController', {
                 worldName = property.data.value;
             }
         });
-        Ext.Ajax.request({
-            url: 'http://localhost:3000/command',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            params: {
-                command: '/newWorld',
-                worldName: worldName
-            },
-            jsonData: {
-                command: '/newWorld',
-                worldName: worldName
-            },
-            timeout: 5000,
-            success: function() {
-                if (MinecraftServerManager.app.debug) {
-                    console.log('Minecraft Server online.');
+
+        if (worldName !== '' && me.minecraftStatus) {
+            Ext.Ajax.request({
+                url: 'http://localhost:3000/command',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                params: {
+                    command: '/newWorld',
+                    worldName: worldName
+                },
+                jsonData: {
+                    command: '/newWorld',
+                    worldName: worldName
+                },
+                timeout: 5000,
+                success: function () {
+                    if (MinecraftServerManager.app.debug) {
+                        console.log('Minecraft Server online.');
+                    }
+                },
+                failure: function (response) {
+                    if (MinecraftServerManager.app.devmode) {
+                        console.log('Minecraft NodeJS Server offline?');
+                        console.log(response);
+                    }
                 }
-            },
-            failure: function(response) {
-                if (MinecraftServerManager.app.devmode) {
-                    console.log('Minecraft NodeJS Server offline?');
-                    console.log(response);
-                }
-            }
-        });
+            });
+        }
     },
 
     startMinecraft: function() {

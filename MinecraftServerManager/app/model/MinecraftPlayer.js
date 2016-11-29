@@ -5,19 +5,46 @@ var minecraftServerOpsStore = Ext.data.StoreManager.lookup('minecraftServerOpsSt
 Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
     extend: 'Ext.data.Model',
 
-    fields: [
+    fields: [{
         // Some of these fields come from Minecraft's ops.json file, so they may change:
-        { name: 'uuid', type: 'string' },
-        { name: 'name', type: 'string' },
-        { name: 'level', type: 'string' },
-        { name: 'bypassesPlayerLimit', type: 'boolean' },
-        { name: 'isOp', type: 'boolean' },
-        { name: 'isOnline', type: 'boolean' },
-        { name: 'isBanned', type: 'boolean' },
-        { name: 'isWhitelisted', type: 'boolean' },
-        { name: 'actionvalue', type: 'string' },
-        { name: 'isDev', type: 'boolean' }
-    ],
+        name: 'uuid',
+        type: 'string'
+    }, {
+        name: 'name',
+        type: 'string'
+    }, {
+        name: 'level',
+        type: 'string'
+    }, {
+        name: 'bypassesPlayerLimit',
+        type: 'boolean'
+    }, {
+        name: 'isOp',
+        type: 'boolean'
+    }, {
+        name: 'isOnline',
+        type: 'boolean'
+    }, {
+        name: 'isBanned',
+        type: 'boolean'
+    }, {
+        name: 'isWhitelisted',
+        type: 'boolean'
+    }, {
+        name: 'playerActionAttributes',
+        calculate: function (data) {
+            var retValue = [];
+
+            if (data.isOp) retValue.push("isOp");
+            if (data.isBanned) retValue.push("isBanned");
+            if (data.isWhitelisted) retValue.push("isWhitelisted");
+
+            return retValue;
+        }
+    }, {
+        name: 'isDev',
+        type: 'boolean'
+    }],
 
     showActions: function () {
         var player = this;
@@ -104,5 +131,10 @@ Ext.define('MinecraftServerManager.model.MinecraftPlayer', {
                 }
             }
         });
+    },
+
+    proxy: {
+        type: 'rest',
+        url : '/MinecraftPlayers'
     }
 });

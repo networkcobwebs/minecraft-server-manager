@@ -11,6 +11,7 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerControl', {
     tbar: [{
         // TODO: prompt for destructive bits
         xtype: 'buttongroup',
+        frame: false,
         items: [
             {
                 text: 'Stop',
@@ -21,9 +22,6 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerControl', {
                 text: 'Start',
                 handler: function() {
                     MinecraftServerManager.app.minecraftServer.startMinecraft();
-                    MinecraftServerManager.app.taskManager.start(MinecraftServerManager.app.getMinecraftStatusTask);
-                    MinecraftServerManager.app.taskManager.start(MinecraftServerManager.app.getOpsTask);
-                    MinecraftServerManager.app.taskManager.start(MinecraftServerManager.app.getPlayersTask);
                 }
             }, {
                 text: 'New World',

@@ -4,7 +4,6 @@ Ext.define('MinecraftServerManager.view.main.List', {
     requires: [
         'Ext.button.Segmented',
         'Ext.container.ButtonGroup',
-        'Ext.form.Label',
         'Ext.grid.column.Action',
         'Ext.grid.column.Widget',
         'Ext.panel.Panel'
@@ -95,14 +94,8 @@ Ext.define('MinecraftServerManager.view.main.List', {
                         text: 'Whitelist',
                         value: 'isWhitelisted'
                     }],
-                    // bind: {
-                    //     value: function(record) {
-                    //         debugger;
-                    //         return [record.get('isOp')?1:0, 0, record.get('isBanned')?1:0, record.get('isWhitelisted')?1:0];
-                    //     } //JSON.parse('{record.actionvalue}')
-                    //
-                    // }
-                    value: [0,3]
+                    bind: '{record.playerActionAttributes}'
+                    // TODO listener to change the values on the backend properly
                 }]
             }]
         }
