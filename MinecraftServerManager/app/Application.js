@@ -32,51 +32,13 @@ Ext.define('MinecraftServerManager.Application', {
     debugMinecraftProperties: false,
     
     launch: function () {
-        var me = this,
-            taskRunner;
-
-        me.minecraftServer = new MinecraftServerManager.view.minecraftserver.ServerController();
-
-        // me.getMinecraftStatusTask = {
-        //     run: function() {
-        //         me.minecraftServer.checkStatus();
-        //     },
-        //     scope: me,
-        //     interval: this.minecraftStatusPollInterval,
-        //     fireOnStart: true
-        // };
-        // me.getOpsTask = {
-        //     run: function() {
-        //         Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
-        //     },
-        //     interval: me.minecraftOpsPollInterval,
-        //     scope: me,
-        //     fireOnStart: true
-        // };
-        // me.getPlayersTask = {
-        //     run: function() {
-        //         Ext.data.StoreManager.lookup('minecraftPlayersStore').getPlayers();
-        //     },
-        //     scope: me,
-        //     interval: me.minecraftPlayersPollInterval,
-        //     fireOnStart: true
-        // };
-        // me.getMinecraftPropertiesTask = {
-        //     run: function() {
-        //         Ext.data.StoreManager.lookup('minecraftServerPropertiesStore').getMinecraftProperties();
-        //     },
-        //     interval: me.minecraftPropertiesPollInterval,
-        //     fireOnStart: true
-        // };
-        //
-        // me.taskManager.start(me.getMinecraftStatusTask);
-        // me.taskManager.start(me.getOpsTask);
-        // me.taskManager.start(me.getPlayersTask);
-        // me.taskManager.start(me.getMinecraftPropertiesTask);
+        var me = this;
 
         me.taskRunner = new Ext.util.TaskRunner();
+        me.minecraftServer = new MinecraftServerManager.view.minecraftserver.ServerController();
+
         me.getMinecraftStatusTask = me.taskRunner.newTask({
-            run: function() {
+            run: function () {
                 me.minecraftServer.checkStatus();
             },
             scope: me,
@@ -84,7 +46,7 @@ Ext.define('MinecraftServerManager.Application', {
             fireOnStart: false
         });
         me.getOpsTask = me.taskRunner.newTask({
-            run: function() {
+            run: function () {
                 Ext.data.StoreManager.lookup('minecraftServerOpsStore').getOps();
             },
             interval: me.minecraftOpsPollInterval,
@@ -92,7 +54,7 @@ Ext.define('MinecraftServerManager.Application', {
             fireOnStart: false
         });
         me.getPlayersTask = me.taskRunner.newTask({
-            run: function() {
+            run: function () {
                 Ext.data.StoreManager.lookup('minecraftPlayersStore').getPlayers();
             },
             scope: me,
@@ -100,7 +62,7 @@ Ext.define('MinecraftServerManager.Application', {
             fireOnStart: false
         });
         me.getMinecraftPropertiesTask = me.taskRunner.newTask({
-            run: function() {
+            run: function () {
                 Ext.data.StoreManager.lookup('minecraftServerPropertiesStore').getMinecraftProperties();
             },
             interval: me.minecraftPropertiesPollInterval,

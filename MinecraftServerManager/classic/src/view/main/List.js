@@ -94,16 +94,12 @@ Ext.define('MinecraftServerManager.view.main.List', {
                         text: 'Whitelist',
                         value: 'isWhitelisted'
                     }],
-                    bind: '{record.playerActionAttributes}'
-                    // TODO listener to change the values on the backend properly
+                    bind: '{record.playerActionAttributes}',
+                    listeners: {
+                        toggle: 'changePlayerAttribute'
+                    }
                 }]
             }]
         }
-    }],
-
-    setActionButtons: function () {
-        var me = this;
-        debugger;
-        return [];
-    }
+    }]
 });

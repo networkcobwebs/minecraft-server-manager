@@ -1,6 +1,7 @@
 
 Ext.define('MinecraftServerManager.view.main.ServerStatus', {
     extend: 'Ext.panel.Panel',
+    requires: 'MinecraftServerManager.view.minecraftserver.ServerController',
     xtype: 'app-main-minecraft-server-status',
 
     title: 'Minecraft Server Status',

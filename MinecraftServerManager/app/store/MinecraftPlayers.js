@@ -110,23 +110,25 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
 
                         // Flag players accordingly
                         me.each(function (player) {
-                            if (MinecraftServerManager.app.debugPlayersCheck) {
-                                console.log('Checking properties of player:', player);
-                            }
-                            found = false;
-                            for (i = 0; i < playerNames.length; i++) {
-                                if (player.get('name') === playerNames[i]) {
-                                    found = true;
+                            if (!player.get('isDev')) {
+                                if (MinecraftServerManager.app.debugPlayersCheck) {
+                                    console.log('Checking properties of player:', player);
                                 }
-                            }
-                            if (player.get('isOnline') !== found) {
-                                player.set('isOnline', found);
-                            }
-                            player.checkOpStatus();
+                                found = false;
+                                for (i = 0; i < playerNames.length; i++) {
+                                    if (player.get('name') === playerNames[i]) {
+                                        found = true;
+                                    }
+                                }
+                                if (player.get('isOnline') !== found) {
+                                    player.set('isOnline', found);
+                                }
+                                player.checkOpStatus();
 
-                            if (player.get('dirty')) {
-                                player.commit();
-                                me.commitChanges();
+                                if (player.get('dirty')) {
+                                    player.commit();
+                                    me.commitChanges();
+                                }
                             }
                         });
 
@@ -162,12 +164,6 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
                 }
             });
         }
-    },
-
-    showActions: function () {
-        var player = this;
-        debugger;
-        return [player.get('isOp')?1:0, 0, player.get('isBanned')?1:0, player.get('isWhitelisted')?1:0];
     },
 
     updateSummary: function(summary) {

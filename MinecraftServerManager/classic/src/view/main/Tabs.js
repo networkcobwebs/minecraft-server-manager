@@ -70,7 +70,7 @@ Ext.define('MinecraftServerManager.view.main.Tabs', {
 
     items: [
         {
-            title: 'Main',
+            title: 'Player Management',
             iconCls: 'fa-user',
             items: [{
                 xtype: 'app-main'
