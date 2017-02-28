@@ -10,10 +10,37 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
 
     model: 'MinecraftServerManager.model.MinecraftPlayer',
 
+    data: [{
+        uuid: 'blarg',
+        name: 'your_mom',
+        level: 'über level',
+        bypassesPlayerLimit: true,
+        isOp: true,
+        isOnline: true,
+        isBanned: false,
+        isWhitelisted: true,
+        isDev: true
+    },{
+        uuid: 'blarg',
+        name: 'your_dad',
+        level: 'über level',
+        bypassesPlayerLimit: true,
+        isOp: false,
+        isOnline: false,
+        isBanned: true,
+        isWhitelisted: false,
+        isDev: true
+    }],
+
+    filters: [{
+        property: 'isDev',
+        value: true
+    }],
+
     getPlayers: function() {
         var me = this;
 
-        if (minecraftServer.minecraftStatus) {
+        if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -54,12 +81,12 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
                         for (i = 0; i < players.length; i++) {
                             // Remove preceding timestamp & server info
                             somePlayerNames = players[i].split(']: ')[1];
-                            if (debugPlayersCheck) {
+                            if (MinecraftServerManager.app.debugPlayersCheck) {
                                 console.log('somePlayerNames:', somePlayerNames);
                             }
                             if (somePlayerNames) {
                                 somePlayerNames = somePlayerNames.split(',');
-                                if (debugPlayersCheck) {
+                                if (MinecraftServerManager.app.debugPlayersCheck) {
                                     console.log('somePlayerNames:', somePlayerNames);
                                 }
                                 for (p = 0; p < somePlayerNames.length; p++) {
@@ -77,29 +104,31 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
                                 }
                             }
                         }
-                        if (debugPlayersCheck) {
+                        if (MinecraftServerManager.app.debugPlayersCheck) {
                             console.log('playerNames discovered:', playerNames);
                         }
 
                         // Flag players accordingly
                         me.each(function (player) {
-                            if (debugPlayersCheck) {
-                                console.log('Checking properties of player:', player);
-                            }
-                            found = false;
-                            for (i = 0; i < playerNames.length; i++) {
-                                if (player.get('name') === playerNames[i]) {
-                                    found = true;
+                            if (!player.get('isDev')) {
+                                if (MinecraftServerManager.app.debugPlayersCheck) {
+                                    console.log('Checking properties of player:', player);
                                 }
-                            }
-                            if (player.get('isOnline') !== found) {
-                                player.set('isOnline', found);
-                            }
-                            player.checkOpStatus();
+                                found = false;
+                                for (i = 0; i < playerNames.length; i++) {
+                                    if (player.get('name') === playerNames[i]) {
+                                        found = true;
+                                    }
+                                }
+                                if (player.get('isOnline') !== found) {
+                                    player.set('isOnline', found);
+                                }
+                                player.checkOpStatus();
 
-                            if (player.get('dirty')) {
-                                player.commit();
-                                me.commitChanges();
+                                if (player.get('dirty')) {
+                                    player.commit();
+                                    me.commitChanges();
+                                }
                             }
                         });
 
@@ -122,7 +151,7 @@ Ext.define('MinecraftServerManager.store.MinecraftPlayers', {
                                 player.commit();
                                 me.add(player);
                                 me.commitChanges();
-                                if (debugPlayersCheck) {
+                                if (MinecraftServerManager.app.debugPlayersCheck) {
                                     console.log('getPlayers: added player: ', player);
                                 }
                             }

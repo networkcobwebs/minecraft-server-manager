@@ -1,7 +1,9 @@
 
+
 Ext.define('MinecraftServerManager.store.MinecraftServerProperties', {
     extend: 'Ext.data.Store',
     storeId: 'minecraftServerPropertiesStore',
+    autoLoad: true,
 
     requires: ['MinecraftServerManager.model.MinecraftServerProperties'],
 
@@ -10,7 +12,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerProperties', {
     getMinecraftProperties: function() {
         var me = this;
 
-        if (minecraftServer.minecraftStatus) {
+        if (MinecraftServerManager.app.minecraftServer.minecraftStatus) {
             Ext.Ajax.request({
                 url: 'http://localhost:3000/command',
                 method: 'POST',
@@ -28,7 +30,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerProperties', {
                     var minecraftServerProperties = JSON.parse(response.responseText).response,
                         propertyIndex, propertySet;
 
-                    if (debugMinecraftProperties) {
+                    if (MinecraftServerManager.app.debugMinecraftProperties) {
                         console.log('Got Minecraft server properties', minecraftServerProperties);
                     }
 
@@ -65,7 +67,7 @@ Ext.define('MinecraftServerManager.store.MinecraftServerProperties', {
                     // }
                 },
                 failure: function () {
-                    if (debugMinecraftProperties) {
+                    if (MinecraftServerManager.app.debugMinecraftProperties) {
                         console.log('Failed to get Minecraft server properties.');
                     }
                 }

@@ -11,21 +11,22 @@ Ext.define('MinecraftServerManager.view.minecraftserver.ServerControl', {
     tbar: [{
         // TODO: prompt for destructive bits
         xtype: 'buttongroup',
+        frame: false,
         items: [
             {
                 text: 'Stop',
                 handler: function() {
-                    minecraftServer.stopMinecraft();
+                    MinecraftServerManager.app.minecraftServer.stopMinecraft();
                 }
             }, {
                 text: 'Start',
                 handler: function() {
-                    minecraftServer.startMinecraft();
+                    MinecraftServerManager.app.minecraftServer.startMinecraft();
                 }
             }, {
                 text: 'New World',
                 handler: function() {
-                    minecraftServer.newWorld();
+                    MinecraftServerManager.app.minecraftServer.newWorld();
                 }
             }
         ]

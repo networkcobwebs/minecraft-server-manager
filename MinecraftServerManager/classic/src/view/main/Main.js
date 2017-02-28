@@ -8,11 +8,10 @@ Ext.define('MinecraftServerManager.view.main.Main', {
         'MinecraftServerManager.view.main.ServerStatus'
         ],
 
-    items: [
-        {
-            xtype: 'app-main-minecraft-server-status'
-        }, {
-            xtype: 'player-list'
-        }
-    ]
+    items: [{
+        xtype: 'app-main-minecraft-server-status'
+    }, {
+        xtype: 'player-list'
+    }]
+
 });

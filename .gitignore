@@ -1,11 +1,12 @@
 .idea
-MinecraftServerManager/bootstrap.css
-MinecraftServerManager/bootstrap.js
-MinecraftServerManager/classic.json
-MinecraftServerManager/sass/example
 backend/minecraft_server
 backend/node/node_modules
 build
 ext
+MinecraftServerManager/bootstrap.css
+MinecraftServerManager/bootstrap.js
+MinecraftServerManager/classic.json
+MinecraftServerManager/classic.jsonp
+MinecraftServerManager/sass/example
 
 npm-debug.log

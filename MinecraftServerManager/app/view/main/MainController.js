@@ -1,14 +1,4 @@
 
-var runner = new Ext.util.TaskRunner(),
-    debug = false,
-    debugOpsCheck = false,
-    debugPlayersCheck = false,
-    debugMinecraftProperties = false,
-    debugMinecraftStatus = false,
-    minecraftServer = new MinecraftServerManager.view.minecraftserver.ServerController(),
-    minecraftServerOpsStore, minecraftPlayersStore, minecraftServerPropertiesStore,
-    getMinecraftStatusTask, getOpsTask, getPlayersTask, getMinecraftPropertiesTask;
-
 Ext.define('MinecraftServerManager.view.main.MainController', {
     extend: 'Ext.app.ViewController',
     requires: [
@@ -18,118 +8,41 @@ Ext.define('MinecraftServerManager.view.main.MainController', {
     alias: 'controller.main',
     
     init: function () {
-        var me = this;
 
-        minecraftPlayersStore = Ext.data.StoreManager.lookup('minecraftPlayersStore');
-        minecraftServerOpsStore = Ext.data.StoreManager.lookup('minecraftServerOpsStore');
-        minecraftServerPropertiesStore = Ext.data.StoreManager.lookup('minecraftServerPropertiesStore');
-
-        // Initial Minecraft server status check
-        getMinecraftStatusTask = runner.newTask({
-            run: function() {
-                minecraftServer.checkStatus();
-            },
-            scope: me,
-            interval: 50,
-            fireOnStart: true,
-            repeat: 1
-        });
-        getMinecraftStatusTask.start();
-
-        // Initial Minecraft op player check
-        getOpsTask = runner.newTask({
-            run: function() {
-                minecraftServerOpsStore.getOps();
-            },
-            interval: 1000,
-            fireOnStart: true,
-            repeat: 1
-        });
-        getOpsTask.start();
-
-        // Initial Minecraft server player check
-        getPlayersTask = runner.newTask({
-            run: function() {
-                minecraftPlayersStore.getPlayers();
-            },
-            // scope: playersStore,
-            interval: 2000,
-            fireOnStart: true,
-            repeat: 1
-        });
-        getPlayersTask.start();
-
-        // Schedule Minecraft server property check
-        getMinecraftPropertiesTask = runner.newTask({
-            run: function() {
-                minecraftServerPropertiesStore.getMinecraftProperties();
-            },
-            scope: me,
-            interval: 2000,
-            fireOnStart: true,
-            repeat: 1
-        });
-        getMinecraftPropertiesTask.start();
-
-        Ext.Function.defer(function() {
-            me.scheduleTasks()
-        }, 2500, me);
     },
 
-    scheduleTasks: function() {
-        var me = this;
-        
-        // Schedule Minecraft server status check
-        getMinecraftStatusTask = runner.newTask({
-            run: function() {
-                minecraftServer.checkStatus();
-                try {
-                    Ext.getCmp('main_status_img').getEl().dom.src = minecraftServer.minecraftStatus ? 'resources/images/online-icon-16.png' : 'resources/images/offline-icon-16.png';
-                } catch (e) {
-                    //
-                }
-                try {
-                    Ext.getCmp('minecraft_status_img').getEl().dom.src = minecraftServer.minecraftStatus ? 'resources/images/online-icon-16.png' : 'resources/images/offline-icon-16.png';
-                } catch (e) {
-                    //
-                }
-            },
-            interval: 5000,
-            fireOnStart: false
-        });
-        getMinecraftStatusTask.start();
+    changePlayerAttribute: function (items, attributeBtn, value) {
+        // debugger;
+        // attributeBtn has a value of the model property name, and value is the 'pressed' state of the button, so set the attribute.value in the player model to value.
+        // Get the player:
+        var player = new MinecraftServerManager.model.MinecraftPlayer(items.up().up().up().$widgetRecord.data);
 
-        // Schedule Minecraft op player check
-        getOpsTask = runner.newTask({
-            run: function() {
-                minecraftServerOpsStore.getOps();
-            },
-            scope: minecraftServerOpsStore,
-            interval: 20000,
-            fireOnStart: false
-        });
-        getOpsTask.start();
-
-        // Schedule Minecraft server player check
-        getPlayersTask = runner.newTask({
-            run: function() {
-                minecraftPlayersStore.getPlayers();
-            },
-            // scope: me,
-            interval: 10000,
-            fireOnStart: false
-        });
-        getPlayersTask.start();
-
-        // Schedule Minecraft server property check
-        getMinecraftPropertiesTask = runner.newTask({
-            run: function() {
-                minecraftServerPropertiesStore.getMinecraftProperties();
-            },
-            scope: me,
-            interval: 60000,
-            fireOnStart: false
-        });
-        getMinecraftPropertiesTask.start();
+        if (attributeBtn.value === 'isOp') {
+            // op/deop
+            if (value) {
+                player.opPlayer();
+            } else {
+                player.deopPlayer();
+            }
+        } else if (attributeBtn.value === 'kick') {
+            // kick
+            if (value) {
+                player.kickPlayer();
+            }
+        } else if (attributeBtn.value === 'isBanned') {
+            // ban/pardon
+            if (value) {
+                player.banPlayer();
+            } else {
+                player.pardonPlayer();
+            }
+        } else if (attributeBtn.value === 'isWhiteListed') {
+            // whitelist/dewhitelist
+            if (value) {
+                player.whitelistPlayer();
+            } else {
+                player.deWhitelistPlayer();
+            }
+        }
     }
 });
