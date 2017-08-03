@@ -551,8 +551,14 @@ Ext.Boot = Ext.Boot || (function (emptyFn) {
                 Boot.isIE9 = Boot.hasReadyState && !Boot.hasAsync && Boot.hasDefer && Boot.hasOnLoad;
                 Boot.isIE10p = Boot.hasReadyState && Boot.hasAsync && Boot.hasDefer && Boot.hasOnLoad;
 
-                Boot.isIE10 = (new Function('/*@cc_on return @_jscript_version @*/')()) === 10;
-                Boot.isIE10m = Boot.isIE10 || Boot.isIE9 || Boot.isIE8;
+                if (Boot.isIE8) {
+                    Boot.isIE10 = false;
+                    Boot.isIE10m = true;
+                }
+                else {
+                    Boot.isIE10 = (new Function('/*@cc_on return @_jscript_version @*/')()) === 10;
+                    Boot.isIE10m = Boot.isIE10 || Boot.isIE9 || Boot.isIE8;
+                }
                 
                 // IE11 does not support conditional compilation so we detect it by exclusion
                 Boot.isIE11 = Boot.isIE10p && !Boot.isIE10;
@@ -2086,8 +2092,12 @@ Ext.Microloader = Ext.Microloader || (function () {
 
             applyCacheBuster: function(url) {
                 var tstamp = new Date().getTime(),
-                    sep = url.indexOf('?') === -1 ? '?' : '&';
-                url = url + sep + "_dc=" + tstamp;
+                    sep = url.indexOf('?') === -1 ? '?' : '&',
+                    progressive = Ext.manifest.progressive,
+                    serviceWorker = progressive && progressive.serviceWorker;
+                if (!serviceWorker) {
+                    url = url + sep + "_dc=" + tstamp;
+                }
                 return url;
             },
 
@@ -2126,6 +2136,7 @@ Ext.Microloader = Ext.Microloader || (function () {
                             Boot.load(Manifest.url);
                         }
                         else {
+                            Manifest.url = url;
                             Boot.fetch(Microloader.applyCacheBuster(url), function(result) {
                                 Microloader.setManifest(result.content);
                             });
@@ -2165,7 +2176,14 @@ Ext.Microloader = Ext.Microloader || (function () {
                 Microloader.urls = [];
                 Microloader.manifest = manifest;
                 Ext.manifest = Microloader.manifest.exportContent();
-
+                var progressive = Ext.manifest.progressive;
+                if (progressive && progressive.serviceWorker) {
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('./' + progressive.serviceWorker);
+                        Ext.Boot.config.disableCaching = false;
+                    }
+                }
+                
                 var assets = manifest.getAssets(),
                     cachedAssets = [],
                     asset, i, len, include, entry;
