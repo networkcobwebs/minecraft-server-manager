@@ -9,4 +9,5 @@ MinecraftServerManager/classic.json
 MinecraftServerManager/classic.jsonp
 MinecraftServerManager/sass/example
 
+node_modules
 npm-debug.log
