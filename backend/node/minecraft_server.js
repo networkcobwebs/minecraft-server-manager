@@ -1,4 +1,3 @@
-
 // Your server's public IP address
 // TODO: Make the address configurable
 // TODO: lockdown some controls to this?
@@ -10,9 +9,7 @@ var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
 
-var lastCommand = '',
-    lastOutput = '',
-    pathToMinecraftDirectory = '../minecraft_server',
+var pathToMinecraftDirectory = '../minecraft_server',
     minecraftServerJar = 'minecraft_server.jar',
     minecraftServerProcess,
     webServerAddress = 'localhost',
@@ -98,9 +95,6 @@ app.use(function(request, response, next) {
         response.json({
             response: 'Failed to connect to Minecraft Server'
         });
-        lastOutput = lastOutput + '{\n' +
-            '    response: Failed to get status for request', request.query.command + '\n' +
-            '}';
         console.log('[' + theDate + '] [Server thread/INFO]: Failed to get status for request', request.query.command);
     } else {
         next();
@@ -112,10 +106,7 @@ app.get('/', function(request, response) {
     // Delay for a bit, then send a response with the latest server output
     setTimeout(function() {
         response.type('text/plain');
-        response.send('Last command was:\n' +
-            '    ' + lastCommand + '\n' +
-            'with output of:\n' +
-            '    ' + lastOutput + '\n');
+        response.send('Minecraft Control Service Online\n');
     }, 250);
 });
 
@@ -137,8 +128,7 @@ app.post('/command', function(request, response) {
         + ('0' + (theDate.getSeconds())).slice(-2);
 
     if (command.command) {
-        lastCommand = command = command.command;
-        lastOutput = '';
+        command = command.command;
 
         // TODO: Some commands will be available to app admins, some only to ops, etc.etc.
         // TODO: This means we need a permissions model
@@ -152,7 +142,6 @@ app.post('/command', function(request, response) {
                 response.json({
                     response: ops
                 });
-                lastOutput = lastOutput + ops;
                 console.log('[' + theDate + '] [Server thread/INFO]: Got ops');
             }
             catch (e) {
@@ -166,7 +155,6 @@ app.post('/command', function(request, response) {
                 response.json({
                     response: props
                 });
-                lastOutput = lastOutput + props;
                 console.log('[' + theDate + '] [Server thread/INFO]: Got properties');
             }
             catch (e) {
@@ -178,18 +166,12 @@ app.post('/command', function(request, response) {
                 response.json({
                     response: true
                 });
-                lastOutput = lastOutput + '{ \n' +
-                    '    response: true\n' +
-                    '}';
                 console.log('[' + theDate + '] [Server thread/INFO]: Got status');
             } else {
                 response.contentType('json');
                 response.json({
                     response: false
                 });
-                lastOutput = lastOutput + '{\n' +
-                    '    response: false\n' +
-                    '}';
                 console.log('[' + theDate + '] [Server thread/INFO]: Failed to get status');
             }
         } else if (command === '/start') {
@@ -200,18 +182,12 @@ app.post('/command', function(request, response) {
                 response.json({
                     response: 'Server started'
                 });
-                lastOutput = lastOutput + '{\n' +
-                    '    response: Server started\n' +
-                    '}';
                 console.log('[' + theDate + '] [Server thread/INFO]: Started Minecraft server');
             } else {
                 response.contentType('json');
                 response.json({
                     response: 'Server already running'
                 });
-                lastOutput = lastOutput + '{\n' +
-                    '    response: Server already running\n' +
-                    '}';
                 console.log('[' + theDate + '] [Server thread/INFO]: Minecraft server already running');
             }
         } else if (command === '/stop') {
@@ -220,9 +196,6 @@ app.post('/command', function(request, response) {
             response.json({
                 response: 'Server stopped'
             });
-            lastOutput = lastOutput + '{\n' +
-                '    response: Server stopped\n' +
-                '}';
             console.log('[' + theDate + '] [Server thread/INFO]: Stopped Minecraft server');
         } else if (command === '/newWorld') {
             console.log('Gonna nuke the planet. Literally.');
@@ -260,9 +233,6 @@ app.post('/command', function(request, response) {
             response.json({
                 response: 'New world created'
             });
-            lastOutput = lastOutput + '{\n' +
-                '    response: New world created\n' +
-                '}';
             console.log('[' + theDate + '] [Server thread/INFO]: New world created');
         } else {
             // buffer output for a quarter of a second, then reply to HTTP request
@@ -291,7 +261,6 @@ app.post('/command', function(request, response) {
                 response.json({
                     response: buffer.join('')
                 });
-                lastOutput = lastOutput + buffer.join('');
             }, 250);
         }
     } else {
