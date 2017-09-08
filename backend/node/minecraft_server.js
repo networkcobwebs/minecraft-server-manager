@@ -12,13 +12,9 @@ var spawn = require('child_process').spawn;
 var pathToMinecraftDirectory = '../minecraft_server',
     minecraftServerJar = 'minecraft_server.jar',
     minecraftServerProcess,
+    minecraftServerLog = 'minecraft_server.log',
     webServerAddress = 'localhost',
     webServerPort = '1841';
-
-// Log process output to stdout
-function log(data) {
-    process.stdout.write(data.toString());
-}
 
 // Make sure the Minecraft server quits with this process
 process.on('exit', function() {
@@ -39,32 +35,39 @@ function startMinecraft() {
     ], {
         cwd: pathToMinecraftDirectory
     });
-
-    minecraftServerProcess.stdout.on('data', log);
-    minecraftServerProcess.stderr.on('data', log);
-    console.log('minecraft server started');
+    console.log('Minecraft server started');
 }
 
 function stopMinecraft() {
     minecraftServerProcess.kill();
 }
 
+function getServerProperties () {
+    var props = fs.readFile(pathToMinecraftDirectory + '/server.properties', 'utf8', function (err, data) {
+        if (!err) {
+            return convertPropsToObject(data);
+        } else {
+            return err;
+        }
+    });
+}
+
 // Convert name=value properties to JSON
-function jsonifyProps(props) {
+function convertPropsToObject(props) {
     var properties = [],
         incomingProps = props.split(/\n/),
         line, lineNumber, property;
 
-    // ignore items that don't have name=value
     for (lineNumber = 0; lineNumber < incomingProps.length; lineNumber++) {
+        // Skip blank lines
         if (incomingProps[lineNumber]) {
             line = incomingProps[lineNumber].split('=');
             if (line.length == 2) {
-                // got name=value pair
+                // Got name=value pair
                 // TODO: Ignore commented out values: '//' ?
                 property = {};
                 property.name = line[0];
-                property.value= line[1];
+                property.value = line[1];
                 properties.push(property);
             }
         }
@@ -149,8 +152,7 @@ app.post('/command', function(request, response) {
             }
         } else if (command === '/getProps') {
             try {
-                props = fs.readFileSync(pathToMinecraftDirectory + '/server.properties', 'utf8');
-                props = JSON.parse(JSON.stringify(jsonifyProps(props)));
+                props = getServerProperties();
                 response.contentType('json');
                 response.json({
                     response: props
