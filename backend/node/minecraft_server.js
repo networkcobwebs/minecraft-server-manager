@@ -1,7 +1,5 @@
-// Your server's public IP address
-// TODO: Make the address configurable
-// TODO: lockdown some controls to this?
-var IP_ADDRESS = '127.0.0.1';
+var ipAddress = '127.0.0.1';
+var ipPort = '3000';
 
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -42,14 +40,29 @@ function stopMinecraft() {
     minecraftServerProcess.kill();
 }
 
+function getOps () {
+    var ops;
+    try {
+        ops = JSON.parse(fs.readFileSync(pathToMinecraftDirectory + '/ops.json', 'utf8'));
+        return ops;
+    } catch (e) {
+        console.log('Failed to read ops.json:', e);
+    }
+}
+
 function getServerProperties () {
-    var props = fs.readFile(pathToMinecraftDirectory + '/server.properties', 'utf8', function (err, data) {
-        if (!err) {
-            return convertPropsToObject(data);
-        } else {
-            return err;
-        }
-    });
+    var props;
+    try {
+        props = fs.readFile(pathToMinecraftDirectory + '/server.properties', 'utf8', function (err, data) {
+            if (!err) {
+                return convertPropsToObject(data);
+            } else {
+                return err;
+            }
+        });
+    } catch (e) {
+        console.log('Failed to read server.properties:', e);
+    }
 }
 
 // Convert name=value properties to JSON
@@ -104,20 +117,21 @@ app.use(function(request, response, next) {
     }
 });
 
-// Simple 'show me what just happened' landing page
+// Simple landing page
 app.get('/', function(request, response) {
-    // Delay for a bit, then send a response with the latest server output
+    // Delay for a bit, then send a response
     setTimeout(function() {
+        // TODO: Set appropriate version/status
         response.type('text/plain');
-        response.send('Minecraft Control Service Online\n');
+        response.send('{"version": "0.11.2", "status": "online"}\n');
     }, 250);
 });
 
 // Handle Minecraft Server Command requests
 app.post('/command', function(request, response) {
-    // Cancel processing if the message was not sent by an admin
+    // Cancel processing if the message was not sent by an admin/allowed address
     // TODO: Make this use server admins
-    // if (request.param('From') !==  ADMIN_PHONE ){
+    // if (request.param('From') !==  ADMIN ){
     //     response.status(403).send('you are not an admin :(');
     //     return;
     // }
@@ -129,6 +143,8 @@ app.post('/command', function(request, response) {
     theDate = ('0' + theDate.getHours()).slice(-2) + ':'
         + ('0' + (theDate.getMinutes()+1)).slice(-2) + ':'
         + ('0' + (theDate.getSeconds())).slice(-2);
+    
+    console.log('Created date of"', theDate, '"');
 
     if (command.command) {
         command = command.command;
@@ -139,8 +155,8 @@ app.post('/command', function(request, response) {
 
         if (command === '/getOps') {
             try {
-                // TODO ignore commented out folks: '//'
-                ops = JSON.parse(fs.readFileSync(pathToMinecraftDirectory + '/ops.json', 'utf8'));
+                ops = getOps();
+
                 response.contentType('json');
                 response.json({
                     response: ops
@@ -153,6 +169,7 @@ app.post('/command', function(request, response) {
         } else if (command === '/getProps') {
             try {
                 props = getServerProperties();
+
                 response.contentType('json');
                 response.json({
                     response: props
@@ -201,7 +218,6 @@ app.post('/command', function(request, response) {
             console.log('[' + theDate + '] [Server thread/INFO]: Stopped Minecraft server');
         } else if (command === '/newWorld') {
             console.log('Gonna nuke the planet. Literally.');
-            console.log('request.query:', request.query);
             worldName = request.query.worldName || 'world';
             backupWorld = request.query.backup || false;
             console.log('path to be deleted: ', __dirname + '/' + pathToMinecraftDirectory + '/' + worldName);
@@ -220,8 +236,17 @@ app.post('/command', function(request, response) {
                     fs.F_OK | fs.R_OK | fs.W_OK,
                     function (err) {
                         if (!err) {
-                            // del the sucker all destructive-like
                             fs.rmdirSync(pathToMinecraftDirectory + '/' + worldName);
+
+                            startMinecraft();
+                            // Starting Minecraft will create a new world by default, so respond to the command accordingly
+                            response.contentType('json');
+                            response.json({
+                                response: 'New world created'
+                            });
+                            console.log('[' + theDate + '] [Server thread/INFO]: New world created');
+                        } else {
+                            console.log('An error occurred deleteing the existing world', err);
                         }
                     }
                 );
@@ -229,20 +254,11 @@ app.post('/command', function(request, response) {
             catch (e) {
                 //
             }
-            startMinecraft();
-
-            response.contentType('json');
-            response.json({
-                response: 'New world created'
-            });
-            console.log('[' + theDate + '] [Server thread/INFO]: New world created');
         } else {
             // buffer output for a quarter of a second, then reply to HTTP request
             var buffer = [];
             var collector = function (data) {
                 data = data.toString();
-                // Split to omit timestamp and junk from Minecraft server output
-                // buffer.push(data.split(']: ')[1]);
                 buffer.push(data);
             };
             minecraftServerProcess.stdout.removeListener('data', collector);
@@ -252,13 +268,8 @@ app.post('/command', function(request, response) {
             // Delay for a bit, then send a response with the latest server output
             setTimeout(function () {
                 minecraftServerProcess.stdout.removeListener('data', collector);
-
-                // create a TwiML response with the output of the Minecraft server
-                // TODO: Make this update a web element on the page instead of twilio
-                // var twiml = new twilio.TwimlResponse();
-                // twiml.message(buffer.join(''));
-                //
-                //response.type('text/xml');
+                // respond with the output of the Minecraft server
+                // TODO: Make this update a web element on the page
                 response.contentType('json');
                 response.json({
                     response: buffer.join('')
@@ -274,6 +285,4 @@ app.post('/command', function(request, response) {
     }
 });
 
-// Listen for incoming HTTP requests on port 3000
-// TODO: Make the listen port configurable
-app.listen(3000);
+app.listen(ipPort);

@@ -1,6 +1,5 @@
 .idea
 backend/minecraft_server
-backend/node/node_modules
 build
 ext
 MinecraftServerManager/bootstrap.css
