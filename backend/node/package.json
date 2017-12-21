@@ -3,14 +3,17 @@
   "version": "1.10.0",
   "description": "Minecraft Server Manager",
   "private": true,
-  "main": "backend/node/minecraft_server.js",
+  "main": "minecraft_server.js",
+  "scripts": {
+    "start": "node minecraft_server.js"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:nickrnet/minecraft-server-manager.git"
   },
   "author": {
     "name": "nickrnet",
-    "url": "https://github.com/nickrnet/minecraft-server-manager"
+    "url": "https://github.com/nickrnet/"
   },
   "dependencies": {
     "body-parser": "1.15.1",
