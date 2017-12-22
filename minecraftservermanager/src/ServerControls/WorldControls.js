@@ -22,7 +22,7 @@ const styles = {
   function backupMinecraftWorld (event) {
       axios({
           method: 'get',
-          url: `http://localhost:3001/api/status`
+          url: `/api/status`
       }).then(res => {
           let minecraftStatus = res.data;
           console.log('minecraftStatus:', minecraftStatus);
@@ -36,7 +36,7 @@ function restoreMinecraftWorld (event) {
     // TODO query for a list of backups
     axios({
         method: 'get',
-        url: `http://localhost:3001/api/status`
+        url: `/api/status`
     }).then(res => {
         let minecraftStatus = res.data;
         // this.props.minecraftStatus = minecraftStatus;
@@ -50,7 +50,7 @@ function restoreMinecraftWorld (event) {
 function newMinecraftWorld (event) {
     axios({
         method: 'get',
-        url: `http://localhost:3001/api/status`
+        url: `/api/status`
     }).then(res => {
         let minecraftStatus = res.data;
         console.log('minecraftStatus:', minecraftStatus);

@@ -29,7 +29,7 @@ const styles = {
   function startMinecraft (event) {
       axios({
           method: 'post',
-          url: `http://localhost:3001/api/command?command=/start`
+          url: `/api/command?command=/start`
       }).then(res => {
           let minecraftStatus = res.data;
           console.log('minecraftStatus:', minecraftStatus);
@@ -42,7 +42,7 @@ const styles = {
 function stopMinecraft (event) {
     axios({
         method: 'post',
-        url: `http://localhost:3001/api/command?command=/stop`
+        url: `/api/command?command=/stop`
     }).then(res => {
         let minecraftStatus = res.data;
         console.log('minecraftStatus:', minecraftStatus);
@@ -55,7 +55,7 @@ function stopMinecraft (event) {
 function restartMinecraft (event) {
     axios({
         method: 'post',
-        url: `http://localhost:3001/api/command?command=/restart`
+        url: `/api/command?command=/restart`
     }).then(res => {
         let minecraftStatus = res.data;
         console.log('minecraftStatus:', minecraftStatus);

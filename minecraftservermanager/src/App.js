@@ -89,7 +89,7 @@ class App extends Component {
 
         this.statusTimerId = setTimeout(() => {
             // TODO Make the URL a property that can be changed
-            axios(`http://localhost:3001/api/status`).then(res => {
+            axios(`/api/status`).then(res => {
                 let minecraftStatus = res.data;
                 this.setState({ minecraftStatus });
                 this.statusTimerId = setTimeout(
@@ -117,7 +117,7 @@ class App extends Component {
     };
   
     getMinecraftServerProperties () {
-        return axios(`http://localhost:3001/api/properties`).then(res => {
+        return axios(`/api/properties`).then(res => {
             let minecraftServerProperties = res.data;
             minecraftServerProperties = minecraftServerProperties.properties;
             this.setState({ 
@@ -132,7 +132,7 @@ class App extends Component {
     };
   
     getMinecraftServerBannedIps () {
-        return axios(`http://localhost:3001/api/bannedIps`).then(res => {
+        return axios(`/api/bannedIps`).then(res => {
             let minecraftServerBannedIps = res.data;
             minecraftServerBannedIps = minecraftServerBannedIps;
             this.setState({ 
@@ -147,7 +147,7 @@ class App extends Component {
     };
   
     getMinecraftServerBannedPlayers () {
-        return axios(`http://localhost:3001/api/bannedPlayers`).then(res => {
+        return axios(`/api/bannedPlayers`).then(res => {
             let minecraftServerBannedPlayers = res.data;
             minecraftServerBannedPlayers = minecraftServerBannedPlayers.bannedPlayers;
             this.setState({ 
@@ -162,7 +162,7 @@ class App extends Component {
     };
   
     getMinecraftServerWhitelist () {
-        return axios(`http://localhost:3001/api/whitelist`).then(res => {
+        return axios(`/api/whitelist`).then(res => {
             let minecraftServerWhitelist = res.data;
             minecraftServerWhitelist = minecraftServerWhitelist.whitelist;
             this.setState({ 
@@ -177,7 +177,7 @@ class App extends Component {
     };
   
     getMinecraftServerOps () {
-        return axios(`http://localhost:3001/api/ops`).then(res => {
+        return axios(`/api/ops`).then(res => {
             let minecraftServerOps = res.data;
             minecraftServerOps = minecraftServerOps.ops;
             this.setState({ 
@@ -192,7 +192,7 @@ class App extends Component {
     };
   
     getMinecraftServerUserCache () {
-        return axios(`http://localhost:3001/api/userCache`).then(res => {
+        return axios(`/api/userCache`).then(res => {
             let minecraftServerUserCache = res.data;
             minecraftServerUserCache = minecraftServerUserCache.userCache;
             this.setState({ 

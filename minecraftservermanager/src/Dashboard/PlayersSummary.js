@@ -73,7 +73,7 @@ class PlayersSummary extends Component {
 
         this.playersTimerId = setTimeout(() => {
             // TODO Make the URL a property that can be changed
-            axios(`http://localhost:3001/api/command?command=/list`).then(res => {
+            axios(`/api/command?command=/list`).then(res => {
                 let result = res.data,
                     playerList = result.response,
                     playerNames = [],

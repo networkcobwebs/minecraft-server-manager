@@ -282,7 +282,7 @@ let app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // Serve web app
-app.use(express.static(path.join(__dirname, 'web/minecraftservermanager/build')));
+app.use(express.static(path.join(__dirname, 'minecraftservermanager/build')));
 
 app.use(function(request, response, next) {
     response.setHeader('Access-Control-Allow-Origin', '*');
