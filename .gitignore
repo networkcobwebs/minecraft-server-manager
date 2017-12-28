@@ -10,3 +10,5 @@ minecraft_server/**/*.json
 minecraft_server/**/*.txt
 minecraft_server/**/*.jar
 minecraft_server/**/*.properties
+
+.DS_Store

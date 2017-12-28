@@ -62,6 +62,18 @@ class ServerSummary extends Component {
             return <div></div>;
         }
     }
+    
+    minecraftVersion () {
+        let minecraftStatus = this.props.minecraftState.minecraftStatus;
+    
+        if (minecraftStatus && minecraftStatus.minecraftVersion) {
+            return (
+                <TableCell>{ minecraftStatus.minecraftVersion }</TableCell>
+            );
+        } else {
+            return <TableCell></TableCell>;
+        }
+    }
 
     minecraftUptime () {
         let minecraftStatus = this.props.minecraftState.minecraftStatus;
@@ -92,50 +104,40 @@ class ServerSummary extends Component {
     }
 
     render () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
-
-        if (minecraftStatus && minecraftStatus.uptime) {
-            return (
-                <div style={ styles.container }>
-                    <h3>Server Information</h3>
-                    <Table>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell>Server Address</TableCell>
-                                <TableCell>localhost</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>Server Uptime</TableCell>
-                                { this.minecraftUptime() }
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>Minecraft Status</TableCell>
-                                <TableCell>
-                                    { this.minecraftOnline() }
-                                </TableCell>
-                                <TableCell>
-                                    { this.minecraftUpdate() }
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>Minecraft Version</TableCell>
-                                <TableCell>1.11.2</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>Minecraft Uptime</TableCell>
-                                { this.minecraftServerUptime() }
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>World</TableCell>
-                                <TableCell>world</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            );
-        } else {
-            return <div></div>;
-        }
+        return (
+            <div style={ styles.container }>
+                <h3>Server Information</h3>
+                <Table>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>Server Address</TableCell>
+                            <TableCell>localhost</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Server Uptime</TableCell>
+                            { this.minecraftUptime() }
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Minecraft Status</TableCell>
+                            <TableCell>
+                                { this.minecraftOnline() }
+                            </TableCell>
+                            <TableCell>
+                                { this.minecraftUpdate() }
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Minecraft Version</TableCell>
+                            { this.minecraftVersion() }
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Minecraft Uptime</TableCell>
+                            { this.minecraftServerUptime() }
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
+        );
     }
 }
 

@@ -2,15 +2,15 @@ import React, { Component } from 'react';
 
 import axios from 'axios';
 
+import ExpansionPanel, {
+    ExpansionPanelSummary,
+    ExpansionPanelDetails,
+  } from 'material-ui/ExpansionPanel';
 import IconButton from 'material-ui/IconButton';
-import Table, {
-    TableBody,
-    TableRow,
-    TableCell,
-} from 'material-ui/Table';
 import TextField from 'material-ui/TextField';
 import Tooltip from 'material-ui/Tooltip';
 
+import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import Start from 'material-ui-icons/PlayArrow';
 import Stop from 'material-ui-icons/Stop';
 import Restart from 'material-ui-icons/Replay';
@@ -20,7 +20,7 @@ const styles = {
     container: {
         margin: 10,
         padding: 10,
-        border: '2px solid gray',
+        // border: '2px solid gray',
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '0.95rem'
     }
@@ -66,56 +66,64 @@ function restartMinecraft (event) {
 }
 
 class ServerControls extends Component {
-    constructor (props) {
-        super(props);
-
-        this.state = {
-            minecraftServerProperties: props.minecraftState.minecraftServerProperties
-        };
-    }
-
     render () {
+        let minecraftStatus = this.props.minecraftState.minecraftStatus,
+            minecraftProperties = this.props.minecraftState.minecraftServerProperties;
+
         return (
             <div>
-                <div style={ styles.container }>
-                    <h3>Server Controls</h3>
-                    <div>
-                        <IconButton
-                            onClick = { startMinecraft }>
-                            <Tooltip title="Start">
-                                <Start />
-                            </Tooltip>
-                        </IconButton>
-                        <IconButton
-                            onClick = { stopMinecraft }>
-                            <Tooltip title="Stop">
-                                <Stop />
-                            </Tooltip>
-                        </IconButton>
-                        <IconButton
-                            onClick = { restartMinecraft }>
-                            <Tooltip title="Restart">
-                                <Restart />
-                            </Tooltip>
-                        </IconButton>
-                    </div>
-                </div>
-                <div style={ styles.container }>
-                    <h3>Server Properties</h3>
-                    <div>
-                        { this.state.minecraftServerProperties.map(property => {
-                            return (
+            <div style={ styles.container }>
+                <ExpansionPanel defaultExpanded>
+                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                        Server Controls
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails>
+                        { !minecraftStatus.minecraftOnline ? <div>Waiting on Minecraft server...</div> : 
+                        <div>
+                            <IconButton
+                                onClick = { startMinecraft }>
+                                <Tooltip title="Start">
+                                    <Start />
+                                </Tooltip>
+                            </IconButton>
+                            <IconButton
+                                onClick = { stopMinecraft }>
+                                <Tooltip title="Stop">
+                                    <Stop />
+                                </Tooltip>
+                            </IconButton>
+                            <IconButton
+                                onClick = { restartMinecraft }>
+                                <Tooltip title="Restart">
+                                    <Restart />
+                                </Tooltip>
+                            </IconButton>
+                        </div> }
+                    </ExpansionPanelDetails>
+                </ExpansionPanel>
+            </div>
+
+            <div style={ styles.container }>
+                <ExpansionPanel defaultExpanded>
+                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                        Server Properties
+                    </ExpansionPanelSummary>
+                    
+                    { minecraftProperties.length ? minecraftProperties.map(property => {
+                        return (
+                            <ExpansionPanelDetails key={ property.name }>
                                 <TextField
-                                    key={ property.name }
                                     label={ property.name }
                                     value={ property.value }
                                     margin="normal"
                                     fullWidth
                                 />
-                            )
-                        }) }
-                    </div>
-                </div>
+                            </ExpansionPanelDetails>
+                        )
+                    }) : 'Waiting on Minecraft server...' }
+                    
+                </ExpansionPanel>
+            </div>
             </div>
         );
     }
