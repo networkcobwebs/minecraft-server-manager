@@ -14,6 +14,7 @@ import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 import Start from 'material-ui-icons/PlayArrow';
 import Stop from 'material-ui-icons/Stop';
 import Restart from 'material-ui-icons/Replay';
+import UpdateAvailable from 'material-ui-icons/AssignmentLate';
 
 
 const styles = {
@@ -98,6 +99,13 @@ class ServerControls extends Component {
                                     <Restart />
                                 </Tooltip>
                             </IconButton>
+                            { this.props.minecraftState.minecraftStatus && this.props.minecraftState.minecraftStatus.updateAvailable ?
+                            <IconButton>
+                                <Tooltip title="Update">
+                                    <UpdateAvailable />
+                                </Tooltip>
+                            </IconButton>
+                            : <div></div> }
                         </div> }
                     </ExpansionPanelDetails>
                 </ExpansionPanel>

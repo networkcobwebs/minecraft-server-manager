@@ -1,6 +1,6 @@
 {
-  "name": "MinecraftServerManager",
-  "version": "1.10.0",
+  "name": "minecraft-server-manager",
+  "version": "1.12.0",
   "description": "Minecraft Server Manager",
   "private": true,
   "main": "minecraft_server.js",

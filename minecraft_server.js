@@ -29,6 +29,7 @@ process.on('exit', function() {
 
 function startMinecraft (callback) {
     console.log('Starting Minecraft server...');
+    // TODO: Beef up detection of the jar before trying to spawn it!
     // TODO: Make the Java + args configurable
     minecraftServerProcess = spawn('java', [
         '-Xmx1G',
@@ -82,6 +83,8 @@ function checkForMinecraftToBeStarted (buffer, checkCount, callback) {
                 minecraftServerProcess.stdout.on('data', (d) => {
                     // noop
                 });
+                // TODO Get list of valid commands from the help for filtering actual server commands received by the web UI
+                // lets us get by a Minecraft version changes maybe?
                 callback();
             }
         });
@@ -161,6 +164,7 @@ function getMinecraftVersions() {
         res.on('end', () => {
             minecraftVersions = JSON.parse(minecraftVersionsArray);
             console.log('Got Minecraft version list.');
+            // TODO Actually do something here
         });
       }).on('error', (e) => {
         console.error(e);
@@ -278,13 +282,16 @@ function createTimestamp (aDate) {
 }
 
 // Create an express web app
+// TODO HTTPS?
 let app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Serve web app
+// Serve web app @ '/'
+// TODO Make the path on disk make sense - BUILD PROCESS?
 app.use(express.static(path.join(__dirname, 'minecraftservermanager/build')));
 
 app.use(function(request, response, next) {
+    // CSRF
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
@@ -308,16 +315,16 @@ app.get('/api/status', function (request, response) {
     if (minecraftStarted) {
         response.contentType('json');
         response.json({
-            uptime: uptime,
             minecraftOnline: true,
             minecraftUptime: mcuptime,
-            minecraftVersion: minecraftCurrentVersion
+            minecraftVersion: minecraftCurrentVersion,
+            uptime: uptime
         });
     } else {
         response.contentType('json');
         response.json({
-            uptime: uptime,
-            minecraftOnline: false
+            minecraftOnline: false,
+            uptime: uptime
         });
     }
 });
@@ -542,10 +549,10 @@ app.post('/api/command', function(request, response) {
 
 if (osType.indexOf('Windows') !== -1) {
     // do Windows related things
-    // set javaHome from Windows
+    // set javaHome from Windows? LOTS OF POTENTIAL PLACES
 } else if (osType.indexOf('Linux') !== -1) {
     // do Linux related things
-    // set javaHome from profile?
+    // set javaHome from profile? bash_profile? bash_rc? TOO MANY PLACES
 } else if (osType.indexOf('Darwin') !== -1) {
     // do Mac related things
     // set javaHome from java_home
@@ -555,9 +562,9 @@ if (osType.indexOf('Windows') !== -1) {
             return;
         } else {
             // console.log('Using java from', stdout);
+            getMinecraftVersions();
             javaHome = stdout;
             startMinecraft(() => {
-                getMinecraftVersions();
                 console.log('Starting web app.');
                 app.listen(ipPort);
                 console.log('Web app running.');

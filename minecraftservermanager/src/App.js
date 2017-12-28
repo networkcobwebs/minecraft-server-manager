@@ -300,6 +300,7 @@ class App extends Component {
                         <Tab label="Dashboard" />
                         <Tab label="Players" />
                         <Tab label="Server Control" />
+                        {/* <Tab label="Preferences" /> */}
                         <Tab label="About" />
                     </Tabs>
                 </AppBar>
@@ -309,6 +310,7 @@ class App extends Component {
                     <WorldControls minecraftState = { this.state } />
                     <ServerControls minecraftState = { this.state } />
                 </div> }
+                {/* TODO Preferences (poll times, start Minecraft always, updates, etc.) */}
                 { this.state.value === 3 && <About /> }
             </MuiThemeProvider>
         );
