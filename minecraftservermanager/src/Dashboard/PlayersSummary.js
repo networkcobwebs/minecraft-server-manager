@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 
 import Table, {
+    TableHead,
     TableBody,
     TableRow,
     TableCell,
@@ -28,7 +29,11 @@ class PlayersSummary extends Component {
             <div style={ styles.container }>
                 <h3>Players</h3>
                 <Table>
-                    { summary ? summary : 'Waiting on Minecraft server...' }
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>{ summary ? summary : 'Waiting on Minecraft server...' }</TableCell>
+                        </TableRow>
+                    </TableHead>
                     <TableBody>
                         { playerNames.length ? playerNames.map(player => {
                             return (
