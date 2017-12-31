@@ -73,65 +73,65 @@ class ServerControls extends Component {
 
         return (
             <div>
-            <div style={ styles.container }>
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                        Server Controls
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
-                        { !minecraftStatus.minecraftOnline ? <div>Waiting on Minecraft server...</div> : 
-                        <div>
-                            <IconButton
-                                onClick = { startMinecraft }>
-                                <Tooltip title="Start">
-                                    <Start />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton
-                                onClick = { stopMinecraft }>
-                                <Tooltip title="Stop">
-                                    <Stop />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton
-                                onClick = { restartMinecraft }>
-                                <Tooltip title="Restart">
-                                    <Restart />
-                                </Tooltip>
-                            </IconButton>
-                            { this.props.minecraftState.minecraftStatus && this.props.minecraftState.minecraftStatus.updateAvailable ?
-                            <IconButton>
-                                <Tooltip title="Update">
-                                    <UpdateAvailable />
-                                </Tooltip>
-                            </IconButton>
-                            : <div></div> }
-                        </div> }
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
-            </div>
+                <div style={ styles.container }>
+                    <ExpansionPanel defaultExpanded>
+                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                            Server Controls
+                        </ExpansionPanelSummary>
+                        <ExpansionPanelDetails>
+                            { !minecraftStatus.minecraftOnline ? <div>Waiting on Minecraft server...</div> : 
+                            <div>
+                                <IconButton
+                                    onClick = { startMinecraft }>
+                                    <Tooltip title="Start">
+                                        <Start />
+                                    </Tooltip>
+                                </IconButton>
+                                <IconButton
+                                    onClick = { stopMinecraft }>
+                                    <Tooltip title="Stop">
+                                        <Stop />
+                                    </Tooltip>
+                                </IconButton>
+                                <IconButton
+                                    onClick = { restartMinecraft }>
+                                    <Tooltip title="Restart">
+                                        <Restart />
+                                    </Tooltip>
+                                </IconButton>
+                                { this.props.minecraftState.minecraftStatus && this.props.minecraftState.minecraftStatus.updateAvailable ?
+                                <IconButton>
+                                    <Tooltip title="Update">
+                                        <UpdateAvailable />
+                                    </Tooltip>
+                                </IconButton>
+                                : <div></div> }
+                            </div> }
+                        </ExpansionPanelDetails>
+                    </ExpansionPanel>
+                </div>
 
-            <div style={ styles.container }>
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                        Server Properties
-                    </ExpansionPanelSummary>
-                    
-                    { minecraftProperties.length ? minecraftProperties.map(property => {
-                        return (
-                            <ExpansionPanelDetails key={ property.name }>
-                                <TextField
-                                    label={ property.name }
-                                    value={ property.value }
-                                    margin="normal"
-                                    fullWidth
-                                />
-                            </ExpansionPanelDetails>
-                        )
-                    }) : 'Waiting on Minecraft server...' }
-                    
-                </ExpansionPanel>
-            </div>
+                <div style={ styles.container }>
+                    <ExpansionPanel defaultExpanded>
+                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                            Server Properties
+                        </ExpansionPanelSummary>
+                        
+                        { minecraftProperties.length ? minecraftProperties.map(property => {
+                            return (
+                                <ExpansionPanelDetails key={ property.name }>
+                                    <TextField
+                                        label={ property.name }
+                                        value={ property.value }
+                                        margin="normal"
+                                        fullWidth
+                                    />
+                                </ExpansionPanelDetails>
+                            )
+                        }) : 'Waiting on Minecraft server...' }
+                        
+                    </ExpansionPanel>
+                </div>
             </div>
         );
     }

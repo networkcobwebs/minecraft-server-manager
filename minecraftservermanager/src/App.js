@@ -1,5 +1,3 @@
-'use strict';
-
 import React, { Component } from 'react';
 
 import axios from 'axios';
@@ -46,12 +44,15 @@ class App extends Component {
             minecraftServerBannedPlayers: [],
             minecraftServerWhitelist: [],
             minecraftServerOps: [],
-            minecraftServerUserCache: []
+            minecraftServerUserCache: [],
+            playerSummary: '',
+            playerNames: []
         };
         if (debug) {
             console.log('App state:', this.state);
         }
         this.getMinecraftStatus(25);
+        this.getMinecraftPlayers(50);
     };
 
     componentWillUnmount () {
@@ -100,6 +101,7 @@ class App extends Component {
                 this.getMinecraftServerWhitelist();
                 this.getMinecraftServerOps();
                 this.getMinecraftServerUserCache();
+                this.getMinecraftPlayers();
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -132,6 +134,10 @@ class App extends Component {
 
         if (this.statusTimerId) {
             clearTimeout(this.statusTimerId);
+        }
+
+        if (this.playersTimerId) {
+            clearTimeout(this.playersTimerId);
         }
     };
   
@@ -288,6 +294,128 @@ class App extends Component {
             });
         }
     };
+
+    getMinecraftPlayers (pingWait) {
+        let normalPingTime = 5 * 1000,
+            appendTime = 5 * 1000,
+            maxTime = 120 * 1000,
+            pingTime,
+            minecraftStatus = this.state.minecraftStatus;
+
+        // normally ping every 10 seconds
+        // if a fast ping was requested (from constructor/DidMount), honor it
+        // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds
+        // once re/successful, reset to 10 seconds
+        if (!pingWait) {
+            pingTime = normalPingTime;
+        } else if (pingWait < 1000) {
+            pingTime = pingWait;
+        } else if (pingWait > maxTime) {
+            pingTime = normalPingTime;
+        } else {
+            pingTime = pingWait;
+        }
+
+        if (this.playersTimerId) {
+            clearTimeout(this.playersTimerId);
+        }
+
+        this.playersTimerId = setTimeout(() => {
+            if (minecraftStatus.minecraftOnline) {
+                axios(`/api/command?command=/list`).then(res => {
+                    let result = res.data,
+                        playerList = result.response,
+                        playerNames = [],
+                        players, somePlayerName, somePlayerNames, testData, playerSummary,
+                        i, p;
+
+                    if (playerList.includes('Fail')) {
+                        // Squelch for now
+                        let playerSummary = '',
+                            playerNames = [];
+
+                        this.setState({ playerSummary });
+                        this.setState({ playerNames });
+
+                        pingTime = pingTime + appendTime;
+
+                        if (this.state.debug) {
+                            console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
+                        }
+                        this.getMinecraftPlayers(pingTime);
+                    } else {
+                        // First line is the summary,
+                        // followed by player names, comma+space separated
+                        players = playerList.split(/\n/);
+                        playerSummary = players.shift();
+                        // Remove trailing ':'
+                        playerSummary = playerSummary.slice(0, -1);
+                        // Remove preceding timestamp/server info
+                        playerSummary = playerSummary.split(']: ')[1];
+
+                        // Get playerNames
+                        for (i = 0; i < players.length; i++) {
+                            // Remove preceding timestamp & server info
+                            somePlayerNames = players[i].split(']: ')[1];
+
+                            if (somePlayerNames) {
+                                somePlayerNames = somePlayerNames.split(',');
+                                for (p = 0; p < somePlayerNames.length; p++) {
+                                    somePlayerName = somePlayerNames[p];
+                                    if (somePlayerName) {
+                                        // Make sure we check for multiple spaces so as to
+                                        // ignore any bad data like things that were
+                                        // accidentally in the buffer at the same time we
+                                        // queried, etc.
+                                        testData = somePlayerName.split(' ');
+                                        if (testData.length <= 2) {
+                                            playerNames.push(this.objectifyPlayer(somePlayerName.trim()));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // console.log('playerNames discovered:', playerNames);
+                        
+                        this.setState({ playerSummary });
+                        this.setState({ playerNames });
+
+                        if (this.state.debug) {
+                            console.log('PlayersSummary state:', this.state);
+                            console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
+                        }
+
+                        this.getMinecraftPlayers();
+                    }
+                },
+                err => {
+                    let playerSummary = '',
+                        playerNames = [];
+
+                    this.setState({ playerSummary });
+                    this.setState({ playerNames });
+
+                    pingTime = pingTime + appendTime;
+
+                    if (this.state.debug) {
+                        console.log('PlayersSummary state:', this.state.playerSummary, this.state.playerNames);
+                        console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
+                    }
+                    this.getMinecraftPlayers(pingTime);
+                });
+            } else {
+                if (this.state.debug) {
+                    console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
+                }
+                this.getMinecraftPlayers();
+            }
+        }, pingTime);
+    }
+
+    objectifyPlayer (player) {
+        return { name: player };
+    }
 
     render () {
         return (
