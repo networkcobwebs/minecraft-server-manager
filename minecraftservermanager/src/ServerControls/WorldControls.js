@@ -44,7 +44,6 @@ function restoreMinecraftWorld (event) {
         url: `/api/status`
     }).then(res => {
         let minecraftStatus = res.data;
-        // this.props.minecraftStatus = minecraftStatus;
         console.log('minecraftStatus:', minecraftStatus);
     },
     err => {
@@ -67,7 +66,7 @@ function newMinecraftWorld (event) {
 
 class WorldControls extends Component {
     render () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
+        let minecraftState = this.props.minecraftState;
 
         return (
             <div style={ styles.container }>
@@ -76,7 +75,7 @@ class WorldControls extends Component {
                         World Controls
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
-                        { !minecraftStatus.minecraftOnline ? <div>Waiting on Minecraft server...</div> : 
+                        { !minecraftState ? <div>Waiting on Minecraft server...</div> : 
                         <div>
                             <IconButton
                                 onClick = { backupMinecraftWorld }>

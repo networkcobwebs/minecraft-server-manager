@@ -68,7 +68,8 @@ function restartMinecraft (event) {
 
 class ServerControls extends Component {
     render () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus,
+        let minecraftState = this.props.minecraftState,
+            minecraftStatus = this.props.minecraftState.minecraftStatus,
             minecraftProperties = this.props.minecraftState.minecraftServerProperties;
 
         return (
@@ -79,7 +80,7 @@ class ServerControls extends Component {
                             Server Controls
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails>
-                            { !minecraftStatus.minecraftOnline ? <div>Waiting on Minecraft server...</div> : 
+                            { !minecraftState ? <div>Waiting on Minecraft server...</div> : 
                             <div>
                                 <IconButton
                                     onClick = { startMinecraft }>
@@ -99,7 +100,7 @@ class ServerControls extends Component {
                                         <Restart />
                                     </Tooltip>
                                 </IconButton>
-                                { this.props.minecraftState.minecraftStatus && this.props.minecraftState.minecraftStatus.updateAvailable ?
+                                { minecraftState && minecraftStatus.updateAvailable ?
                                 <IconButton>
                                     <Tooltip title="Update">
                                         <UpdateAvailable />
@@ -117,7 +118,7 @@ class ServerControls extends Component {
                             Server Properties
                         </ExpansionPanelSummary>
                         
-                        { minecraftProperties.length ? minecraftProperties.map(property => {
+                        { minecraftState && minecraftProperties.length ? minecraftProperties.map(property => {
                             return (
                                 <ExpansionPanelDetails key={ property.name }>
                                     <TextField

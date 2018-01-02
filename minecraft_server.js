@@ -281,17 +281,15 @@ function createTimestamp (aDate) {
     return theDate;
 }
 
-// Create an express web app
-// TODO HTTPS?
+// Create an express web app - HTTPS?
 let app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // Serve web app @ '/'
-// TODO Make the path on disk make sense - BUILD PROCESS?
+// TODO Make the path on disk make sense - BUILD PROCESS!
 app.use(express.static(path.join(__dirname, 'minecraftservermanager/build')));
 
 app.use(function(request, response, next) {
-    // CSRF
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
@@ -562,12 +560,12 @@ if (osType.indexOf('Windows') !== -1) {
             return;
         } else {
             // console.log('Using java from', stdout);
+            app.listen(ipPort);
+            console.log('Web app running.');
             getMinecraftVersions();
             javaHome = stdout;
             startMinecraft(() => {
-                console.log('Starting web app.');
-                app.listen(ipPort);
-                console.log('Web app running.');
+                console.log('');
             });
         }
     });
