@@ -14,9 +14,11 @@ let pathToMinecraftDirectory = 'minecraft_server',
     minecraftStarted, minecraftStartedTimer, minecraftStartTime,
     minecraftStoppedTimer,
     minecraftOutput = [],
+    minecraftServerOutputCaptured = false,
     minecraftCurrentVersion,
+    minecraftCommands = [],
     javaHome, javaMaxMem, javaMinMem,
-    ipAddress = '127.0.0.1',
+    ipAddress = '127.0.0.1', // or 0.0.0.0 for all interfaces
     ipPort = '3001',
     players, ops, serverProperties,
     startTime = Date.now(),
@@ -27,9 +29,13 @@ process.on('exit', function() {
     stopMinecraft();
 });
 
+function bufferMinecraftOutput (d) {
+    minecraftOutput.push(d.toString().trim());
+}
+
 function startMinecraft (callback) {
     console.log('Starting Minecraft server...');
-    // TODO: Beef up detection of the jar before trying to spawn it!
+    // TODO: Beef up detection of the jar before trying to spawn
     // TODO: Make the Java + args configurable
     minecraftServerProcess = spawn('java', [
         '-Xmx1G',
@@ -38,36 +44,56 @@ function startMinecraft (callback) {
         minecraftServerJar,
         'nogui'
     ], {
-        cwd: pathToMinecraftDirectory
+        cwd: pathToMinecraftDirectory,
+        stdio: [
+            'pipe', // Use parent's stdin for child
+            'pipe', // Pipe child's stdout to parent
+            'pipe'  // Direct child's stderr to parent
+        ]
     });
 
-    minecraftServerProcess.stdout.on('data', (d) => {
-        // buffer while we wait for 'started'
-        minecraftOutput.push(d);
-    });
+    if (!minecraftServerOutputCaptured) {
+        minecraftServerOutputCaptured = true;
+        minecraftOutput.length = 0;
+        minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
 
-    if (minecraftStartedTimer) {
-        clearTimeout(minecraftStartedTimer);
+        if (minecraftStartedTimer) {
+            clearTimeout(minecraftStartedTimer);
+        }
+    
+        minecraftStartedTimer = setTimeout(() => {
+            checkForMinecraftToBeStarted(0, callback);
+        }, 100);
+    } else {
+        setTimeout(() => {
+            startMinecraft(callback)
+        }, 1000);
     }
-
-    minecraftStartedTimer = setTimeout(() => {
-        checkForMinecraftToBeStarted(minecraftOutput, 0, callback);
-    }, 1000);
 }
 
-function checkForMinecraftToBeStarted (buffer, checkCount, callback) {
-    let threshold = 240,
+function checkForMinecraftToBeStarted (checkCount, callback) {
+    let threshold = 1000,
         versionParts = [],
         major, minor, release;
 
     if (checkCount > threshold) {
         // Pop back out. Minecraft may or may not come up.
-        callback();
+        minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+        minecraftOutput.length = 0;
+        minecraftServerOutputCaptured = false;
+        console.log('Failed to detect running Minecraft server. Continuing.');
+        if (typeof callback === 'function') {
+            callback();
+        }
     } else {
-        buffer.join('');
-        buffer.forEach((line) => {
-            // TODO get minecraft version here too?
-            if (line.toString().indexOf('server version') !== -1) {
+        while( (line = minecraftOutput.shift()) !== undefined ) {
+            if (line.indexOf('FAILED') !== -1) {
+                console.log('An error occurred starting Minecraft. Check the Minecraft log.');
+                minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                minecraftOutput.length = 0;
+                minecraftServerOutputCaptured = false;
+                process.exit(1);
+            } else if (!minecraftCurrentVersion && line.indexOf('server version') !== -1) {
                 versionParts = line.toString().split('.');
                 major = versionParts.shift();
                 minor = versionParts.shift();
@@ -76,84 +102,92 @@ function checkForMinecraftToBeStarted (buffer, checkCount, callback) {
                 major = versionParts[versionParts.length - 1];
                 minecraftCurrentVersion = major + '.' + minor + '.' + release;
                 console.log('Detected Minecraft version:', minecraftCurrentVersion);
-            } else if (line.toString().indexOf('Done') !== -1) {
+            } else if (!minecraftStarted && line.indexOf('Done') !== -1) {
                 console.log('Minecraft server started.');
                 minecraftStarted = true;
                 minecraftStartTime = Date.now();
-                minecraftServerProcess.stdout.on('data', (d) => {
-                    // noop
-                });
-                // TODO Get list of valid commands from the help for filtering actual server commands received by the web UI
-                // lets us get by a Minecraft version changes maybe?
-                callback();
+                minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                minecraftOutput.length = 0;
+                minecraftServerOutputCaptured = false;
+                // listMinecraftCommands(0, callback);
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
-        });
-    
-        buffer.length = 0;
+        }
     
         if (!minecraftStarted) {
             minecraftStartedTimer = setTimeout(() => {
-                checkForMinecraftToBeStarted(minecraftOutput, ++checkCount, callback);
-            }, 500);
+                checkForMinecraftToBeStarted(++checkCount, callback);
+            }, 100);
         }
     }
 }
 
 function stopMinecraft (callback) {
     console.log('Stopping Minecraft server.');
-    if (minecraftServerProcess) {
-        minecraftOutput.length = 0;
-        minecraftServerProcess.stdout.on('data', (d) => {
-            // buffer while we wait for 'stopped'
-            minecraftOutput.push(d);
-        });
+    if (minecraftStarted) {
+        if (!minecraftServerOutputCaptured) {
+            minecraftServerOutputCaptured = true;
+            minecraftOutput.length = 0;
+            minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
 
-        minecraftServerProcess.stdin.write('/stop\n');
+            minecraftServerProcess.stdin.write('/stop\n');
 
-        if (minecraftStoppedTimer) {
-            clearTimeout(minecraftStoppedTimer);
+            if (minecraftStoppedTimer) {
+                clearTimeout(minecraftStoppedTimer);
+            }
+
+            minecraftStoppedTimer = setTimeout(() => {
+                checkForMinecraftToBeStopped(0, callback);
+            }, 1000);
+        } else {
+            setTimeout(() => {
+                stopMinecraft(callback);
+             }, 100);
         }
-
-        minecraftStoppedTimer = setTimeout(() => {
-            checkForMinecraftToBeStopped(minecraftOutput, 0, callback);
-        }, 1000);
     }
 }
 
-function checkForMinecraftToBeStopped (buffer, checkCount, callback) {
-    let threshold = 240;
+function checkForMinecraftToBeStopped (checkCount, callback) {
+    let threshold = 1000;
 
     if (checkCount > threshold) {
         // Pop back out. Minecraft may or may not be stopped.
-        console.log('Minecraft server may not have stopped.');
-        callback();
+        minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+        minecraftServerOutputCaptured = false;
+        minecraftServerProcess.kill();
+        minecraftOutput.length = 0;
+        console.log('Minecraft server had to be forced to stop.');
+        if (typeof callback === 'function') {
+            callback();
+        }
     } else {
-        buffer.join('');
-        buffer.forEach((line) => {
-            // TODO get minecraft version here too?
+        minecraftOutput.forEach((line) => {
             if (line.indexOf('Shutdown Thread') !== -1 && line.indexOf('Saving') !== -1) {
                 console.log('Minecraft server stopped.');
                 minecraftStarted = false;
                 minecraftStartTime = null;
-                minecraftServerProcess.stdout.on('data', (d) => {
-                    // noop
-                });
+                minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                minecraftServerOutputCaptured = false;
                 minecraftServerProcess.kill();
-                buffer.length = 0;
-                callback();
+                miencraftOutput.length = 0;
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         });
     
         if (minecraftStarted) {
             minecraftStoppedTimer = setTimeout(() => {
-                checkForMinecraftToBeStopped(minecraftOutput, ++checkCount, callback);
+                checkForMinecraftToBeStopped(++checkCount, callback);
             }, 500);
         }
     }
 }
 
 function getMinecraftVersions() {
-    // TODO enable snapshot updates?
+    // TODO enable snapshot updates with a property/preference
     let minecraftVersionsArray = [],
         minecraftVersions = {};
 
@@ -162,12 +196,17 @@ function getMinecraftVersions() {
             minecraftVersionsArray.push(d);
         });
         res.on('end', () => {
-            minecraftVersions = JSON.parse(minecraftVersionsArray);
-            console.log('Got Minecraft version list.');
-            // TODO Actually do something here
+            try {
+                minecraftVersions = JSON.parse(minecraftVersionsArray);
+                console.log('Got Minecraft version list.');
+                // TODO Actually do something here
+                return minecraftVersions;
+            } catch (e) {
+                console.log('An error occurred processing the Minecraft official version list:', e);
+            }
         });
       }).on('error', (e) => {
-        console.error(e);
+        console.error('An error occurred retrieving the Minecraft official version list:', e);
       });
 }
 
@@ -218,6 +257,162 @@ function getServerProperties () {
     } catch (e) {
         console.log('Failed to read server.properties:', e);
         return e;
+    }
+}
+
+function getCommand (line, required, optional) {
+    let start = 0;
+    let end = 0;
+    let args = [];
+    let startChar, endChar;
+
+    if (required) {
+        startChar = '<';
+        endChar = '>'
+    }
+    if (optional) {
+        startChar = '[';
+        endChar = ']';
+    }
+
+    while (start !== -1) {
+        // got argument(s)?
+        start = line.indexOf(startChar, end);
+        end = line.indexOf(endChar, start);
+        
+        if (start !== -1) {
+            let option = line.substr(start + 1, end - start - 1);
+            let options = option.concat(line.substr(end + 1, line.indexOf(' ', end + 1) - end - 1));
+            if (options.indexOf('|') !== -1) {
+                // found multiples
+                let args2 = options.split('|');
+                while ( (arg = args2.shift()) !== undefined ) {
+                    args.push(arg);
+                }
+            } else {
+                args.push(options);
+            }
+            start = line.indexOf(startChar, end);
+        }
+    }
+
+    return args
+}
+
+function waitForHelpOutput (buffer, callback) {
+    // [10:04:31] [Server thread/INFO]: --- Showing help page 1 of 10 (/help <page>) ---
+    // ... <help commands and description(s)
+
+    while( (line = minecraftOutput.shift()) !== undefined ) {
+        if (line.indexOf('Showing help page') !== -1) {
+            minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+            minecraftOutput.length = 0;
+
+            let part1 = line.split('Showing help page ');
+            let part2 = part1[1].split(' ');
+            let maxPages = parseInt(part2[2]);
+
+            minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
+            for (let i = 1; i <= maxPages; i++) {
+                minecraftServerProcess.stdin.write('/help ' + i + '\n');
+            }
+            setTimeout(() => {
+                minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                while ( (line = minecraftOutput.shift()) !== undefined ) {
+                    // console.log('line:', line);
+                    // gather the commands:
+                    // example:
+                    // [23:57:04] [Server thread/INFO]: /time <set|add|query> <value>
+                    // [23:57:04] [Server thread/INFO]: /title <player> title|subtitle|actionbar|clear|reset|times ...
+                    // [23:57:04] [Server thread/INFO]: /tp [target player] <destination player> OR /tp [target player] <x> <y> <z> [<yaw> <pitch>]
+                    // [23:57:04] [Server thread/INFO]: /trigger <objective> <add|set> <value>
+                    let command = {};
+                    let commandLine = line.split(' [Server thread/INFO]: ');
+
+                    if (commandLine[1].indexOf('/') === 0) {
+                        let commandLineSpaces = commandLine[1].split(' ');
+                        let args = [];
+                        let commands = [];
+                        
+                        command = {
+                            command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
+                        };
+
+                        commandLineSpaces.shift();
+
+                        // Handle 'OR's
+                        if (commandLine[1].indexOf(' OR ') !== -1) {
+                            commands = commandLine[1].split(' OR ');
+                        } else {
+                            commands.push(commandLine[1]);
+                        }
+
+                        args.length = 0;
+                        for (let c of commands) {
+                            let things = getCommand(c, true, false);
+                            for (let thing of things) {
+                                args.push(thing);
+                            }
+                            // args.push(getCommand(c, true, false));
+                        }
+                        if (args.length) {
+                            command['requiredArgs'] = Array.from(new Set(args));
+                        }
+
+                        args.length = 0;
+                        for (let c of commands) {
+                            let things = getCommand(c, false, true);
+                            for (let thing of things) {
+                                args.push(thing);
+                            }
+                            // args.push(getCommand(c, false, true));
+                        }
+                        if (args.length) {
+                            command['optionalArgs'] = Array.from(new Set(args));
+                        }
+    
+                        console.log('Adding command: ' + JSON.stringify(command));
+                        minecraftCommands.push(command);
+                    }
+                }
+
+                minecraftOutput.length = 0;
+                minecraftServerOutputCaptured = false;
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }, 500);
+        }
+    }
+}
+
+function listMinecraftCommands (checkCount, callback) {
+    let threshold = 100;
+
+    if (!checkCount) {
+        checkCount = 0;
+    }
+
+    if (checkCount < threshold) {
+        if (minecraftStarted && !minecraftServerOutputCaptured) {
+            console.log('Listing Minecraft commands...');
+            let minecraftCommands = [];
+            minecraftServerOutputCaptured = true;
+            minecraftOutput.length = 0;
+            minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
+    
+            minecraftServerProcess.stdin.write('/help\n');
+        
+            setTimeout(() => {
+                waitForHelpOutput(minecraftOutput, callback);
+            }, 100);
+        } else {
+            setTimeout(() => {
+                listMinecraftCommands(++checkCount, callback);
+            }, 100);
+        }
+    } else {
+        console.log('Couldn\'t get Minecraft help.');
     }
 }
 
@@ -556,16 +751,16 @@ if (osType.indexOf('Windows') !== -1) {
     // set javaHome from java_home
     exec('/usr/libexec/java_home', (err, stdout, stderr) => {
         if (err) {
-            console.log('Could not set JAVA_HOME. Make sure Java is installed.');
+            console.log('Could not set JAVA_HOME. Make sure Java is properly installed.');
             return;
         } else {
-            // console.log('Using java from', stdout);
             app.listen(ipPort);
             console.log('Web app running.');
             getMinecraftVersions();
+            // console.log('Using java from', stdout);
             javaHome = stdout;
             startMinecraft(() => {
-                console.log('');
+                listMinecraftCommands(0);
             });
         }
     });
