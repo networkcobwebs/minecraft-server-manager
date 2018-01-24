@@ -57,7 +57,7 @@ your Minecraft Server installation in `minecraft-server-manager` named `minecraf
 3. Play Minecraft on your server.
 
 ### Notes
-The current supported version of Minecraft is **1.11.2**.
+The current supported version of Minecraft is **1.11.2**, but should also run with 1.12.2 as well.
 
 Current testing has been with:
 * Ubuntu 16.04
