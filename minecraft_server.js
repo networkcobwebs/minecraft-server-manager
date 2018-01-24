@@ -371,7 +371,7 @@ function waitForHelpOutput (buffer, callback) {
                             command['optionalArgs'] = Array.from(new Set(args));
                         }
     
-                        console.log('Adding command: ' + JSON.stringify(command));
+                        // console.log('Adding command: ' + JSON.stringify(command));
                         minecraftCommands.push(command);
                     }
                 }
