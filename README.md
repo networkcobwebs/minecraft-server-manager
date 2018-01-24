@@ -32,10 +32,13 @@ in a Terminal or Command Prompt.
 ```
 
 to build the React web pages.
+
 4. If desired, edit the IP address and port properties at the top of the minecraft_server.js
 script. By default, the web server will run on all network interfaces on port 3001.
+
 5. Download a release of Minecraft Server to `minecraft-server-manager` (or place
 your Minecraft Server installation in `minecraft-server-manager` named `minecraft_server`.
+
 6. Accept the terms of the Minecraft EULA by setting the eula property to `true` in the 
 `eula.txt` file of `minecraft_server` if this is a new installation:
 
