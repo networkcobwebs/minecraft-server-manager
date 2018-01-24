@@ -8,7 +8,6 @@ Includes:
 
 ## Requirements
 Node.js 8.x
-Web server of your choice
 
 ## Installation
 1. Execute
