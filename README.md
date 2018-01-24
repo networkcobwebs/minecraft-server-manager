@@ -37,7 +37,7 @@ to build the React web pages.
 script. By default, the web server will run on all network interfaces on port 3001.
 
 5. Download a release of Minecraft Server to `minecraft-server-manager` (or place
-your Minecraft Server installation in `minecraft-server-manager` named `minecraft_server`.
+your Minecraft Server installation in `minecraft-server-manager` named `minecraft_server`).
 
 6. Accept the terms of the Minecraft EULA by setting the eula property to `true` in the 
 `eula.txt` file of `minecraft_server` if this is a new installation:
