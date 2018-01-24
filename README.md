@@ -11,19 +11,19 @@ Node.js 8.x
 
 ## Installation
 1. Execute
-
+```
     git clone https://github.com/nickrnet/minecraft-server-manager.git
-
+```
 in a Terminal or Command Prompt.
 2. Execute
-
+```
     cd minecraft-server-manager
     npm install
-
+```
 3. Execute
-
+```
     npm run build
-
+```
 to build the React web pages.
 4. If desired, edit the IP address and port properties at the top of the minecraft_server.js
 script. By default, the web server will run on all network interfaces on port 3001.
@@ -31,9 +31,9 @@ script. By default, the web server will run on all network interfaces on port 30
 your Minecraft Server installation in `minecraft-server-manager` named `minecraft_server`.
 6. Accept the terms of the Minecraft EULA by setting the eula property to `true` in the 
 `eula.txt` file of `minecraft_server` if this is a new installation:
-
+```
     eula=true
-
+```
 ## Running Minecraft Server Manager
 1. Execute
 
