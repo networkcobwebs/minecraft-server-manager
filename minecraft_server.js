@@ -17,6 +17,8 @@ let pathToMinecraftDirectory = 'minecraft_server',
     minecraftServerOutputCaptured = false,
     minecraftCurrentVersion,
     minecraftCommands = [],
+    minecraftEulaUrl = '',
+    minecraftAcceptedEula = false,
     javaHome, javaMaxMem, javaMinMem,
     ipAddress = '127.0.0.1', // or 0.0.0.0 for all interfaces
     ipPort = '3001',
@@ -24,7 +26,6 @@ let pathToMinecraftDirectory = 'minecraft_server',
     startTime = Date.now(),
     osType = os.type();
 
-// Make sure the Minecraft server quits with this process
 process.on('exit', function() {
     stopMinecraft();
 });
@@ -109,7 +110,6 @@ function checkForMinecraftToBeStarted (checkCount, callback) {
                 minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
                 minecraftOutput.length = 0;
                 minecraftServerOutputCaptured = false;
-                // listMinecraftCommands(0, callback);
                 if (typeof callback === 'function') {
                     callback();
                 }
@@ -276,7 +276,6 @@ function getCommand (line, required, optional) {
     }
 
     while (start !== -1) {
-        // got argument(s)?
         start = line.indexOf(startChar, end);
         end = line.indexOf(endChar, start);
         
@@ -284,7 +283,6 @@ function getCommand (line, required, optional) {
             let option = line.substr(start + 1, end - start - 1);
             let options = option.concat(line.substr(end + 1, line.indexOf(' ', end + 1) - end - 1));
             if (options.indexOf('|') !== -1) {
-                // found multiples
                 let args2 = options.split('|');
                 while ( (arg = args2.shift()) !== undefined ) {
                     args.push(arg);
@@ -300,9 +298,6 @@ function getCommand (line, required, optional) {
 }
 
 function waitForHelpOutput (buffer, callback) {
-    // [10:04:31] [Server thread/INFO]: --- Showing help page 1 of 10 (/help <page>) ---
-    // ... <help commands and description(s)
-
     while( (line = minecraftOutput.shift()) !== undefined ) {
         if (line.indexOf('Showing help page') !== -1) {
             minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
@@ -319,13 +314,6 @@ function waitForHelpOutput (buffer, callback) {
             setTimeout(() => {
                 minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
                 while ( (line = minecraftOutput.shift()) !== undefined ) {
-                    // console.log('line:', line);
-                    // gather the commands:
-                    // example:
-                    // [23:57:04] [Server thread/INFO]: /time <set|add|query> <value>
-                    // [23:57:04] [Server thread/INFO]: /title <player> title|subtitle|actionbar|clear|reset|times ...
-                    // [23:57:04] [Server thread/INFO]: /tp [target player] <destination player> OR /tp [target player] <x> <y> <z> [<yaw> <pitch>]
-                    // [23:57:04] [Server thread/INFO]: /trigger <objective> <add|set> <value>
                     let command = {};
                     let commandLine = line.split(' [Server thread/INFO]: ');
 
@@ -340,7 +328,6 @@ function waitForHelpOutput (buffer, callback) {
 
                         commandLineSpaces.shift();
 
-                        // Handle 'OR's
                         if (commandLine[1].indexOf(' OR ') !== -1) {
                             commands = commandLine[1].split(' OR ');
                         } else {
@@ -353,7 +340,6 @@ function waitForHelpOutput (buffer, callback) {
                             for (let thing of things) {
                                 args.push(thing);
                             }
-                            // args.push(getCommand(c, true, false));
                         }
                         if (args.length) {
                             command['requiredArgs'] = Array.from(new Set(args));
@@ -365,13 +351,11 @@ function waitForHelpOutput (buffer, callback) {
                             for (let thing of things) {
                                 args.push(thing);
                             }
-                            // args.push(getCommand(c, false, true));
                         }
                         if (args.length) {
                             command['optionalArgs'] = Array.from(new Set(args));
                         }
     
-                        // console.log('Adding command: ' + JSON.stringify(command));
                         minecraftCommands.push(command);
                     }
                 }
@@ -395,7 +379,6 @@ function listMinecraftCommands (checkCount, callback) {
 
     if (checkCount < threshold) {
         if (minecraftStarted && !minecraftServerOutputCaptured) {
-            console.log('Listing Minecraft commands...');
             let minecraftCommands = [];
             minecraftServerOutputCaptured = true;
             minecraftOutput.length = 0;
@@ -416,6 +399,64 @@ function listMinecraftCommands (checkCount, callback) {
     }
 }
 
+function getEula () {
+    let eula, eulaUrlLine, line, lineNumber;
+
+    console.log('Reading eula.txt...');
+    try {
+        eula = fs.readFileSync(pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
+        
+        for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
+            if (eula[lineNumber]) {
+                eulaUrlLine = eula[lineNumber].split('https://');
+                if (eulaUrlLine.length == 2) {
+                    minecraftEulaUrl = eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
+                    console.log('Minecraft EULA: https://' + minecraftEulaUrl);
+                }
+                line = eula[lineNumber].split('=');
+                if (line.length == 2) {
+                    minecraftAcceptedEula = line[1];
+                    console.log('EULA accepted?', minecraftAcceptedEula);
+                }
+            }
+        }
+    } catch (e) {
+        console.log('Failed to read eula.txt:', e);
+        throw e;
+    }
+
+}
+
+function acceptEula () {
+    let eula, line, lineNumber;
+
+    if (minecraftAcceptedEula === 'false') {
+        console.log('Accepting EULA...');
+        try {
+            eula = fs.readFileSync(pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
+            for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
+                if (eula[lineNumber]) {
+                    line = eula[lineNumber].split('=');
+                    if (line.length == 2) {
+                        eula[lineNumber] = 'eula=true';
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('Failed to read eula.txt:', e);
+            throw e;
+        }
+
+        // write the eula.txt file
+        fs.writeFile(pathToMinecraftDirectory + '/eula.txt', eula.join('\n'), (err) => {
+            if (err) {
+                console.log('Failed to write eula.txt:', e);
+                throw e
+            }
+        });
+    }
+}
+
 // Convert name=value properties to JSON
 function convertPropertiesToObjects (props) {
     let properties = [],
@@ -433,7 +474,6 @@ function convertPropertiesToObjects (props) {
                 property.name = line[0];
                 property.value = line[1];
                 properties.push(property);
-                // console.log('property found:', property);
             }
         }
     }
@@ -619,7 +659,7 @@ app.post('/api/command', function(request, response) {
     //     return;
     // }
     let command = request.query,
-        ops, props, worldName, backupWorld;
+        worldName, backupWorld;
 
     if (command.command) {
         command = command.command;
@@ -628,21 +668,7 @@ app.post('/api/command', function(request, response) {
         // TODO: This means we need a permissions model
         //     linked between this server and the webapp making these requests - oof.
 
-        if (command === '/getOps') {
-            ops = getOps();
-
-            response.contentType('json');
-            response.json({
-                response: ops
-            });
-        } else if (command === '/getProps') {
-            props = getServerProperties();
-
-            response.contentType('json');
-            response.json({
-                response: props
-            });
-        } else if (command === '/start') {
+        if (command === '/start') {
             if (!minecraftStarted) {
                 startMinecraft(() => {
                     response.contentType('json');
@@ -752,13 +778,15 @@ if (osType.indexOf('Windows') !== -1) {
     exec('/usr/libexec/java_home', (err, stdout, stderr) => {
         if (err) {
             console.log('Could not set JAVA_HOME. Make sure Java is properly installed.');
-            return;
+            throw err;
         } else {
+            javaHome = stdout;
             app.listen(ipPort);
             console.log('Web app running.');
             getMinecraftVersions();
             // console.log('Using java from', stdout);
-            javaHome = stdout;
+            getEula();
+            acceptEula();
             startMinecraft(() => {
                 listMinecraftCommands(0);
             });
