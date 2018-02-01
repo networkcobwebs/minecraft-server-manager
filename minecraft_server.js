@@ -27,7 +27,9 @@ let pathToMinecraftDirectory = 'minecraft_server',
     osType = os.type();
 
 process.on('exit', function() {
-    stopMinecraft();
+    if (minecraftStarted) {
+        stopMinecraft();
+    }
 });
 
 function bufferMinecraftOutput (d) {
@@ -88,7 +90,19 @@ function checkForMinecraftToBeStarted (checkCount, callback) {
         }
     } else {
         while( (line = minecraftOutput.shift()) !== undefined ) {
-            if (line.indexOf('FAILED') !== -1) {
+            if (line.indexOf('eula.txt') !== -1) {
+                minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                minecraftOutput.length = 0;
+                minecraftServerOutputCaptured = false;
+                acceptEula();
+                startMinecraft(callback);
+            } else if (line.toLowerCase().indexOf('failed') !== -1) {
+                console.log('An error occurred starting Minecraft. Check the Minecraft log.');
+                minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                minecraftOutput.length = 0;
+                minecraftServerOutputCaptured = false;
+                process.exit(1);
+            } else if (line.toLowerCase().indexOf('stopping server') !== -1) {
                 console.log('An error occurred starting Minecraft. Check the Minecraft log.');
                 minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
                 minecraftOutput.length = 0;
@@ -146,6 +160,8 @@ function stopMinecraft (callback) {
                 stopMinecraft(callback);
              }, 100);
         }
+    } else {
+        callback();
     }
 }
 
@@ -430,7 +446,7 @@ function getEula () {
 function acceptEula () {
     let eula, line, lineNumber;
 
-    if (minecraftAcceptedEula === 'false') {
+    if (minecraftAcceptedEula === 'false' || !minecraftAcceptedEula) {
         console.log('Accepting EULA...');
         try {
             eula = fs.readFileSync(pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
@@ -453,6 +469,7 @@ function acceptEula () {
                 console.log('Failed to write eula.txt:', e);
                 throw e
             }
+            minecraftAcceptedEula = true;
         });
     }
 }
@@ -551,6 +568,7 @@ app.get('/api/status', function (request, response) {
             minecraftOnline: true,
             minecraftUptime: mcuptime,
             minecraftVersion: minecraftCurrentVersion,
+            minecraftAcceptedEula: minecraftAcceptedEula,
             uptime: uptime
         });
     } else {
@@ -785,9 +803,9 @@ if (osType.indexOf('Windows') !== -1) {
             console.log('Web app running.');
             getMinecraftVersions();
             // console.log('Using java from', stdout);
-            getEula();
-            acceptEula();
             startMinecraft(() => {
+                getEula();
+                // acceptEula();
                 listMinecraftCommands(0);
             });
         }
