@@ -6,6 +6,13 @@ import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
 import * as Colors from 'material-ui/colors';
 import Tabs, { Tab } from 'material-ui/Tabs';
 import AppBar from 'material-ui/AppBar';
+import Button from 'material-ui/Button';
+import Dialog, {
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from 'material-ui/Dialog';
 
 import Dashboard from './Dashboard/Dashboard.js';
 import Players from './Players/Players.js';
@@ -39,6 +46,7 @@ class App extends Component {
             debug: debug,
             value: 0,
             minecraftStatus: {},
+            eulaOpen: true,
             minecraftServerProperties: [],
             minecraftServerBannedIps: [],
             minecraftServerBannedPlayers: [],
@@ -417,6 +425,44 @@ class App extends Component {
         return { name: player };
     }
 
+    handleEulaOpen = () => {
+      this.setState({ eulaOpen: true });
+    };
+  
+    handleEulaClose = () => {
+      this.setState({ eulaOpen: false });
+    };
+
+    displayEulaDialog () {
+        let minecraftStatus = this.state.minecraftStatus;
+
+        if (!minecraftStatus.minecraftAcceptedEula) {
+            return (
+                <Dialog
+                    open={this.state.eulaOpen}
+                    onClose={this.handleEulaClose}>
+                    <DialogTitle>{"Accept Minecraft End User License Agreement?"}</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            By using this application, you agree to the terms of the Minecraft end user
+                            license agreement, available <a href={ minecraftStatus.minecraftEulaUrl }>here</a>.
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.handleEulaClose} color="primary">
+                        Disagree
+                        </Button>
+                        <Button onClick={this.handleEulaClose} color="primary" autoFocus>
+                        Agree
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            );
+        } else {
+            return <div></div>
+        }
+    }
+    
     render () {
         return (
             <MuiThemeProvider theme={ getTheme() }>
@@ -440,6 +486,7 @@ class App extends Component {
                 </div> }
                 {/* TODO Preferences (poll times, start Minecraft always, updates, etc.) */}
                 { this.state.value === 3 && <About /> }
+                { this.displayEulaDialog() }
             </MuiThemeProvider>
         );
     };

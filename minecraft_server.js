@@ -1,6 +1,6 @@
 const bodyParser = require('body-parser');
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const spawn = require('child_process').spawn;
 const exec = require('child_process').exec;
@@ -187,7 +187,7 @@ function checkForMinecraftToBeStopped (checkCount, callback) {
                 minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
                 minecraftServerOutputCaptured = false;
                 minecraftServerProcess.kill();
-                miencraftOutput.length = 0;
+                minecraftOutput.length = 0;
                 if (typeof callback === 'function') {
                     callback();
                 }
@@ -426,13 +426,13 @@ function getEula () {
             if (eula[lineNumber]) {
                 eulaUrlLine = eula[lineNumber].split('https://');
                 if (eulaUrlLine.length == 2) {
-                    minecraftEulaUrl = eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
-                    console.log('Minecraft EULA: https://' + minecraftEulaUrl);
+                    minecraftEulaUrl = 'https://' + eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
+                    console.log('Minecraft EULA: ' + minecraftEulaUrl);
                 }
                 line = eula[lineNumber].split('=');
                 if (line.length == 2) {
-                    minecraftAcceptedEula = line[1];
-                    console.log('EULA accepted?', minecraftAcceptedEula);
+                    minecraftAcceptedEula = !!JSON.parse(line[1]);
+                    // console.log('EULA accepted?', minecraftAcceptedEula);
                 }
             }
         }
@@ -533,6 +533,33 @@ function createTimestamp (aDate) {
     return theDate;
 }
 
+function deleteWorld (worldName, backupWorld) {
+    worldName = worldName || 'world';
+    backupWorld = backupWorld || false;
+    
+    try {
+        // see if dir exists
+        fs.access(__dirname + '/' + pathToMinecraftDirectory + '/' + worldName,
+            fs.F_OK | fs.R_OK | fs.W_OK,
+            function (err) {
+                console.log('path to be deleted: ' + pathToMinecraftDirectory + '/' + worldName);
+                if (!err) {
+                    if (backupWorld) {
+                        // TODO: back it up
+                    }
+                    fs.removeSync(pathToMinecraftDirectory + '/' + worldName);
+                    console.log('World deleted.');
+                } else {
+                    console.log('An error occurred deleting the world:', err);
+                }
+            }
+        );
+    }
+    catch (e) {
+        console.log('An error occurred accessing world data:', e);
+    }
+}
+
 // Create an express web app - HTTPS?
 let app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -569,6 +596,7 @@ app.get('/api/status', function (request, response) {
             minecraftUptime: mcuptime,
             minecraftVersion: minecraftCurrentVersion,
             minecraftAcceptedEula: minecraftAcceptedEula,
+            minecraftEulaUrl: minecraftEulaUrl,
             uptime: uptime
         });
     } else {
@@ -697,7 +725,7 @@ app.post('/api/command', function(request, response) {
             } else {
                 response.contentType('json');
                 response.json({
-                    response: 'Server already running'
+                    response: 'Server already running.'
                 });
             }
         } else if (command === '/stop') {
@@ -711,39 +739,25 @@ app.post('/api/command', function(request, response) {
             console.log('Gonna nuke the planet. Literally.');
             worldName = request.query.worldName || 'world';
             backupWorld = request.query.backup || false;
-            console.log('path to be deleted: ', __dirname + '/' + pathToMinecraftDirectory + '/' + worldName);
-            if (!minecraftStarted) {
+            if (minecraftStarted) {
                 stopMinecraft(() => {
-                    console.log('Stopped Minecraft server.');
+                    deleteWorld(worldName, backupWorld);
+                    startMinecraft(() => {
+                        // Starting Minecraft will create a new world by default, so respond to the command accordingly
+                        response.contentType('json');
+                        response.json({
+                            response: 'New world created.'
+                        });
+                    });
                 });
             }
-            // This try/catch may need to move into the ^^ callback passed to stopMinecraft
-            try {
-                // see if dir exists
-                fs.access(__dirname + '/' + pathToMinecraftDirectory + '/' + worldName,
-                    fs.F_OK | fs.R_OK | fs.W_OK,
-                    function (err) {
-                        if (!err) {
-                            if (backupWorld) {
-                                // TODO: back it up
-                            }
-                            fs.rmdirSync(pathToMinecraftDirectory + '/' + worldName);
+            else {
+                deleteWorld();
 
-                            startMinecraft(() => {
-                                // Starting Minecraft will create a new world by default, so respond to the command accordingly
-                                response.contentType('json');
-                                response.json({
-                                    response: 'New world created'
-                                });
-                            });
-                        } else {
-                            console.log('An error occurred deleteing the existing world', err);
-                        }
-                    }
-                );
-            }
-            catch (e) {
-                console.log('An error occurred accessing the world data:', e);
+                response.contentType('json');
+                response.json({
+                    response: 'New world will be created at startup.'
+                });
             }
         } else {
             if (minecraftStarted) {

@@ -52,15 +52,25 @@ function restoreMinecraftWorld (event) {
 }
 
 function newMinecraftWorld (event) {
+    // axios({
+    //     method: 'get',
+    //     url: '/api/status'
+    // }).then(res => {
+    //     let minecraftStatus = res.data;
+    //     console.log('minecraftStatus:', minecraftStatus);
+    // },
+    // err => {
+    //     console.log('An error occurred contacting the Minecraft server.', err);
+    // });
+
     axios({
-        method: 'get',
-        url: `/api/status`
+        method: 'post',
+        url: '/api/command',
+        params: {
+            command: '/newWorld'
+        }
     }).then(res => {
-        let minecraftStatus = res.data;
-        console.log('minecraftStatus:', minecraftStatus);
-    },
-    err => {
-        console.log('An error occurred contacting the Minecraft server.', err);
+        console.log('Response:', res);
     });
 }
 
