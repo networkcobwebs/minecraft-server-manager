@@ -22,20 +22,55 @@ const styles = {
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '0.95rem'
     }
-  };
+};
+
+function handleBackupDialogOpen () {
+    this.setState({ backupDialogOpen: true });
+};
+
+function handleBackupDialogClose () {
+    this.setState({ backupDialogOpen: false });
+};
+
+function displayBackupDialog () {
+    let minecraftStatus = this.state.minecraftStatus;
+
+    return (
+        <Dialog
+            open={this.state.backupDialogOpen}
+            onClose={this.handleBackupDialogClose}>
+            <DialogTitle>{"Backup First?"}</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    Backup the world first?
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={this.handleBackupDialogClose} color="primary">
+                    Cancel
+                </Button>
+                <Button onClick={this.handleBackupDialogClose} color="primary">
+                    No
+                </Button>
+                <Button onClick={this.handleBackupDialogClose} color="primary" autoFocus>
+                    Yes
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
   
-  function backupMinecraftWorld (event) {
-      axios({
-          method: 'get',
-          url: `/api/status`
-      }).then(res => {
-          let minecraftStatus = res.data;
-          console.log('minecraftStatus:', minecraftStatus);
-      },
-      err => {
-          console.log('An error occurred contacting the Minecraft server.', err);
-      });
-  }
+function backupMinecraftWorld (event) {
+    axios({
+        method: 'post',
+        url: '/api/command',
+        params: {
+            command: '/backupWorld'
+        }
+    }).then(res => {
+        this.setState({ backupDialogOpen: false });
+    });
+}
 
 function restoreMinecraftWorld (event) {
     // TODO query for a list of backups
@@ -52,22 +87,12 @@ function restoreMinecraftWorld (event) {
 }
 
 function newMinecraftWorld (event) {
-    // axios({
-    //     method: 'get',
-    //     url: '/api/status'
-    // }).then(res => {
-    //     let minecraftStatus = res.data;
-    //     console.log('minecraftStatus:', minecraftStatus);
-    // },
-    // err => {
-    //     console.log('An error occurred contacting the Minecraft server.', err);
-    // });
-
     axios({
         method: 'post',
         url: '/api/command',
         params: {
-            command: '/newWorld'
+            command: '/newWorld',
+            backup: false
         }
     }).then(res => {
         console.log('Response:', res);

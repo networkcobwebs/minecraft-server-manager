@@ -1,6 +1,7 @@
 const bodyParser = require('body-parser');
 const express = require('express');
 const fs = require('fs-extra');
+const archiver = require('archiver');
 const path = require('path');
 const spawn = require('child_process').spawn;
 const exec = require('child_process').exec;
@@ -94,8 +95,9 @@ function checkForMinecraftToBeStarted (checkCount, callback) {
                 minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
                 minecraftOutput.length = 0;
                 minecraftServerOutputCaptured = false;
-                acceptEula();
-                startMinecraft(callback);
+                // acceptEula();
+                // startMinecraft(callback);
+                stopMinecraft(callback);
             } else if (line.toLowerCase().indexOf('failed') !== -1) {
                 console.log('An error occurred starting Minecraft. Check the Minecraft log.');
                 minecraftServerProcess.stdout.removeListener('data', bufferMinecraftOutput);
@@ -533,6 +535,58 @@ function createTimestamp (aDate) {
     return theDate;
 }
 
+function backupWorld (worldName) {
+    worldName = worldName || 'world';
+
+    let backupDir = pathToMinecraftDirectory + '/worldBackups';
+    
+    fs.ensureDirSync(backupDir);
+    
+    try {
+        fs.access(backupDir, fs.F_OK | fs.R_OK | fs.W_OK, function (err) {
+            if (!err) {
+                let archive = archiver('zip', {
+                    zlib: { level: 9 } // Sets the compression level.
+                });
+                let output = fs.createWriteStream(backupDir + '/' + worldName + '_' + createDateTimestamp() + '.zip');
+
+                archive.on('error', function(err) {
+                    throw err;
+                });
+                output.on('close', function() {
+                    console.log(archive.pointer() + ' total bytes');
+                    console.log('Archive has been finalized and the output file descriptor has closed.');
+                });
+
+                fs.ensureDirSync(backupDir);
+                if (minecraftStarted) {
+                    stopMinecraft(() => {
+                        // zip world dir
+                        archive.pipe(output);
+                        archive.directory(pathToMinecraftDirectory + '/' + worldName, false);
+                        archive.finalize();
+                        startMinecraft(() => {
+                            console.log('World backed up.');
+                        });
+                    });
+                } else {
+                    // zip world dir
+                    archive.pipe(output);
+                    archive.directory(pathToMinecraftDirectory + '/' + worldName, false);
+                    archive.finalize();
+                    console.log('World backed up.');
+                }
+            } else {
+                console.log('An error occurred backing up the world:', err);
+            }
+        });
+    } catch (e) {
+        console.log('Backup directory does not exist, creating.');
+        fs.ensureDirSync(backupDir);
+        output.close();
+    }
+}
+
 function deleteWorld (worldName, backupWorld) {
     worldName = worldName || 'world';
     backupWorld = backupWorld || false;
@@ -574,14 +628,15 @@ app.use(function(request, response, next) {
     response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
     response.setHeader('Access-Control-Allow-Credentials', true);
 
-    if (!minecraftStarted && request.query.command !== '/start' && request.query.command !== '/getOps' && request.query.command !== '/getProps' && request.query.command !== '/newWorld') {
-        response.contentType('json');
-        response.json({
-            response: 'Failed to connect to Minecraft Server'
-        });
-    } else {
+    // TODO: Better filtering
+    // if (!minecraftStarted && request.query.command !== '/start' && request.query.command !== '/getOps' && request.query.command !== '/getProps' && request.query.command !== '/newWorld') {
+        // response.contentType('json');
+        // response.json({
+        //     response: 'Failed to connect to Minecraft Server'
+        // });
+    // } else {
         next();
-    }
+    // }
 });
 
 app.get('/api/status', function (request, response) {
@@ -589,23 +644,15 @@ app.get('/api/status', function (request, response) {
         uptime = rightNow - startTime,
         mcuptime = minecraftStartTime? rightNow - minecraftStartTime : null;
     
-    if (minecraftStarted) {
-        response.contentType('json');
-        response.json({
-            minecraftOnline: true,
-            minecraftUptime: mcuptime,
-            minecraftVersion: minecraftCurrentVersion,
-            minecraftAcceptedEula: minecraftAcceptedEula,
-            minecraftEulaUrl: minecraftEulaUrl,
-            uptime: uptime
-        });
-    } else {
-        response.contentType('json');
-        response.json({
-            minecraftOnline: false,
-            uptime: uptime
-        });
-    }
+    response.contentType('json');
+    response.json({
+        minecraftOnline: minecraftStarted,
+        minecraftUptime: mcuptime,
+        minecraftVersion: minecraftCurrentVersion,
+        minecraftAcceptedEula: minecraftAcceptedEula,
+        minecraftEulaUrl: minecraftEulaUrl,
+        uptime: uptime
+    });
 });
 
 app.get('/api/properties', function (request, response) {
@@ -697,6 +744,28 @@ app.get('/api/command', function (request, response) {
     }
 });
 
+app.post('/api/acceptEula', function(request, response) {    
+    acceptEula();
+    
+    startMinecraft(() => {
+        let rightNow = Date.now(),
+            uptime = rightNow - startTime,
+            mcuptime = minecraftStartTime? rightNow - minecraftStartTime : null;
+
+        listMinecraftCommands(0);
+
+        response.contentType('json');
+        response.json({
+            minecraftOnline: minecraftStarted,
+            minecraftUptime: mcuptime,
+            minecraftVersion: minecraftCurrentVersion,
+            minecraftAcceptedEula: minecraftAcceptedEula,
+            minecraftEulaUrl: minecraftEulaUrl,
+            uptime: uptime
+        });
+    });
+});
+
 // Handle Minecraft Server Command requests
 app.post('/api/command', function(request, response) {
     // TODO: Cancel processing if the message was not sent by an admin/allowed address
@@ -705,7 +774,7 @@ app.post('/api/command', function(request, response) {
     //     return;
     // }
     let command = request.query,
-        worldName, backupWorld;
+        worldName, backupToo;
 
     if (command.command) {
         command = command.command;
@@ -735,13 +804,21 @@ app.post('/api/command', function(request, response) {
                     minecraftOnline: false
                 });
             });
+        } else if (command === '/backupWorld') {
+            worldName = request.query.worldName || 'world';
+            
+            backupWorld(worldName);
+            response.contentType('json');
+            response.json({
+                response: 'World backup complete.'
+            });
         } else if (command === '/newWorld') {
             console.log('Gonna nuke the planet. Literally.');
             worldName = request.query.worldName || 'world';
-            backupWorld = request.query.backup || false;
+            backupToo = request.query.backup || false;
             if (minecraftStarted) {
                 stopMinecraft(() => {
-                    deleteWorld(worldName, backupWorld);
+                    deleteWorld(worldName, backupToo);
                     startMinecraft(() => {
                         // Starting Minecraft will create a new world by default, so respond to the command accordingly
                         response.contentType('json');
@@ -819,7 +896,6 @@ if (osType.indexOf('Windows') !== -1) {
             // console.log('Using java from', stdout);
             startMinecraft(() => {
                 getEula();
-                // acceptEula();
                 listMinecraftCommands(0);
             });
         }

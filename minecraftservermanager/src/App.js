@@ -426,11 +426,16 @@ class App extends Component {
     }
 
     handleEulaOpen = () => {
-      this.setState({ eulaOpen: true });
+        this.setState({ eulaOpen: true });
     };
   
     handleEulaClose = () => {
-      this.setState({ eulaOpen: false });
+        axios({
+            method: 'post',
+            url: '/api/acceptEula'
+        }).then(res => {
+            this.setState({ eulaOpen: false });
+        });
     };
 
     displayEulaDialog () {

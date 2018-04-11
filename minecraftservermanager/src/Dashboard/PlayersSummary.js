@@ -6,11 +6,11 @@ import Table, {
     TableRow,
     TableCell,
 } from 'material-ui/Table';
-import Tooltip from 'material-ui/Tooltip';
+// import Tooltip from 'material-ui/Tooltip';
 
-import OpStatus from 'material-ui-icons/VerifiedUser';
-import NetworkOnline from 'material-ui-icons/SignalWifi4Bar';
-import NetworkOffline from 'material-ui-icons/SignalWifiOff';
+// import OpStatus from 'material-ui-icons/VerifiedUser';
+// import NetworkOnline from 'material-ui-icons/SignalWifi4Bar';
+// import NetworkOffline from 'material-ui-icons/SignalWifiOff';
 
 const styles = {
     container: {

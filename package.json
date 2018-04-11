@@ -21,6 +21,7 @@
     "url": "https://github.com/nickrnet/"
   },
   "dependencies": {
+    "archiver": "^2.1.1",
     "axios": "v0.17.1",
     "body-parser": "1.15.1",
     "express": "4.14.0",
