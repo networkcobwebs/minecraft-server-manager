@@ -12,17 +12,19 @@ let pathToMinecraftDirectory = 'minecraft_server',
     minecraftServerJar = 'minecraft_server.jar',
     minecraftServerProcess,
     minecraftServerLog = 'minecraft_server.log',
-    minecraftStarted, minecraftStartedTimer, minecraftStartTime,
-    minecraftStoppedTimer,
+    minecraftStarting, minecraftStarted, minecraftStartedTimer, minecraftStartTime,
+    minecraftStopping, minecraftStoppedTimer,
     minecraftOutput = [],
     minecraftServerOutputCaptured = false,
     minecraftCurrentVersion,
     minecraftCommands = [],
-    minecraftEulaUrl = '',
+    minecraftHelpPages,
+    minecraftFullHelp = [],
+    minecraftEulaUrl = 'https://account.mojang.com/documents/minecraft_eula',
     minecraftAcceptedEula = false,
     javaHome, javaMaxMem, javaMinMem,
     ipAddress = '127.0.0.1', // or 0.0.0.0 for all interfaces
-    ipPort = '3001',
+    ipPort = 3001,
     players, ops, serverProperties,
     startTime = Date.now(),
     osType = os.type();
@@ -57,6 +59,7 @@ function startMinecraft (callback) {
     });
 
     if (!minecraftServerOutputCaptured) {
+        minecraftStarting = true;
         minecraftServerOutputCaptured = true;
         minecraftOutput.length = 0;
         minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
@@ -65,6 +68,11 @@ function startMinecraft (callback) {
             clearTimeout(minecraftStartedTimer);
         }
     
+        minecraftStartedTimer = setTimeout(() => {
+            checkForMinecraftToBeStarted(0, callback);
+        }, 100);
+    } else if (minecraftStarting && minecraftServerOutputCaptured) {
+        clearTimeout(minecraftStartedTimer);
         minecraftStartedTimer = setTimeout(() => {
             checkForMinecraftToBeStarted(0, callback);
         }, 100);
@@ -144,6 +152,7 @@ function stopMinecraft (callback) {
     console.log('Stopping Minecraft server.');
     if (minecraftStarted) {
         if (!minecraftServerOutputCaptured) {
+            minecraftStopping = true;
             minecraftServerOutputCaptured = true;
             minecraftOutput.length = 0;
             minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
@@ -154,6 +163,11 @@ function stopMinecraft (callback) {
                 clearTimeout(minecraftStoppedTimer);
             }
 
+            minecraftStoppedTimer = setTimeout(() => {
+                checkForMinecraftToBeStopped(0, callback);
+            }, 1000);
+        } else if (minecraftStopping && minecraftServerOutputCaptured) {
+            clearTimeout(minecraftStoppedTimer);
             minecraftStoppedTimer = setTimeout(() => {
                 checkForMinecraftToBeStopped(0, callback);
             }, 1000);
@@ -323,10 +337,10 @@ function waitForHelpOutput (buffer, callback) {
 
             let part1 = line.split('Showing help page ');
             let part2 = part1[1].split(' ');
-            let maxPages = parseInt(part2[2]);
+            minecraftHelpPages = parseInt(part2[2]);
 
             minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
-            for (let i = 1; i <= maxPages; i++) {
+            for (let i = 1; i <= minecraftHelpPages; i++) {
                 minecraftServerProcess.stdin.write('/help ' + i + '\n');
             }
             setTimeout(() => {
@@ -336,6 +350,10 @@ function waitForHelpOutput (buffer, callback) {
                     let commandLine = line.split(' [Server thread/INFO]: ');
 
                     if (commandLine[1].indexOf('/') === 0) {
+                        let aThing = {}
+                        aThing.key = minecraftFullHelp.length;
+                        aThing.command = commandLine[1];
+                        minecraftFullHelp.push(aThing);
                         let commandLineSpaces = commandLine[1].split(' ');
                         let args = [];
                         let commands = [];
@@ -543,43 +561,38 @@ function backupWorld (worldName) {
     fs.ensureDirSync(backupDir);
     
     try {
-        fs.access(backupDir, fs.F_OK | fs.R_OK | fs.W_OK, function (err) {
-            if (!err) {
-                let archive = archiver('zip', {
-                    zlib: { level: 9 } // Sets the compression level.
-                });
-                let output = fs.createWriteStream(backupDir + '/' + worldName + '_' + createDateTimestamp() + '.zip');
+        fs.accessSync(backupDir, fs.F_OK | fs.R_OK | fs.W_OK);
 
-                archive.on('error', function(err) {
-                    throw err;
-                });
-                output.on('close', function() {
-                    console.log(archive.pointer() + ' total bytes');
-                    console.log('Archive has been finalized and the output file descriptor has closed.');
-                });
-
-                fs.ensureDirSync(backupDir);
-                if (minecraftStarted) {
-                    stopMinecraft(() => {
-                        // zip world dir
-                        archive.pipe(output);
-                        archive.directory(pathToMinecraftDirectory + '/' + worldName, false);
-                        archive.finalize();
-                        startMinecraft(() => {
-                            console.log('World backed up.');
-                        });
-                    });
-                } else {
-                    // zip world dir
-                    archive.pipe(output);
-                    archive.directory(pathToMinecraftDirectory + '/' + worldName, false);
-                    archive.finalize();
-                    console.log('World backed up.');
-                }
-            } else {
-                console.log('An error occurred backing up the world:', err);
-            }
+        let archive = archiver('zip', {
+            zlib: { level: 9 } // Sets the compression level.
         });
+        let output = fs.createWriteStream(backupDir + '/' + worldName + '_' + createDateTimestamp() + '.zip');
+
+        archive.on('error', function(err) {
+            throw err;
+        });
+        output.on('close', function() {
+            startMinecraft(() => {
+                console.log('Backup size: ' + archive.pointer() + ' total bytes');
+                // console.log('Archive has been finalized and the output file descriptor has closed.');
+                console.log('World backed up.');
+            });
+        });
+
+        if (minecraftStarted) {
+            stopMinecraft(() => {
+                // zip world dir
+                archive.pipe(output);
+                archive.directory(pathToMinecraftDirectory + '/' + worldName, false);
+                archive.finalize();
+            });
+        } else {
+            // zip world dir
+            archive.pipe(output);
+            archive.directory(pathToMinecraftDirectory + '/' + worldName, false);
+            archive.finalize();
+            console.log('World backed up.');
+        }
     } catch (e) {
         console.log('Backup directory does not exist, creating.');
         fs.ensureDirSync(backupDir);
@@ -592,22 +605,12 @@ function deleteWorld (worldName, backupWorld) {
     backupWorld = backupWorld || false;
     
     try {
-        // see if dir exists
-        fs.access(__dirname + '/' + pathToMinecraftDirectory + '/' + worldName,
-            fs.F_OK | fs.R_OK | fs.W_OK,
-            function (err) {
-                console.log('path to be deleted: ' + pathToMinecraftDirectory + '/' + worldName);
-                if (!err) {
-                    if (backupWorld) {
-                        // TODO: back it up
-                    }
-                    fs.removeSync(pathToMinecraftDirectory + '/' + worldName);
-                    console.log('World deleted.');
-                } else {
-                    console.log('An error occurred deleting the world:', err);
-                }
-            }
-        );
+        fs.accessSync(__dirname + '/' + pathToMinecraftDirectory + '/' + worldName,
+            fs.F_OK | fs.R_OK | fs.W_OK);
+
+        console.log('path to be deleted: ' + pathToMinecraftDirectory + '/' + worldName);
+        fs.removeSync(pathToMinecraftDirectory + '/' + worldName);
+        console.log('World deleted.');
     }
     catch (e) {
         console.log('An error occurred accessing world data:', e);
@@ -707,6 +710,20 @@ app.get('/api/userCache', function (request, response) {
     response.json({
         userCache: userCache
     });
+});
+
+app.get('/api/commands', function (request, response) {
+    if (minecraftFullHelp) {
+        response.contentType('json');
+        response.json({
+            commands: minecraftFullHelp
+        });
+    } else {
+        response.contentType('json');
+        response.json({
+            commands: null
+        })
+    }
 });
 
 app.get('/api/command', function (request, response) {
@@ -829,7 +846,7 @@ app.post('/api/command', function(request, response) {
                 });
             }
             else {
-                deleteWorld();
+                deleteWorld(worldName, backupToo);
 
                 response.contentType('json');
                 response.json({
@@ -889,11 +906,11 @@ if (osType.indexOf('Windows') !== -1) {
             console.log('Could not set JAVA_HOME. Make sure Java is properly installed.');
             throw err;
         } else {
+            // console.log('Using java from', stdout);
             javaHome = stdout;
             app.listen(ipPort);
             console.log('Web app running.');
             getMinecraftVersions();
-            // console.log('Using java from', stdout);
             startMinecraft(() => {
                 getEula();
                 listMinecraftCommands(0);

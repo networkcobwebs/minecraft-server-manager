@@ -1,18 +1,21 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import axios from 'axios';
 
-import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
-import * as Colors from 'material-ui/colors';
-import Tabs, { Tab } from 'material-ui/Tabs';
-import AppBar from 'material-ui/AppBar';
-import Button from 'material-ui/Button';
-import Dialog, {
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from 'material-ui/Dialog';
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import { blue800 } from '@material-ui/core/colors';
+import { blue300 } from '@material-ui/core/colors';
+import { deepOrangeA200 } from '@material-ui/core/colors';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
+import AppBar from '@material-ui/core/AppBar';
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Snackbar from '@material-ui/core/Snackbar';
 
 import Dashboard from './Dashboard/Dashboard.js';
 import Players from './Players/Players.js';
@@ -25,10 +28,10 @@ const debug = false;
 const getTheme = () => {
     const theme = createMuiTheme({
         "palette": {
-            "primary": Colors.blue800,
-            "primary2r": Colors.blue300,
-            "accent": Colors.deepOrangeA200,
-            "pickerHeader": Colors.blue800
+            "primary": blue800,
+            "primary2r": blue300,
+            "accent": deepOrangeA200,
+            "pickerHeader": blue800
         },
         "tableRowColumn": {
             "height": 60
@@ -36,9 +39,9 @@ const getTheme = () => {
     });
     
     return theme;
-}
+};
 
-class App extends Component {
+class App extends React.Component {
     constructor (props) {
         super(props);
 
@@ -46,13 +49,15 @@ class App extends Component {
             debug: debug,
             value: 0,
             minecraftStatus: {},
-            eulaOpen: true,
+            eulaOpen: false,
+            minecraftEulaUrl: 'https://account.mojang.com/documents/minecraft_eula',
             minecraftServerProperties: [],
             minecraftServerBannedIps: [],
             minecraftServerBannedPlayers: [],
             minecraftServerWhitelist: [],
             minecraftServerOps: [],
             minecraftServerUserCache: [],
+            minecraftCommands: [],
             playerSummary: '',
             playerNames: []
         };
@@ -60,7 +65,7 @@ class App extends Component {
             console.log('App state:', this.state);
         }
         this.getMinecraftStatus(25);
-        this.getMinecraftPlayers(50);
+        this.getMinecraftPlayers(25);
     };
 
     componentWillUnmount () {
@@ -72,6 +77,16 @@ class App extends Component {
     
     handleChange = (event, value) => {
         this.setState({ value });
+    };
+      
+    getMinecraftCommands = () => {
+        return axios({
+            method: 'get',
+            url: '/api/commands'
+        }).then(res => {
+            console.log('Commands:', res.data.commands);
+            this.setState({ minecraftCommands: res.data.commands });
+        });
     };
 
     getMinecraftStatus (pingWait) {
@@ -102,6 +117,7 @@ class App extends Component {
             axios(`/api/status`).then(res => {
                 let minecraftStatus = res.data;
                 this.setState({ minecraftStatus });
+                this.setState({ eulaOpen: minecraftStatus.minecraftAcceptedEula });
                 
                 this.getMinecraftServerProperties();
                 this.getMinecraftServerBannedIps();
@@ -110,6 +126,10 @@ class App extends Component {
                 this.getMinecraftServerOps();
                 this.getMinecraftServerUserCache();
                 this.getMinecraftPlayers();
+
+                if (!this.state.minecraftCommands || this.state.minecraftCommands.length === 0) {
+                    this.getMinecraftCommands();
+                }
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -310,7 +330,7 @@ class App extends Component {
             pingTime,
             minecraftStatus = this.state.minecraftStatus;
 
-        // normally ping every 10 seconds
+        // normally ping every 5 seconds
         // if a fast ping was requested (from constructor/DidMount), honor it
         // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds
         // once re/successful, reset to 10 seconds
@@ -419,56 +439,53 @@ class App extends Component {
                 this.getMinecraftPlayers();
             }
         }, pingTime);
-    }
+    };
 
     objectifyPlayer (player) {
         return { name: player };
-    }
+    };
 
     handleEulaOpen = () => {
         this.setState({ eulaOpen: true });
     };
   
-    handleEulaClose = () => {
+    handleAcceptEula = () => {
         axios({
             method: 'post',
             url: '/api/acceptEula'
         }).then(res => {
+            console.log('res:', res);
+            this.setState({ eulaOpen: false });
+        }, error => {
+            console.log('error:', error);
+            this.setState({ eulaOpen: false });
+        }).catch(error => {
+            console.log('error:', error);
             this.setState({ eulaOpen: false });
         });
     };
-
-    displayEulaDialog () {
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (!minecraftStatus.minecraftAcceptedEula) {
-            return (
-                <Dialog
-                    open={this.state.eulaOpen}
-                    onClose={this.handleEulaClose}>
-                    <DialogTitle>{"Accept Minecraft End User License Agreement?"}</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            By using this application, you agree to the terms of the Minecraft end user
-                            license agreement, available <a href={ minecraftStatus.minecraftEulaUrl }>here</a>.
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.handleEulaClose} color="primary">
-                        Disagree
-                        </Button>
-                        <Button onClick={this.handleEulaClose} color="primary" autoFocus>
-                        Agree
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            );
-        } else {
-            return <div></div>
-        }
-    }
+  
+    handleDeclineEula = () => {
+        axios({
+            method: 'post',
+            url: '/api/command?command=/stop'
+        }).then(res => {
+            console.log('res:', res);
+            this.setState({ eulaOpen: false });
+        }, error => {
+            console.log('error:', error);
+            this.setState({ eulaOpen: false });
+        }).catch(error => {
+            console.log('error:', error);
+            this.setState({ eulaOpen: false });
+        });
+    };
     
     render () {
+        let minecraftStatus = this.state.minecraftStatus,
+            vertical = 'top',
+            horizontal = 'left';
+
         return (
             <MuiThemeProvider theme={ getTheme() }>
                 <AppBar position="static">
@@ -478,23 +495,44 @@ class App extends Component {
                         centered>
                         <Tab label="Dashboard" />
                         <Tab label="Players" />
-                        <Tab label="Server Control" />
+                        <Tab label="World Controls" />
+                        <Tab label="Server Controls" />
                         {/* <Tab label="Preferences" /> */}
                         <Tab label="About" />
                     </Tabs>
                 </AppBar>
                 { this.state.value === 0 && <Dashboard minecraftState = { this.state } /> }
                 { this.state.value === 1 && <Players /> }
-                { this.state.value === 2 && <div>
-                    <WorldControls minecraftState = { this.state } />
-                    <ServerControls minecraftState = { this.state } />
-                </div> }
+                { this.state.value === 2 && <WorldControls minecraftState = { this.state } /> }
+                { this.state.value === 3 && <ServerControls minecraftState = { this.state } /> }
                 {/* TODO Preferences (poll times, start Minecraft always, updates, etc.) */}
-                { this.state.value === 3 && <About /> }
-                { this.displayEulaDialog() }
+                { this.state.value === 4 && <About /> }
+                <Snackbar
+                    anchorOrigin = {{ vertical, horizontal }}
+                    open = { !minecraftStatus.minecraftOnline }
+                    message = {<span id="message-id">Minecraft is currently stopped.</span>}
+                />
+                <Dialog
+                    open = { !minecraftStatus.minecraftAcceptedEula }>
+                    <DialogTitle>{"Accept Minecraft End User License Agreement?"}</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            By using this application, you agree to the terms of the Minecraft end user
+                            license agreement, available <a href={ minecraftStatus.minecraftEulaUrl || this.state.minecraftEulaUrl }>here</a>.
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick = { this.handleDeclineEula } color="primary">
+                        Disagree
+                        </Button>
+                        <Button onClick = { this.handleAcceptEula } color="primary" autoFocus>
+                        Agree
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </MuiThemeProvider>
         );
     };
-}
+};
 
 export default App;

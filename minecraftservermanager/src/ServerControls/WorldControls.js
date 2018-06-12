@@ -1,141 +1,207 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import axios from 'axios';
 
-import ExpansionPanel, {
-    ExpansionPanelSummary,
-    ExpansionPanelDetails,
-  } from 'material-ui/ExpansionPanel';
-import IconButton from 'material-ui/IconButton';
-import Tooltip from 'material-ui/Tooltip';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import FormControl from '@material-ui/core/FormControl';
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
+import Divider from '@material-ui/core/Divider';
+import Tooltip from '@material-ui/core/Tooltip';
+import Backup from '@material-ui/icons/Backup';
+import Restore from '@material-ui/icons/Restore';
+import New from '@material-ui/icons/Autorenew';
+import Help from '@material-ui/icons/Help';
 
-import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
-import Backup from 'material-ui-icons/Backup';
-import Restore from 'material-ui-icons/Restore';
-import New from 'material-ui-icons/Autorenew';
+import BackupBeforeNewDialog from './BackupBeforeNewDialog.js';
+import RawMinecraftCommandDialog from './RawMinecraftCommandDialog.js';
+import ProgressDialog from './ProgressDialog.js';
 
 const styles = {
     container: {
         margin: 10,
-        padding: 10,
-        // border: '2px solid gray',
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '0.95rem'
     }
 };
-
-function handleBackupDialogOpen () {
-    this.setState({ backupDialogOpen: true });
-};
-
-function handleBackupDialogClose () {
-    this.setState({ backupDialogOpen: false });
-};
-
-function displayBackupDialog () {
-    let minecraftStatus = this.state.minecraftStatus;
-
-    return (
-        <Dialog
-            open={this.state.backupDialogOpen}
-            onClose={this.handleBackupDialogClose}>
-            <DialogTitle>{"Backup First?"}</DialogTitle>
-            <DialogContent>
-                <DialogContentText>
-                    Backup the world first?
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={this.handleBackupDialogClose} color="primary">
-                    Cancel
-                </Button>
-                <Button onClick={this.handleBackupDialogClose} color="primary">
-                    No
-                </Button>
-                <Button onClick={this.handleBackupDialogClose} color="primary" autoFocus>
-                    Yes
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
-  
-function backupMinecraftWorld (event) {
-    axios({
-        method: 'post',
-        url: '/api/command',
-        params: {
-            command: '/backupWorld'
+    
+export default class WorldControls extends React.Component {
+    constructor (props) {
+        super(props);
+        
+        this.state = {
+            backupDialogOpen: false,
+            helpDialogOpen: false,
+            progressDialogOpen: false,
+            rawMinecraftCommandDialogOpen: false
         }
-    }).then(res => {
+    }
+    
+    openBackupBeforeNewDialog = () => {
+        this.setState({ backupDialogOpen: true, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false });
+    };
+    
+    closeBackupDialog = () => {
         this.setState({ backupDialogOpen: false });
-    });
-}
+    };
+    
+    openProgressDialog = (e) => {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true, rawMinecraftCommandDialogOpen: false });
+    };
+    
+    closeProgressDialog = (e) => {
+        this.setState({ progressDialogOpen: false });
+    };
 
-function restoreMinecraftWorld (event) {
-    // TODO query for a list of backups
-    axios({
-        method: 'get',
-        url: `/api/status`
-    }).then(res => {
-        let minecraftStatus = res.data;
-        console.log('minecraftStatus:', minecraftStatus);
-    },
-    err => {
-        console.log('An error occurred contacting the Minecraft server.', err);
-    });
-}
+    openRawCommandDialog = (e) => {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: true });
+    };
 
-function newMinecraftWorld (event) {
-    axios({
-        method: 'post',
-        url: '/api/command',
-        params: {
-            command: '/newWorld',
-            backup: false
-        }
-    }).then(res => {
-        console.log('Response:', res);
-    });
-}
+    closeRawCommandDialog = (e) => {
+        this.setState({ rawMinecraftCommandDialogOpen: false });
+    };
 
-class WorldControls extends Component {
+    onClear = (e) => {
+        //
+    };
+
+    onSendCommand = (e) => {
+        //
+    };
+      
+    backupMinecraftWorld = () => {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true });
+        axios({
+            method: 'post',
+            url: '/api/command',
+            params: {
+                command: '/backupWorld'
+            }
+        }).then(res => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ progressDialogOpen: false });
+        });
+    };
+    
+    newMinecraftWorld = () => {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true });
+        axios({
+            method: 'post',
+            url: '/api/command',
+            params: {
+                command: '/newWorld',
+                backup: false
+            }
+        }).then(res => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ progressDialogOpen: false });
+        });
+    };
+
+    backupAndNewMinecraftWorld = () => {
+        this.backupMinecraftWorld();
+        this.newMinecraftWorld();
+    };
+    
+    restoreMinecraftWorld = () => {
+        // TODO query for a list of backups; fetch status for now as 'noop'
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true });
+        axios({
+            method: 'get',
+            url: `/api/status`
+        }).then(res => {
+            let minecraftStatus = res.data;
+            console.log('minecraftStatus:', minecraftStatus);
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ progressDialogOpen: false });
+        });
+    };
+
+    backupAndRestoreMinecraftWorld = () => {
+        // TODO Fix timing issue of failed backup then don't nuke
+        this.backupMinecraftWorld();
+        this.restoreMinecraftWorld();
+    };
+
     render () {
-        let minecraftState = this.props.minecraftState;
-
         return (
-            <div style={ styles.container }>
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+            <div>
+                <BackupBeforeNewDialog 
+                    backupAndNew = { this.backupAndNewMinecraftWorld } 
+                    newOnly = { this.backupMinecraftWorld }
+                    cancelDialog = { this.closeBackupDialog }
+                    open = { this.state.backupDialogOpen }
+                />
+                <ProgressDialog
+                    open = { this.state.progressDialogOpen }
+                    onClose = { this.closeProgressDialog }
+                />
+                <RawMinecraftCommandDialog
+                    open = { this.state.rawMinecraftCommandDialogOpen }
+                    onClose = { this.closeRawCommandDialog }
+                    minecraftCommands = { this.props.minecraftState.minecraftCommands }
+                />
+                <ExpansionPanel style = { styles.container } defaultExpanded>
+                    <ExpansionPanelSummary expandIcon = { <ExpandMoreIcon /> }>
                         World Controls
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
-                        { !minecraftState ? <div>Waiting on Minecraft server...</div> : 
-                        <div>
-                            <IconButton
-                                onClick = { backupMinecraftWorld }>
-                                <Tooltip title="Backup">
-                                    <Backup />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton
-                                onClick = { restoreMinecraftWorld }>
-                                <Tooltip title="Restore">
-                                    <Restore />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton
-                                onClick = { newMinecraftWorld }>
-                                <Tooltip title="New">
-                                    <New />
-                                </Tooltip>
-                            </IconButton>
-                        </div> }
+                        <IconButton onClick = { this.backupMinecraftWorld }>
+                            <Tooltip title = "Backup">
+                                <Backup />
+                            </Tooltip>
+                        </IconButton>
+                        <IconButton>
+                            <Tooltip title = "Restore">
+                                <Restore />
+                            </Tooltip>
+                        </IconButton>
+                        <IconButton onClick = { this.openBackupBeforeNewDialog }>
+                            <Tooltip title = "New">
+                                <New />
+                            </Tooltip>
+                        </IconButton>
+                    </ExpansionPanelDetails>
+                </ExpansionPanel>
+                <ExpansionPanel style = { styles.container }>
+                    <ExpansionPanelSummary expandIcon = {<ExpandMoreIcon />}>
+                        Send raw Minecraft command
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails>
+                        <FormControl fullWidth>
+                            <InputLabel htmlFor = "rawCommand">
+                                Enter command. Example: /list
+                            </InputLabel>
+                            <Input id = 'rawCommand' fullWidth />
+                            <Divider />
+                            <ExpansionPanelActions>
+                                <IconButton onClick = { this.openRawCommandDialog }>
+                                    <Tooltip title = "List available Minecraft commands">
+                                        <Help />
+                                    </Tooltip>
+                                </IconButton>
+                                <Button size = "small" onClick = { this.onClear }>Clear</Button>
+                                <Button size = "small" color="primary" onClick = { this.onSendCommand }>Send Command</Button>
+                            </ExpansionPanelActions>
+                        </FormControl>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>
             </div>
         );
-    }
-}
-
-export default WorldControls;
+    };
+};

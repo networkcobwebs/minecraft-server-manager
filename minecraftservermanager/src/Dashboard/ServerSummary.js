@@ -1,15 +1,14 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-import Table, {
-    TableBody,
-    TableRow,
-    TableCell,
-} from 'material-ui/Table';
-import Tooltip from 'material-ui/Tooltip';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import Tooltip from '@material-ui/core/Tooltip';
 
-import ServerOnline from 'material-ui-icons/CheckCircle';
-import ServerOffline from 'material-ui-icons/Error';
-import UpdateAvailable from 'material-ui-icons/AssignmentLate';
+import ServerOnline from '@material-ui/icons/CheckCircle';
+import ServerOffline from '@material-ui/icons/Error';
+import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 
 const styles = {
     container: {
@@ -30,7 +29,7 @@ function formatTime (seconds) {
     ].filter(s => s).join(':');
   }
 
-class ServerSummary extends Component {
+class ServerSummary extends React.Component {
     minecraftOnline () {
         let minecraftStatus = this.props.minecraftState.minecraftStatus;
         

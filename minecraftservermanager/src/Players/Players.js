@@ -1,20 +1,19 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-import Table, {
-    TableBody,
-    TableHead,
-    TableRow,
-    TableCell,
-} from 'material-ui/Table';
-import Tooltip from 'material-ui/Tooltip';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import Tooltip from '@material-ui/core/Tooltip';
 
-import IconButton from 'material-ui/IconButton';
-import OpStatus from 'material-ui-icons/VerifiedUser';
-import NetworkOnline from 'material-ui-icons/SignalWifi4Bar';
-import NetworkOffline from 'material-ui-icons/SignalWifiOff';
-import Kick from 'material-ui-icons/DoNotDisturbOn';
-import Ban from 'material-ui-icons/DoNotDisturb';
-import WhitelistIcon from 'material-ui-icons/PlaylistAdd';
+import IconButton from '@material-ui/core/IconButton';
+import OpStatus from '@material-ui/icons/VerifiedUser';
+import NetworkOnline from '@material-ui/icons/SignalWifi4Bar';
+import NetworkOffline from '@material-ui/icons/SignalWifiOff';
+import Kick from '@material-ui/icons/DoNotDisturbOn';
+import Ban from '@material-ui/icons/DoNotDisturb';
+import WhitelistIcon from '@material-ui/icons/PlaylistAdd';
 
 const styles = {
     container: {
@@ -22,7 +21,7 @@ const styles = {
     }
 };
 
-class Players extends Component {
+class Players extends React.Component {
     render () {
         return (
             <div style={ styles.container }>

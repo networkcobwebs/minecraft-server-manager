@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import ServerSummary from './ServerSummary.js';
 import PlayersSummary from './PlayersSummary.js';
@@ -11,7 +11,7 @@ const styles = {
     }
 };
 
-class Dashboard extends Component {
+class Dashboard extends React.Component {
     render () {
         return (
             <div style={ styles.container }>
