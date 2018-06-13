@@ -84,7 +84,6 @@ class App extends React.Component {
             method: 'get',
             url: '/api/commands'
         }).then(res => {
-            console.log('Commands:', res.data.commands);
             this.setState({ minecraftCommands: res.data.commands });
         });
     };
@@ -502,7 +501,7 @@ class App extends React.Component {
                     </Tabs>
                 </AppBar>
                 { this.state.value === 0 && <Dashboard minecraftState = { this.state } /> }
-                { this.state.value === 1 && <Players /> }
+                { this.state.value === 1 && <Players minecraftState = { this.state } /> }
                 { this.state.value === 2 && <WorldControls minecraftState = { this.state } /> }
                 { this.state.value === 3 && <ServerControls minecraftState = { this.state } /> }
                 {/* TODO Preferences (poll times, start Minecraft always, updates, etc.) */}

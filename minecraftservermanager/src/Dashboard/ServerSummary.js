@@ -111,10 +111,12 @@ class ServerSummary extends React.Component {
                         <TableRow>
                             <TableCell>Server Address</TableCell>
                             <TableCell>localhost</TableCell>
+                            <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Server Uptime</TableCell>
                             { this.minecraftUptime() }
+                            <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Minecraft Status</TableCell>
@@ -128,10 +130,12 @@ class ServerSummary extends React.Component {
                         <TableRow>
                             <TableCell>Minecraft Version</TableCell>
                             { this.minecraftVersion() }
+                            <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Minecraft Uptime</TableCell>
                             { this.minecraftServerUptime() }
+                            <TableCell></TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>

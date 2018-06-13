@@ -22,10 +22,11 @@ const styles = {
 export default class BackupBeforeNewDialog extends React.Component {
 
     render () {
+        // TODO: Close on selection
         return (
-            <Dialog fullScreen open = { this.props.open } style={ styles.container } >
+            <Dialog fullScreen open = { this.props.open } style = { styles.container } >
                 <DialogTitle>
-                    <IconButton onClick={this.props.onClose}>
+                    <IconButton onClick = {this.props.onClose}>
                         <CloseIcon />
                     </IconButton>
                     Available Minecraft Commands
@@ -34,11 +35,11 @@ export default class BackupBeforeNewDialog extends React.Component {
                     <List>
                         { this.props.minecraftCommands.map(command => {
                             return (
-                            <div>
-                                <ListItem key={ command.key } button>
-                                    <ListItemText primary={ command.command} />
+                            <div key = { command.key }>
+                                <ListItem button>
+                                    <ListItemText primary = { command.command} />
+                                    <Divider />
                                 </ListItem>
-                                <Divider />
                             </div>
                             );
                         }) }
