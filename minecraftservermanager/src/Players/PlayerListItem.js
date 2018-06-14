@@ -17,8 +17,8 @@ export default class PlayerListItem extends React.Component {
     banPlayer = () => {
         this.props.banPlayer(this.props.player.name);
     }
-    unbanPlayer = () => {
-        this.props.unbanPlayer(this.props.player.name);
+    pardonPlayer = () => {
+        this.props.pardonPlayer(this.props.player.name);
     }
     kickPlayer = () => {
         this.props.kickPlayer(this.props.player.name);
@@ -61,8 +61,8 @@ export default class PlayerListItem extends React.Component {
                 }</TableCell>
                 <TableCell>
                     { player.banned ?
-                    <IconButton onClick = { this.unbanPlayer }>
-                        <Tooltip title="Un Ban">
+                    <IconButton onClick = { this.pardonPlayer }>
+                        <Tooltip title="Pardon">
                             <Ban />
                         </Tooltip>
                     </IconButton> : 

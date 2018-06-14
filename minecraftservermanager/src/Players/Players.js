@@ -131,7 +131,7 @@ export default class Players extends React.Component {
         }
     }
 
-    unbanPlayer = player => {
+    pardonPlayer = player => {
         let found = false,
             players = this.state.players;
 
@@ -146,7 +146,7 @@ export default class Players extends React.Component {
                 method: 'post',
                 url: '/api/command',
                 params: {
-                    command: '/unban ' + player.name
+                    command: '/pardon ' + player.name
                 }
             }).then(res => {
                 return;
@@ -266,7 +266,7 @@ export default class Players extends React.Component {
             key = { player.key }
             player = { player }
             banPlayer = { this.banPlayer }
-            unbanPlayer = { this.unbanPlayer }
+            pardonPlayer = { this.pardonPlayer }
             kickPlayer = { this.kickPlayer }
             opPlayer = { this.opPlayer }
             deopPlayer = { this.deopPlayer }
@@ -274,8 +274,16 @@ export default class Players extends React.Component {
         />;
 
     render () {
+        let summary = this.props.minecraftState.playerSummary;
         return (
             <div style = { styles.container }>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>{ summary ? summary : 'Waiting on Minecraft server...' }</TableCell>
+                        </TableRow>
+                    </TableHead>
+                </Table>
                 <Table>
                     <TableHead>
                         <TableRow>

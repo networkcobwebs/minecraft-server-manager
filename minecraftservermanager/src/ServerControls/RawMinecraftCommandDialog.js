@@ -19,7 +19,11 @@ const styles = {
     }
 };
     
-export default class BackupBeforeNewDialog extends React.Component {
+export default class RawMinecraftCommandDialog extends React.Component {
+    closeDialog = event => {
+        this.props.updateRawCommandField(event);
+        this.props.onClose();
+    };
 
     render () {
         // TODO: Close on selection
@@ -36,8 +40,8 @@ export default class BackupBeforeNewDialog extends React.Component {
                         { this.props.minecraftCommands.map(command => {
                             return (
                             <div key = { command.key }>
-                                <ListItem button>
-                                    <ListItemText primary = { command.command} />
+                                <ListItem button onClick = {() => { this.closeDialog(command.command) } }>
+                                    <ListItemText primary = { command.command } />
                                     <Divider />
                                 </ListItem>
                             </div>

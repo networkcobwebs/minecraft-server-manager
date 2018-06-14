@@ -26,7 +26,7 @@ class PlayersSummary extends React.Component {
 
         return (
             <div style={ styles.container }>
-                <h3>Players</h3>
+                <h3>Connected Players</h3>
                 <Table>
                     <TableHead>
                         <TableRow>

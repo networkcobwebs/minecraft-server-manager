@@ -39,7 +39,8 @@ export default class WorldControls extends React.Component {
             backupDialogOpen: false,
             helpDialogOpen: false,
             progressDialogOpen: false,
-            rawMinecraftCommandDialogOpen: false
+            rawMinecraftCommandDialogOpen: false,
+            rawCommand: ''
         }
     }
     
@@ -67,12 +68,32 @@ export default class WorldControls extends React.Component {
         this.setState({ rawMinecraftCommandDialogOpen: false });
     };
 
-    onClear = (e) => {
-        //
+    updateRawCommandType = event => {
+        this.setState({ rawCommand: event.target.value });
+    };
+
+    updateRawCommandDialog = command => {
+        this.setState({ rawCommand: command });
+    };
+
+    onClearCommand = (e) => {
+        this.setState({ rawCommand: '' });
     };
 
     onSendCommand = (e) => {
-        //
+        axios({
+            method: 'post',
+            url: '/api/command',
+            params: {
+                command: this.state.rawCommand
+            }
+        }).then(res => {
+            this.setState({ rawCommand: '' });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ progressDialogOpen: false });
+        });
     };
       
     backupMinecraftWorld = () => {
@@ -155,6 +176,7 @@ export default class WorldControls extends React.Component {
                     open = { this.state.rawMinecraftCommandDialogOpen }
                     onClose = { this.closeRawCommandDialog }
                     minecraftCommands = { this.props.minecraftState.minecraftCommands }
+                    updateRawCommandField = { this.updateRawCommandDialog }
                 />
                 <ExpansionPanel style = { styles.container } defaultExpanded>
                     <ExpansionPanelSummary expandIcon = { <ExpandMoreIcon /> }>
@@ -185,9 +207,9 @@ export default class WorldControls extends React.Component {
                     <ExpansionPanelDetails>
                         <FormControl fullWidth>
                             <InputLabel htmlFor = "rawCommand">
-                                Enter command. Example: /list
+                                Enter command. Click the Help icon for a full list of supported commands.
                             </InputLabel>
-                            <Input id = 'rawCommand' fullWidth />
+                            <Input id = 'rawCommand' fullWidth value = { this.state.rawCommand } onChange = { this.updateRawCommandType }/>
                             <Divider />
                             <ExpansionPanelActions>
                                 <IconButton onClick = { this.openRawCommandDialog }>
@@ -195,7 +217,7 @@ export default class WorldControls extends React.Component {
                                         <Help />
                                     </Tooltip>
                                 </IconButton>
-                                <Button size = "small" onClick = { this.onClear }>Clear</Button>
+                                <Button size = "small" onClick = { this.onClearCommand }>Clear</Button>
                                 <Button size = "small" color="primary" onClick = { this.onSendCommand }>Send Command</Button>
                             </ExpansionPanelActions>
                         </FormControl>
