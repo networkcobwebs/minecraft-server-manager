@@ -41,45 +41,51 @@ function bufferMinecraftOutput (d) {
 
 function startMinecraft (callback) {
     console.log('Starting Minecraft server...');
-    // TODO: Beef up detection of the jar before trying to spawn
-    // TODO: Make the Java + args configurable
-    minecraftServerProcess = spawn('java', [
-        '-Xmx1G',
-        '-Xms1G',
-        '-jar',
-        minecraftServerJar,
-        'nogui'
-    ], {
-        cwd: pathToMinecraftDirectory,
-        stdio: [
-            'pipe', // Use parent's stdin for child
-            'pipe', // Pipe child's stdout to parent
-            'pipe'  // Direct child's stderr to parent
-        ]
-    });
-
-    if (!minecraftServerOutputCaptured) {
-        minecraftStarting = true;
-        minecraftServerOutputCaptured = true;
-        minecraftOutput.length = 0;
-        minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
-
-        if (minecraftStartedTimer) {
-            clearTimeout(minecraftStartedTimer);
-        }
     
-        minecraftStartedTimer = setTimeout(() => {
-            checkForMinecraftToBeStarted(0, callback);
-        }, 100);
-    } else if (minecraftStarting && minecraftServerOutputCaptured) {
-        clearTimeout(minecraftStartedTimer);
-        minecraftStartedTimer = setTimeout(() => {
-            checkForMinecraftToBeStarted(0, callback);
-        }, 100);
-    } else {
-        setTimeout(() => {
-            startMinecraft(callback)
-        }, 1000);
+    try {
+        fs.accessSync(pathToMinecraftDirectory + '/' + minecraftServerJar, fs.F_OK | fs.R_OK | fs.W_OK);
+        // TODO: Make the Java + args configurable
+        minecraftServerProcess = spawn('java', [
+            '-Xmx1G',
+            '-Xms1G',
+            '-jar',
+            minecraftServerJar,
+            'nogui'
+        ], {
+            cwd: pathToMinecraftDirectory,
+            stdio: [
+                'pipe', // Use parent's stdin for child
+                'pipe', // Pipe child's stdout to parent
+                'pipe'  // Direct child's stderr to parent
+            ]
+        });
+    
+        if (!minecraftServerOutputCaptured) {
+            minecraftStarting = true;
+            minecraftServerOutputCaptured = true;
+            minecraftOutput.length = 0;
+            minecraftServerProcess.stdout.addListener('data', bufferMinecraftOutput);
+    
+            if (minecraftStartedTimer) {
+                clearTimeout(minecraftStartedTimer);
+            }
+        
+            minecraftStartedTimer = setTimeout(() => {
+                checkForMinecraftToBeStarted(0, callback);
+            }, 100);
+        } else if (minecraftStarting && minecraftServerOutputCaptured) {
+            clearTimeout(minecraftStartedTimer);
+            minecraftStartedTimer = setTimeout(() => {
+                checkForMinecraftToBeStarted(0, callback);
+            }, 100);
+        } else {
+            setTimeout(() => {
+                startMinecraft(callback)
+            }, 1000);
+        }
+    } catch (e) {
+        console.log('Minecraft Server executable not found.');
+        callback();
     }
 }
 
