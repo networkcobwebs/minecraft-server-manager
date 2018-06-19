@@ -5,11 +5,6 @@ import TableHead from '@material-ui/core/TableHead';
 import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-// import Tooltip from 'material-ui/Tooltip';
-
-// import OpStatus from 'material-ui-icons/VerifiedUser';
-// import NetworkOnline from 'material-ui-icons/SignalWifi4Bar';
-// import NetworkOffline from 'material-ui-icons/SignalWifiOff';
 
 const styles = {
     container: {
@@ -19,7 +14,7 @@ const styles = {
     }
 };
 
-class PlayersSummary extends React.Component {
+export default class PlayersSummary extends React.Component {
     render () {
         let playerNames = this.props.minecraftState.playerNames,
             summary = this.props.minecraftState.playerSummary;
@@ -47,5 +42,3 @@ class PlayersSummary extends React.Component {
         );
     }
 }
-
-export default PlayersSummary;

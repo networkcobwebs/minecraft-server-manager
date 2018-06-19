@@ -41,7 +41,7 @@ const getTheme = () => {
     return theme;
 };
 
-class App extends React.Component {
+export default class App extends React.Component {
     constructor (props) {
         super(props);
 
@@ -59,7 +59,8 @@ class App extends React.Component {
             minecraftServerUserCache: [],
             minecraftCommands: [],
             playerSummary: '',
-            playerNames: []
+            playerNames: [],
+            players: []
         };
         if (debug) {
             console.log('App state:', this.state);
@@ -125,6 +126,7 @@ class App extends React.Component {
                 this.getMinecraftServerOps();
                 this.getMinecraftServerUserCache();
                 this.getMinecraftPlayers();
+                this.determinePlayerStates();
 
                 if (!this.state.minecraftCommands || this.state.minecraftCommands.length === 0) {
                     this.getMinecraftCommands();
@@ -443,6 +445,80 @@ class App extends React.Component {
     objectifyPlayer (player) {
         return { name: player };
     };
+    
+    determinePlayerStates () {
+        let minecraftState = this.state,
+            minecraftPlayerCache = minecraftState.minecraftServerUserCache,
+            players = [],
+            player;
+
+        minecraftPlayerCache.forEach(cachedPlayer => {
+            player = {};
+            player.name = cachedPlayer.name;
+            player.key = cachedPlayer.uuid;
+            player.online = this.determineOnlineStatus(cachedPlayer);
+            player.banned = this.determineBanStatus(cachedPlayer);
+            player.whitelisted = this.determineWhitelistStatus(cachedPlayer);
+            player.opped = this.determineOpStatus(cachedPlayer);
+            players.push(player);
+        });
+        this.setState({ players });
+    };
+
+    determineBanStatus (player) {
+        let minecraftState = this.state,
+            minecraftBannedPlayers = minecraftState.minecraftServerBannedPlayers,
+            banned = false;
+
+        minecraftBannedPlayers.forEach(bannedPlayer => {
+            if (bannedPlayer.name === player.name) {
+                banned = true;
+            }
+        });
+        return banned;
+    };
+    
+    determineWhitelistStatus (player) {
+        let minecraftState = this.state,
+            minecraftWhitelist = minecraftState.minecraftServerWhitelist,
+            whitelisted = false;
+
+        minecraftWhitelist.forEach(p => {
+            if (p.name === player.name) {
+                whitelisted = true;
+            }
+        });
+        return whitelisted;
+    }
+
+    determineOnlineStatus (player) {
+        let minecraftState = this.state,
+            onlinePlayers = minecraftState.playerNames,
+            minecraftPlayerCache = minecraftState.minecraftServerUserCache,
+            online = false;
+
+        minecraftPlayerCache.forEach(c => {
+            onlinePlayers.forEach(o => {
+                if (player.name === o.name || c.name === o.name) {
+                    online = true;
+                }
+            });
+        });
+        return online;
+    };
+
+    determineOpStatus (player) {
+        let minecraftState = this.state,
+            minecraftOps = minecraftState.minecraftServerOps,
+            opped = false;
+
+        minecraftOps.forEach(op => {
+            if (op.name === player.name) {
+                opped = true;
+            }
+        });
+        return opped;
+    };
 
     handleEulaOpen = () => {
         this.setState({ eulaOpen: true });
@@ -533,5 +609,3 @@ class App extends React.Component {
         );
     };
 };
-
-export default App;

@@ -19,92 +19,6 @@ const styles = {
 };
 
 export default class Players extends React.Component {
-    state = {};
-    constructor(props) {
-        super(props);
-        this.state = {
-            players: []
-        };
-    };
-
-    componentDidMount () {
-        this.determinePlayerStates();
-    }
-
-    determinePlayerStates () {
-        let minecraftState = this.props.minecraftState,
-            minecraftPlayerCache = minecraftState.minecraftServerUserCache,
-            players = [],
-            player;
-
-        minecraftPlayerCache.forEach(cachedPlayer => {
-            player = {};
-            player.name = cachedPlayer.name;
-            player.key = cachedPlayer.uuid;
-            player.online = this.determineOnlineStatus(cachedPlayer);
-            player.banned = this.determineBanStatus(cachedPlayer);
-            player.whitelisted = this.determineWhitelistStatus(cachedPlayer);
-            player.opped = this.determineOpStatus(cachedPlayer);
-            players.push(player);
-        });
-        this.setState({ players });
-    };
-
-    determineBanStatus (player) {
-        let minecraftState = this.props.minecraftState,
-            minecraftBannedPlayers = minecraftState.minecraftServerBannedPlayers,
-            banned = false;
-
-        minecraftBannedPlayers.forEach(bannedPlayer => {
-            if (bannedPlayer.name === player.name) {
-                banned = true;
-            }
-        });
-        return banned;
-    };
-    
-    determineWhitelistStatus (player) {
-        let minecraftState = this.props.minecraftState,
-            minecraftWhitelist = minecraftState.minecraftServerWhitelist,
-            whitelisted = false;
-
-        minecraftWhitelist.forEach(p => {
-            if (p.name === player.name) {
-                whitelisted = true;
-            }
-        });
-        return whitelisted;
-    }
-
-    determineOnlineStatus (player) {
-        let minecraftState = this.props.minecraftState,
-            onlinePlayers = minecraftState.playerNames,
-            minecraftPlayerCache = minecraftState.minecraftServerUserCache,
-            online = false;
-
-        minecraftPlayerCache.forEach(c => {
-            onlinePlayers.forEach(o => {
-                if (player.name === o.name || c.name === o.name) {
-                    online = true;
-                }
-            });
-        });
-        return online;
-    };
-
-    determineOpStatus (player) {
-        let minecraftState = this.props.minecraftState,
-            minecraftOps = minecraftState.minecraftServerOps,
-            opped = false;
-
-        minecraftOps.forEach(op => {
-            if (op.name === player.name) {
-                opped = true;
-            }
-        });
-        return opped;
-    };
-
     banPlayer = player => {
         let found = false,
             players = this.state.players;
@@ -120,7 +34,7 @@ export default class Players extends React.Component {
                 method: 'post',
                 url: '/api/command',
                 params: {
-                    command: '/ban ' + player.name
+                    command: '/ban ' + player
                 }
             }).then(res => {
                 return;
@@ -146,7 +60,7 @@ export default class Players extends React.Component {
                 method: 'post',
                 url: '/api/command',
                 params: {
-                    command: '/pardon ' + player.name
+                    command: '/pardon ' + player
                 }
             }).then(res => {
                 return;
@@ -172,7 +86,7 @@ export default class Players extends React.Component {
                 method: 'post',
                 url: '/api/command',
                 params: {
-                    command: '/kick ' + player.name
+                    command: '/kick ' + player
                 }
             }).then(res => {
                 return;
@@ -250,7 +164,7 @@ export default class Players extends React.Component {
                 method: 'post',
                 url: '/api/command',
                 params: {
-                    command: '/whitelist ' + player.name
+                    command: '/whitelist ' + player
                 }
             }).then(res => {
                 return;
@@ -275,6 +189,7 @@ export default class Players extends React.Component {
 
     render () {
         let summary = this.props.minecraftState.playerSummary;
+
         return (
             <div style = { styles.container }>
                 <Table>
@@ -293,7 +208,7 @@ export default class Players extends React.Component {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        { this.state.players.map(this.displayPlayerListItems) }
+                        { this.props.minecraftState.players.map(this.displayPlayerListItems) }
                     </TableBody>
                 </Table>
             </div>
