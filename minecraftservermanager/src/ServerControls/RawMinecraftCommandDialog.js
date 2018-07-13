@@ -30,7 +30,7 @@ export default class RawMinecraftCommandDialog extends React.Component {
         return (
             <Dialog fullScreen open = { this.props.open } style = { styles.container } >
                 <DialogTitle>
-                    <IconButton onClick = {this.props.onClose}>
+                    <IconButton onClick = { this.props.onClose }>
                         <CloseIcon />
                     </IconButton>
                     Available Minecraft Commands
@@ -40,7 +40,7 @@ export default class RawMinecraftCommandDialog extends React.Component {
                         { this.props.minecraftCommands.map(command => {
                             return (
                             <div key = { command.key }>
-                                <ListItem button onClick = {() => { this.closeDialog(command.command) } }>
+                                <ListItem button onClick = { () => { this.closeDialog(command.command) } }>
                                     <ListItemText primary = { command.command } />
                                     <Divider />
                                 </ListItem>

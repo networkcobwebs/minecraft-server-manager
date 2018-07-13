@@ -606,6 +606,31 @@ function backupWorld (worldName) {
     }
 }
 
+function listWorldBackups () {
+    let backupDir = pathToMinecraftDirectory + '/worldBackups'
+        backupList = [],
+        files = [],
+        readError = {};
+    
+    files = fs.readdirSync(backupDir);
+
+    files.forEach(file => {
+        let fileItem = {},
+            fileParts = file.split('.');
+
+        if (fileParts[1] === 'zip') {
+            let fileInfo = fileParts[0].split('_');
+            fileItem.fileName = file;
+            fileItem.worldName = fileInfo[0];
+            fileItem.date = fileInfo[1];
+            fileItem.time = fileInfo[2];
+            backupList.push(fileItem);
+        }
+    });
+    
+    return backupList;
+}
+
 function deleteWorld (worldName, backupWorld) {
     worldName = worldName || 'world';
     backupWorld = backupWorld || false;
@@ -715,6 +740,15 @@ app.get('/api/userCache', function (request, response) {
     response.contentType('json');
     response.json({
         userCache: userCache
+    });
+});
+
+app.get('/api/listWorldBackups', function (request, response) {
+    let backupList = listWorldBackups();
+    
+    response.contentType('json');
+    response.json({
+        backupList: backupList
     });
 });
 
@@ -850,8 +884,7 @@ app.post('/api/command', function(request, response) {
                         });
                     });
                 });
-            }
-            else {
+            } else {
                 deleteWorld(worldName, backupToo);
 
                 response.contentType('json');
@@ -859,6 +892,34 @@ app.post('/api/command', function(request, response) {
                     response: 'New world will be created at startup.'
                 });
             }
+        } else if (command === '/restoreWorld') {
+            console.log('Gonna restore a world now.');
+            // worldName = request.query.worldName || 'world';
+            // backupName = request.query.backupFile;
+            // backupToo = request.query.backup || false;
+            // if (minecraftStarted) {
+            //     stopMinecraft(() => {
+            //         deleteWorld(worldName, backupToo);
+            //         restoreWorld(backupName); // TODO handle world renames too!
+            //         startMinecraft(() => {
+            //             response.contentType('json');
+            //             response.json({
+            //                 response: 'World restored.'
+            //             });
+            //         });
+            //     });
+            // } else {
+            //     deleteWorld(worldName, backupToo);
+            //     restoreWorld(backupName); // TODO handle world renames too!
+            //     response.contentType('json');
+            //     response.json({
+            //         response: 'New world will be created at startup.'
+            //     });
+            // }
+            response.contentType('json');
+            response.json({
+                response: 'World restored.'
+            });
         } else {
             if (minecraftStarted) {
                 // buffer output for a quarter of a second, then reply to HTTP request

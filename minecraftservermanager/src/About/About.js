@@ -30,6 +30,9 @@ class About extends Component {
                     </script>
                     <script src="https://z-na.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&Operation=GetScript&ID=OneJS&WS=1"></script>
                 </div>
+                <p>
+                    Support this project by making purchases from Amazon.
+                </p>
                 <iframe src="https://rcm-na.amazon-adsystem.com/e/cm?o=1&p=9&l=ez&f=ifr&linkID=94a6a8bcf4c0832533e2ed9b53ea4ccc&t=nickrnet-20&tracking_id=nickrnet-20" width="180" height="150" scrolling="no" border="1" marginWidth="0" title="Amazon" style={styles.container} frameBorder="1"></iframe>
                 <div>
                     <script type="text/javascript">

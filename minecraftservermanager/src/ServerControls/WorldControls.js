@@ -22,6 +22,7 @@ import Help from '@material-ui/icons/Help';
 import BackupBeforeNewDialog from './BackupBeforeNewDialog.js';
 import RawMinecraftCommandDialog from './RawMinecraftCommandDialog.js';
 import ProgressDialog from './ProgressDialog.js';
+import RestoreBackupDialog from './RestoreBackupDialog.js';
 
 const styles = {
     container: {
@@ -38,9 +39,12 @@ export default class WorldControls extends React.Component {
         this.state = {
             backupDialogOpen: false,
             helpDialogOpen: false,
+            potentialBackups: [],
             progressDialogOpen: false,
             rawMinecraftCommandDialogOpen: false,
-            rawCommand: ''
+            rawCommand: '',
+            restoreDialogOpen: false,
+            restoreBackup: {  }
         }
     }
     
@@ -80,6 +84,22 @@ export default class WorldControls extends React.Component {
         this.setState({ rawCommand: '' });
     };
 
+    openRestoreDialog = (e) => {
+        this.getMinecraftWorldBackups();
+        this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false, restoreDialogOpen: true });
+    };
+
+    closeRestoreDialog = worldBackup => {
+        if (worldBackup.filename) {
+            this.setState({ restoreBackup: worldBackup });
+            console.log('Would restore world: ', worldBackup);
+            this.setState({ restoreDialogOpen: false });
+            this.restoreMinecraftWorld(worldBackup);
+        } else {
+            this.setState({ restoreDialogOpen: false });
+        }
+    };
+
     onSendCommand = (e) => {
         axios({
             method: 'post',
@@ -97,7 +117,7 @@ export default class WorldControls extends React.Component {
     };
       
     backupMinecraftWorld = () => {
-        this.setState({ backupDialogOpen: false, progressDialogOpen: true });
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
         axios({
             method: 'post',
             url: '/api/command',
@@ -114,7 +134,7 @@ export default class WorldControls extends React.Component {
     };
     
     newMinecraftWorld = () => {
-        this.setState({ backupDialogOpen: false, progressDialogOpen: true });
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
         axios({
             method: 'post',
             url: '/api/command',
@@ -132,29 +152,55 @@ export default class WorldControls extends React.Component {
     };
 
     backupAndNewMinecraftWorld = () => {
+        // TODO Fix issue of if failed backup then don't nuke
         this.backupMinecraftWorld();
         this.newMinecraftWorld();
     };
-    
-    restoreMinecraftWorld = () => {
-        // TODO query for a list of backups; fetch status for now as 'noop'
-        this.setState({ backupDialogOpen: false, progressDialogOpen: true });
+
+    getMinecraftWorldBackups = () => {
         axios({
             method: 'get',
-            url: `/api/status`
+            url: `/api/listWorldBackups`
         }).then(res => {
-            let minecraftStatus = res.data;
-            console.log('minecraftStatus:', minecraftStatus);
-            this.setState({ progressDialogOpen: false });
+            let backupList = res.data.backupList;
+            console.log('backupList response:', backupList);
+            if (backupList.length) {
+                this.setState({ potentialBackups: backupList });
+                this.setState({ restoreDialogOpen: true });
+            } else {
+                // TODO: Show error
+                this.setState({ potentialBackups: [{key: 'nothingtoseehere', fileName: 'nope', worldName: '', date: ''}] });
+                console.log('An error occurred getting backups from the Minecraft server.', backupList);
+            }
         },
         err => {
             console.log('An error occurred contacting the Minecraft server.', err);
-            this.setState({ progressDialogOpen: false });
+            this.setState({ restoreDialogOpen: false });
+        });
+    };
+    
+    restoreMinecraftWorld = worldBackup => {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true, restoreDialogOpen: false });
+        axios({
+            method: 'post',
+            url: '/api/command',
+            params: {
+                command: '/restoreWorld',
+                backupFile: worldBackup,
+                backup: false
+            }
+        }).then(res => {
+            this.setState({ backupDialogOpen: false, progressDialogOpen: false, restoreDialogOpen: false });
+            this.setState({ restoreBackup: {} });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ restoreDialogOpen: false });
         });
     };
 
     backupAndRestoreMinecraftWorld = () => {
-        // TODO Fix timing issue of failed backup then don't nuke
+        // TODO Fix issue of if failed backup then don't nuke
         this.backupMinecraftWorld();
         this.restoreMinecraftWorld();
     };
@@ -178,6 +224,11 @@ export default class WorldControls extends React.Component {
                     minecraftCommands = { this.props.minecraftState.minecraftCommands }
                     updateRawCommandField = { this.updateRawCommandDialog }
                 />
+                <RestoreBackupDialog
+                    open = { this.state.restoreDialogOpen }
+                    onClose = { this.closeRestoreDialog }
+                    potentialBackups = { this.state.potentialBackups }
+                />
                 <ExpansionPanel style = { styles.container } defaultExpanded>
                     <ExpansionPanelSummary expandIcon = { <ExpandMoreIcon /> }>
                         World Controls
@@ -188,7 +239,7 @@ export default class WorldControls extends React.Component {
                                 <Backup />
                             </Tooltip>
                         </IconButton>
-                        <IconButton>
+                        <IconButton onClick = { this.openRestoreDialog } disabled>
                             <Tooltip title = "Restore">
                                 <Restore />
                             </Tooltip>

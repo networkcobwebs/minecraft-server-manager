@@ -117,7 +117,7 @@ export default class App extends React.Component {
             axios(`/api/status`).then(res => {
                 let minecraftStatus = res.data;
                 this.setState({ minecraftStatus });
-                this.setState({ eulaOpen: minecraftStatus.minecraftAcceptedEula });
+                this.setState({ eulaOpen: !minecraftStatus.minecraftAcceptedEula });
                 
                 this.getMinecraftServerProperties();
                 this.getMinecraftServerBannedIps();
@@ -588,7 +588,7 @@ export default class App extends React.Component {
                     message = {<span id="message-id">Minecraft is currently stopped.</span>}
                 />
                 <Dialog
-                    open = { !minecraftStatus.minecraftAcceptedEula }>
+                    open = { this.state.eulaOpen }>
                     <DialogTitle>{"Accept Minecraft End User License Agreement?"}</DialogTitle>
                     <DialogContent>
                         <DialogContentText>
