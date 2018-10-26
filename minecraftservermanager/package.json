@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@material-ui/core": "^1.2.1",
-    "@material-ui/icons": "^1.1.0",
-    "ajv": "^6.5.1",
+    "@material-ui/core": "^1.5.1",
+    "@material-ui/icons": "^1.1.1",
+    "ajv": "^6.5.4",
     "ajv-keywords": "^3.2.0",
-    "axios": "v0.17.1",
-    "jss": "^9.8.3",
-    "prop-types": "^15.6.1",
-    "react": "^16.4.0",
-    "react-dom": "^16.4.0",
-    "react-scripts": "^1.1.4"
+    "axios": "v0.18.0",
+    "jss": "^9.8.7",
+    "prop-types": "^15.6.2",
+    "react": "^16.6.0",
+    "react-dom": "^16.6.0",
+    "react-scripts": "^1.1.5"
   },
   "scripts": {
     "start": "react-scripts start",
