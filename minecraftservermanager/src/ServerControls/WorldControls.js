@@ -210,7 +210,7 @@ export default class WorldControls extends React.Component {
             <div>
                 <BackupBeforeNewDialog 
                     backupAndNew = { this.backupAndNewMinecraftWorld } 
-                    newOnly = { this.backupMinecraftWorld }
+                    newOnly = { this.newMinecraftWorld }
                     cancelDialog = { this.closeBackupDialog }
                     open = { this.state.backupDialogOpen }
                 />

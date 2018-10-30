@@ -780,18 +780,26 @@ app.get('/api/command', function (request, response) {
 
             minecraftServerProcess.stdout.removeListener('data', collector);
             minecraftServerProcess.stdout.on('data', collector);
-            minecraftServerProcess.stdin.write(command + '\n');
 
-            // Delay for a bit, then send a response with the latest server output
-            setTimeout(function () {
-                minecraftServerProcess.stdout.removeListener('data', collector);
-                // respond with the output of the Minecraft server
-                // TODO: Make this update a web element on the page
-                response.contentType('json');
-                response.json({
-                    response: buffer.join('')
-                });
-            }, 250);
+            try {
+                minecraftServerProcess.stdin.write(command + '\n');
+            }
+            catch (e) {
+                debugger;
+            }
+            finally {
+                // Delay for a bit, then send a response with the latest server output
+                setTimeout(function () {
+                    minecraftServerProcess.stdout.removeListener('data', collector);
+                    // respond with the output of the Minecraft server
+                    // TODO: Make this update a web element on the page
+                    response.contentType('json');
+                    response.json({
+                        response: buffer.join('')
+                    });
+                }, 250);
+            }
+
         } else {
             response.contentType('json');
             response.json({
