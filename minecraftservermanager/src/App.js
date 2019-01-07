@@ -351,72 +351,27 @@ export default class App extends React.Component {
 
         this.playersTimerId = setTimeout(() => {
             if (minecraftStatus.minecraftOnline) {
-                axios(`/api/command?command=/list`).then(res => {
-                    let result = res.data,
-                        playerList = result.response,
-                        playerNames = [],
-                        players, somePlayerName, somePlayerNames, testData, playerSummary,
-                        i, p;
-
-                    if (playerList.includes('Fail')) {
-                        // Squelch for now
-                        let playerSummary = '',
-                            playerNames = [];
-
-                        this.setState({ playerSummary });
-                        this.setState({ playerNames });
-
-                        pingTime = pingTime + appendTime;
-
-                        if (this.state.debug) {
-                            console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
-                        }
-                        this.getMinecraftPlayers(pingTime);
-                    } else {
-                        // First line is the summary,
-                        // followed by player names, comma+space separated
-                        players = playerList.split(/\n/);
-                        playerSummary = players.shift();
-                        // Remove trailing ':'
-                        playerSummary = playerSummary.slice(0, -1);
-                        // Remove preceding timestamp/server info
-                        playerSummary = playerSummary.split(']: ')[1];
-
-                        // Get playerNames
-                        for (i = 0; i < players.length; i++) {
-                            // Remove preceding timestamp & server info
-                            somePlayerNames = players[i].split(']: ')[1];
-
-                            if (somePlayerNames) {
-                                somePlayerNames = somePlayerNames.split(',');
-                                for (p = 0; p < somePlayerNames.length; p++) {
-                                    somePlayerName = somePlayerNames[p];
-                                    if (somePlayerName) {
-                                        // Make sure we check for multiple spaces so as to
-                                        // ignore any bad data like things that were
-                                        // accidentally in the buffer at the same time we
-                                        // queried, etc.
-                                        testData = somePlayerName.split(' ');
-                                        if (testData.length <= 2) {
-                                            playerNames.push(this.objectifyPlayer(somePlayerName.trim()));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // console.log('playerNames discovered:', playerNames);
-                        
-                        this.setState({ playerSummary });
-                        this.setState({ playerNames });
-
-                        if (this.state.debug) {
-                            console.log('PlayersSummary state:', this.state);
-                            console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
-                        }
-
-                        this.getMinecraftPlayers();
+                axios({
+                    method: 'post',
+                    url: '/api/command',
+                    params: {
+                        command: '/list'
                     }
+                }).then(res => {
+                    let result = res.data,
+                        playersInfo = result.response,
+                        playerSummary = playersInfo.summary,
+                        playerNames = playersInfo.players;
+                    this.setState({ playerSummary });
+                    this.setState({ playerNames });
+
+                    if (this.state.debug) {
+                        console.log('PlayersSummary state:', this.state.playerSummary);
+                        console.log('Players state:', this.state.playerNames);
+                        console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
+                    }
+
+                    this.getMinecraftPlayers();
                 },
                 err => {
                     let playerSummary = '',
@@ -428,7 +383,7 @@ export default class App extends React.Component {
                     pingTime = pingTime + appendTime;
 
                     if (this.state.debug) {
-                        console.log('PlayersSummary state:', this.state.playerSummary, this.state.playerNames);
+                        console.log('An error occurred getting current players:', err);
                         console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
                     }
                     this.getMinecraftPlayers(pingTime);
@@ -440,10 +395,6 @@ export default class App extends React.Component {
                 this.getMinecraftPlayers();
             }
         }, pingTime);
-    };
-
-    objectifyPlayer (player) {
-        return { name: player };
     };
     
     determinePlayerStates () {

@@ -7,8 +7,18 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceFolder}/index.js"
+            "name": "Minecraft",
+            "program": "${workspaceFolder}/index.js",
+            "env": {"JAVA_HOME": "/opt/java"},
+            "args": []
+        },
+        {  
+            "type":"node",
+            "request": "launch",
+            "name": "React",
+            "program": "${workspaceRoot}/minecraftservermanager/node_modules/react-scripts/bin/react-scripts.js",
+            "args": ["start"],
+            "cwd": "${workspaceFolder}/minecraftservermanager"
         }
     ]
 }

@@ -132,6 +132,7 @@ class MinecraftServer {
         this.getEula = this.getEula.bind(this);
         this.getServerProperties = this.getServerProperties.bind(this);
         this.listCommands = this.listCommands.bind(this);
+        this.getMinecraftPlayers = this.getMinecraftPlayers.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.waitForHelpOutput = this.waitForHelpOutput.bind(this);
@@ -262,19 +263,19 @@ class MinecraftServer {
                     this.properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
                     this.properties.serverOutput.length = 0;
                     this.properties.serverOutputCaptured = false;
-                    this.stopMinecraft(callback);
+                    this.stop(callback);
                 } else if (line.toLowerCase().indexOf('failed') !== -1) {
+                    // TODO: Get smarter here and show the error
                     console.log('An error occurred starting MinecraftServer. Check the Minecraft log.');
                     this.properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
                     this.properties.serverOutput.length = 0;
                     this.properties.serverOutputCaptured = false;
-                    process.exit(1);
                 } else if (line.toLowerCase().indexOf('stopping server') !== -1) {
+                    // TODO: Get smarter here and show the error
                     console.log('An error occurred starting MinecraftServer. Check the Minecraft log.');
                     this.properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
                     this.properties.serverOutput.length = 0;
                     this.properties.serverOutputCaptured = false;
-                    process.exit(1);
                 } else if (!this.properties.version && line.indexOf('server version') !== -1) {
                     versionParts = line.toString().split('.');
                     major = versionParts.shift();
@@ -423,7 +424,8 @@ class MinecraftServer {
             }
         } catch (e) {
             console.log('Failed to read eula.txt:', e);
-            throw e;
+            // throw e;
+            console.log(e);
         }
     }
     
@@ -542,80 +544,61 @@ class MinecraftServer {
         this.properties.backupList = backupList;
     }
 
-    waitForHelpOutput (buffer, callback) {
-        while( (line = this.properties.serverOutput.shift()) !== undefined ) {
-            if (line.indexOf('Showing help page') !== -1) {
-                this.properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
-                this.properties.serverOutput.length = 0;
-    
-                let part1 = line.split('Showing help page ');
-                let part2 = part1[1].split(' ');
-                this.properties.helpPages = parseInt(part2[2]);
-    
-                this.properties.serverProcess.stdout.addListener('data', bufferMinecraftOutput);
-                for (let i = 1; i <= minecraftHelpPages; i++) {
-                    minecraftServerProcess.stdin.write('/help ' + i + '\n');
-                }
-                setTimeout(() => {
-                    this.properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
-                    while ( (line = minecraftOutput.shift()) !== undefined ) {
-                        let command = {};
-                        let commandLine = line.split(' [Server thread/INFO]: ');
-    
-                        if (commandLine[1].indexOf('/') === 0) {
-                            let aThing = {}
-                            aThing.key = minecraftFullHelp.length;
-                            aThing.command = commandLine[1];
-                            this.properties.fullHelp.push(aThing);
-                            let commandLineSpaces = commandLine[1].split(' ');
-                            let args = [];
-                            let commands = [];
-                            
-                            command = {
-                                command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
-                            };
-    
-                            commandLineSpaces.shift();
-    
-                            if (commandLine[1].indexOf(' OR ') !== -1) {
-                                commands = commandLine[1].split(' OR ');
-                            } else {
-                                commands.push(commandLine[1]);
-                            }
-    
-                            args.length = 0;
-                            for (let c of commands) {
-                                let things = getCommand(c, true, false);
-                                for (let thing of things) {
-                                    args.push(thing);
+    getMinecraftPlayers (callback) {
+        if (debug) {
+            console.log('Sending raw Minecraft server command...');
+        }
+
+        if (this.properties.started) {
+            this.properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+            this.properties.serverOutput.length = 0;
+            this.properties.serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+            this.properties.serverOutputCaptured = true;
+            
+            try {
+                this.properties.serverProcess.stdin.write('/list' + '\n');
+            }
+            catch (e) {
+                debugger;
+            }
+            finally {
+                // Delay for a bit, then send a response with the latest server output
+                setTimeout(function () {
+                    this.properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+                    this.properties.serverOutputCaptured = false;
+                    let playersInfo = { summary: '', players: [] };
+                    playersInfo.summary = this.properties.serverOutput.shift();
+                    playersInfo.summary = playersInfo.summary.slice(0, -1).split(']: ')[1];
+                    playersInfo.players = [];
+                    for (let i = 0; i < this.properties.serverOutput.length; i++) {
+                        // Remove preceding timestamp & server info
+                        let somePlayerNames = this.properties.serverOutput[i].split(']: ')[1];
+                        if (somePlayerNames) {
+                            somePlayerNames = somePlayerNames.split(',');
+                            for (p = 0; p < somePlayerNames.length; p++) {
+                                somePlayerName = somePlayerNames[p];
+                                if (somePlayerName) {
+                                    // Make sure we check for multiple spaces so as to
+                                    // ignore any bad data like things that were
+                                    // accidentally in the buffer at the same time we
+                                    // queried, etc.
+                                    let testData = somePlayerName.split(' ');
+                                    if (testData.length <= 2) {
+                                        playersInfo.players.push({ name: somePlayerName.trim() });
+                                    }
                                 }
                             }
-                            if (args.length) {
-                                command['requiredArgs'] = Array.from(new Set(args));
-                            }
-    
-                            args.length = 0;
-                            for (let c of commands) {
-                                let things = getCommand(c, false, true);
-                                for (let thing of things) {
-                                    args.push(thing);
-                                }
-                            }
-                            if (args.length) {
-                                command['optionalArgs'] = Array.from(new Set(args));
-                            }
-        
-                            this.properties.allowedCommands.push(command);
                         }
                     }
-    
-                    this.properties.serverOutput.length = 0;
-                    this.properties.serverOutputCaptured = false;
+                    // console.log("playerList:", playerList);
                     if (typeof callback === 'function') {
-                        callback();
+                        callback(playersInfo);
                     }
-                }, 500);
+                }.bind(this), 250);
             }
+
+        } else {
+            console.log('TODO: complete error handling');
         }
     }
 
@@ -634,7 +617,7 @@ class MinecraftServer {
         try {
             fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
             // TODO: Make the Java + args configurable
-            serverProcess = this.properties.serverProcess = spawn('java', [
+            serverProcess = this.properties.serverProcess = spawn(process.env.JAVA_HOME + '/bin/java', [
                 '-Xmx1G',
                 '-Xms1G',
                 '-jar',
@@ -722,6 +705,83 @@ class MinecraftServer {
             if (typeof callback === 'function') {
                 stopping = false;
                 callback();
+            }
+        }
+    }
+
+    waitForHelpOutput (buffer, callback) {
+        while( (line = this.properties.serverOutput.shift()) !== undefined ) {
+            if (line.indexOf('Showing help page') !== -1) {
+                this.properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                this.properties.serverOutput.length = 0;
+    
+                let part1 = line.split('Showing help page ');
+                let part2 = part1[1].split(' ');
+                this.properties.helpPages = parseInt(part2[2]);
+    
+                this.properties.serverProcess.stdout.addListener('data', bufferMinecraftOutput);
+                for (let i = 1; i <= minecraftHelpPages; i++) {
+                    minecraftServerProcess.stdin.write('/help ' + i + '\n');
+                }
+                setTimeout(() => {
+                    this.properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                    while ( (line = minecraftOutput.shift()) !== undefined ) {
+                        let command = {};
+                        let commandLine = line.split(' [Server thread/INFO]: ');
+    
+                        if (commandLine[1].indexOf('/') === 0) {
+                            let aThing = {}
+                            aThing.key = fullHelp.length;
+                            aThing.command = commandLine[1];
+                            this.properties.fullHelp.push(aThing);
+                            let commandLineSpaces = commandLine[1].split(' ');
+                            let args = [];
+                            let commands = [];
+                            
+                            command = {
+                                command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
+                            };
+    
+                            commandLineSpaces.shift();
+    
+                            if (commandLine[1].indexOf(' OR ') !== -1) {
+                                commands = commandLine[1].split(' OR ');
+                            } else {
+                                commands.push(commandLine[1]);
+                            }
+    
+                            args.length = 0;
+                            for (let c of commands) {
+                                let things = getCommand(c, true, false);
+                                for (let thing of things) {
+                                    args.push(thing);
+                                }
+                            }
+                            if (args.length) {
+                                command['requiredArgs'] = Array.from(new Set(args));
+                            }
+    
+                            args.length = 0;
+                            for (let c of commands) {
+                                let things = getCommand(c, false, true);
+                                for (let thing of things) {
+                                    args.push(thing);
+                                }
+                            }
+                            if (args.length) {
+                                command['optionalArgs'] = Array.from(new Set(args));
+                            }
+        
+                            this.properties.allowedCommands.push(command);
+                        }
+                    }
+    
+                    this.properties.serverOutput.length = 0;
+                    this.properties.serverOutputCaptured = false;
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }, 500);
             }
         }
     }

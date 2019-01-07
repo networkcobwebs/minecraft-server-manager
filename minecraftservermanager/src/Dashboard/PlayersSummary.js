@@ -20,7 +20,7 @@ export default class PlayersSummary extends React.Component {
             summary = this.props.minecraftState.playerSummary;
 
         return (
-            <div style={ styles.container }>
+            <div style = { styles.container }>
                 <h3>Connected Players</h3>
                 <Table>
                     <TableHead>

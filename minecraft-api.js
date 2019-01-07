@@ -77,9 +77,9 @@ class MinecraftApi {
             });
 
             // Trap bad URLs and redirect to '/'
-            app.get('/*', function (req, res) {
-                res.sendFile(path.join(__dirname, pathToWeb));
-            });
+            // app.get('/*', function (req, res) {
+            //     res.sendFile(path.join(__dirname, pathToWeb));
+            // });
             
             this.properties.app = app;
         }
@@ -109,11 +109,11 @@ class MinecraftApi {
             app.get('/api/bannedPlayers', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    bannedPlayers: mincraftServer.properties.bannedPlayers
+                    bannedPlayers: minecraftServer.properties.bannedPlayers
                 });
             });
             app.get('/api/commands', function (request, response) {
-                if (minecraftFullHelp) {
+                if (minecraftServer.properties.fullHelp) {
                     response.contentType('json');
                     response.json({
                         commands: minecraftServer.properties.fullHelp
@@ -140,7 +140,7 @@ class MinecraftApi {
             app.get('/api/properties', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    properties: mincraftServer.properties.serverProperties
+                    properties: minecraftServer.properties.serverProperties
                 });
             });
             app.get('/api/status', function (request, response) {
@@ -159,8 +159,6 @@ class MinecraftApi {
                 });
             });
             app.get('/api/userCache', function (request, response) {
-                let userCache = getUserCache();
-                
                 response.contentType('json');
                 response.json({
                     userCache: minecraftServer.properties.userCache
@@ -171,6 +169,52 @@ class MinecraftApi {
                 response.json({
                     whitelist: minecraftServer.properties.whitelist
                 });
+            });
+            app.post('/api/start', function (request, response) {
+                minecraftServer.start();
+                response.contentType('json');
+                response.json({
+                    response: 'started'
+                });
+            });
+            app.post('/api/stop', function (request, response) {
+                minecraftServer.stop();
+                response.contentType('json');
+                response.json({
+                    response: 'stopped'
+                });
+            });
+            app.post('/api/command', function (request, response) {
+                let command = request.query.command;
+
+                if (command === '/start') {
+                    if (!minecraftServer.properties.started) {
+                        minecraftServer.start(() => {
+                            response.contentType('json');
+                            response.json({
+                                minecraftOnline: true
+                            });
+                        });
+                    } else {
+                        response.contentType('json');
+                        response.json({
+                            response: 'Server already running.'
+                        });
+                    }
+                } else if (command === '/list') {
+                    minecraftServer.getMinecraftPlayers((list) => {
+                        // debugger;
+                        response.contentType('json');
+                        response.json({
+                            response: list
+                        });
+                    });
+                } else {
+                    response.contentType('json');
+                    response.json({
+                        response: 'stopped'
+                    });
+                }
             });
         } else {
             console.log('MinecraftServer not operational... ignoring MinecraftServer API requests.');

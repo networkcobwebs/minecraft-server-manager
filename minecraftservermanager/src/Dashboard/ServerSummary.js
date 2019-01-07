@@ -77,7 +77,7 @@ class ServerSummary extends React.Component {
     minecraftUptime () {
         let minecraftStatus = this.props.minecraftState.minecraftStatus;
     
-        if (minecraftStatus && minecraftStatus.uptime) {
+        if (minecraftStatus && minecraftStatus.uptime && minecraftStatus.uptime > 0) {
             return (
                 <TableCell>{ formatTime(minecraftStatus.uptime / 1000) }</TableCell>
             );
