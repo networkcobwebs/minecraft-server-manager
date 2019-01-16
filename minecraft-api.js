@@ -7,13 +7,13 @@ const path = require('path');
 
 const MinecraftServer = require('./minecraft-server.js');
 
-_defaultProperties = {
+let _defaultProperties = {
     app: {},
     ipAddress: '127.0.0.1', // or 0.0.0.0 for all interfaces
     ipPort: 3001,
     pathToWeb: 'minecraftservermanager/build',
     minecraftServer: {}
-}
+};
 
 class MinecraftApi {
     get properties () {
@@ -96,8 +96,9 @@ class MinecraftApi {
     }
 
     connectMinecraftApi () {
-        let app = this.properties.app,
-            minecraftServer = this.properties.minecraftServer;
+        let app = this.properties.app;
+        let minecraftServer = this.properties.minecraftServer;
+        let minecraftFullHelp = this.properties.minecraftServer.properties.fullHelp;
 
         if (minecraftServer.properties) {
             app.get('/api/bannedIps', function (request, response) {
@@ -122,7 +123,7 @@ class MinecraftApi {
                     response.contentType('json');
                     response.json({
                         commands: null
-                    })
+                    });
                 }
             });
             app.get('/api/listWorldBackups', function (request, response) {
@@ -144,6 +145,7 @@ class MinecraftApi {
                 });
             });
             app.get('/api/status', function (request, response) {
+                // TODO: Make this more usable
                 let rightNow = Date.now(),
                     uptime = rightNow - minecraftServer.properties.startTime,
                     mcuptime = minecraftServer.properties.startTime ? rightNow - minecraftServer.properties.startTime : null;
@@ -152,7 +154,7 @@ class MinecraftApi {
                 response.json({
                     minecraftOnline: minecraftServer.properties.started,
                     minecraftUptime: mcuptime,
-                    minecraftVersion: minecraftServer.properties.version,
+                    minecraftVersion: minecraftServer.properties.detectedVersion,
                     minecraftAcceptedEula: minecraftServer.properties.acceptedEula,
                     minecraftEulaUrl: minecraftServer.properties.eulaUrl,
                     uptime: uptime
@@ -235,22 +237,23 @@ class MinecraftApi {
             console.info('Web application running at ' + url);
         });
         
-        // TODO - these appear to be broken. determine if need fixing.
+        // TODO - these appear to be broken. determine if need fixing. Might for SSL EVERYWHERE.
         // http.createServer(app).listen(8080, properties.ipAddress, function () {
-            //     let url = 'http://' + this.address().address + ':' + this.address().port;
-            //     console.log('Web application running at ' + url);
+        //     let url = 'http://' + this.address().address + ':' + this.address().port;
+        //     console.log('Web application running at ' + url);
         // });
         // https.createServer(app).listen(8443, properties.ipAddress, function () {
-            //     let url = 'https://' + this.address().address + ':' + this.address().port;
-            //     console.log('Web application running at ' + url);
+        //     let url = 'https://' + this.address().address + ':' + this.address().port;
+        //     console.log('Web application running at ' + url);
         // });
         
-        // TODO Make starting Minecraft Server a preference
-        if (minecraftServer.properties.acceptedEula) {
-            minecraftServer.start();
-        } else {
-            console.log('Minecraft EULA not accepted yet.');
-        }
+        // TODO Make starting Minecraft Server a preference, and check EULA?
+        // if (minecraftServer.properties.acceptedEula) {
+        //     minecraftServer.start();
+        // } else {
+        //     console.log('Minecraft EULA not accepted yet.');
+        // }
+        minecraftServer.start();
 
         console.info('MinecraftApi started.');
     }
@@ -265,7 +268,6 @@ class MinecraftApi {
             minecraftServer.stop(() => {
                 console.log('MinecraftServer stopped.');
                 properties.minecraftServer = null;
-                debugger;
             });
         }
         console.log('MinecraftApi stopped.');
