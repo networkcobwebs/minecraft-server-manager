@@ -143,7 +143,6 @@ class MinecraftServer {
         this.getUserCache = this.getUserCache.bind(this);
         this.install = this.install.bind(this);
         this.listCommands = this.listCommands.bind(this);
-        this.getMinecraftPlayers = this.getMinecraftPlayers.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.waitForHelpOutput = this.waitForHelpOutput.bind(this);
@@ -1066,15 +1065,14 @@ class MinecraftServer {
                             this.properties.allowedCommands.push(command);
                         }
                     }
-                    // console.log("playerList:", playerList);
+    
+                    this.properties.serverOutput.length = 0;
+                    this.properties.serverOutputCaptured = false;
                     if (typeof callback === 'function') {
-                        callback(playersInfo);
+                        callback();
                     }
-                }.bind(this), 250);
+                }, 500);
             }
-
-        } else {
-            console.log('TODO: complete error handling');
         }
     }
 }
