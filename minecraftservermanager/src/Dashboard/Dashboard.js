@@ -15,8 +15,8 @@ class Dashboard extends React.Component {
     render () {
         return (
             <div style={ styles.container }>
-                <ServerSummary minecraftState = { this.props.minecraftState } />
-                <PlayersSummary minecraftState = { this.props.minecraftState } />
+                <ServerSummary ipInfo = { this.props.ipInfo } minecraftProperties = { this.props.minecraftProperties } />
+                <PlayersSummary playerInfo = { this.props.playerInfo } />
             </div>
         );
     }

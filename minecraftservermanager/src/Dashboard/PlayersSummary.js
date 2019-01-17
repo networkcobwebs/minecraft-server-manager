@@ -16,9 +16,9 @@ const styles = {
 
 export default class PlayersSummary extends React.Component {
     render () {
-        let playerNames = this.props.minecraftState.playerNames,
-            summary = this.props.minecraftState.playerSummary;
-
+        let players = this.props.playerInfo.players;
+        let summary = this.props.playerInfo.summary;
+        
         return (
             <div style = { styles.container }>
                 <h3>Connected Players</h3>
@@ -29,7 +29,7 @@ export default class PlayersSummary extends React.Component {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        { playerNames.length ? playerNames.map(player => {
+                        { players && players.length ? players.map(player => {
                             return (
                                 <TableRow key={ player.name }>
                                     <TableCell>{ player.name }</TableCell>

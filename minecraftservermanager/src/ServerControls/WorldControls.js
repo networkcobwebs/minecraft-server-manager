@@ -120,10 +120,7 @@ export default class WorldControls extends React.Component {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
         axios({
             method: 'post',
-            url: '/api/command',
-            params: {
-                command: '/backupWorld'
-            }
+            url: '/api/backupWorld'
         }).then(res => {
             this.setState({ progressDialogOpen: false });
         },
@@ -137,9 +134,8 @@ export default class WorldControls extends React.Component {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
         axios({
             method: 'post',
-            url: '/api/command',
+            url: '/api/newWorld',
             params: {
-                command: '/newWorld',
                 backup: false
             }
         }).then(res => {
@@ -221,7 +217,7 @@ export default class WorldControls extends React.Component {
                 <RawMinecraftCommandDialog
                     open = { this.state.rawMinecraftCommandDialogOpen }
                     onClose = { this.closeRawCommandDialog }
-                    minecraftCommands = { this.props.minecraftState.minecraftCommands }
+                    minecraftCommands = { this.props.minecraftProperties.fullHelp }
                     updateRawCommandField = { this.updateRawCommandDialog }
                 />
                 <RestoreBackupDialog

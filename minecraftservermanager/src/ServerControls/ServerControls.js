@@ -19,6 +19,8 @@ import Stop from '@material-ui/icons/Stop';
 import Restart from '@material-ui/icons/Replay';
 import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 
+import ProgressDialog from './ProgressDialog.js';
+
 const styles = {
     container: {
         margin: 10,
@@ -26,45 +28,66 @@ const styles = {
         fontSize: '0.95rem'
     }
   };
-  
-  function startMinecraft (event) {
-      axios({
-          method: 'post',
-          url: `/api/command?command=/start`
-      }).then(res => {},
-      err => {
-          console.log('An error occurred contacting the Minecraft server.', err);
-      });
-  }
-
-function stopMinecraft (event) {
-    axios({
-        method: 'post',
-        url: `/api/command?command=/stop`
-    }).then(res => {},
-    err => {
-        console.log('An error occurred contacting the Minecraft server.', err);
-    });
-}
-
-function restartMinecraft (event) {
-    axios({
-        method: 'post',
-        url: `/api/command?command=/restart`
-    }).then(res => {
-        let minecraftStatus = res.data;
-        console.log('minecraftStatus:', minecraftStatus);
-    },
-    err => {
-        console.log('An error occurred contacting the Minecraft server.', err);
-    });
-}
 
 class ServerControls extends React.Component {
+    constructor (props) {
+        super(props);
+        
+        this.state = {
+            progressDialogOpen: false
+        }
+    }
+    
+    openProgressDialog = (e) => {
+        this.setState({ progressDialogOpen: true });
+    };
+    
+    closeProgressDialog = (e) => {
+        this.setState({ progressDialogOpen: false });
+    };
+
+    restartMinecraft = () => {
+        this.setState({ progressDialogOpen: true });
+        axios({
+            method: 'post',
+            url: `/api/restart`
+        }).then(res => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+        });
+    }
+    
+    startMinecraft = () => {
+        this.setState({ progressDialogOpen: true });
+        axios({
+            method: 'post',
+            url: `/api/start`
+        }).then(res => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+        });
+    }
+  
+    stopMinecraft = () => {
+        this.setState({ progressDialogOpen: true });
+        axios({
+            method: 'post',
+            url: `/api/stop`
+        }).then(res => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+        });
+    }
+
     render () {
-        let minecraftState = this.props.minecraftState,
-            minecraftStatus = this.props.minecraftState.minecraftStatus,
-            minecraftProperties = this.props.minecraftState.minecraftServerProperties;
+        let minecraftProperties = this.props.minecraftProperties,
+            minecraftStatus = minecraftProperties.started;
 
         return (
             <div style={ styles.container }>
@@ -73,33 +96,31 @@ class ServerControls extends React.Component {
                         Server Controls
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
-                        { !minecraftState ? <div>Waiting on Minecraft server...</div> : 
+                        { !minecraftStatus ? <div>Waiting on Minecraft server...</div> : 
                         <div>
                             <IconButton
-                                onClick = { startMinecraft }>
+                                onClick = { this.startMinecraft }>
                                 <Tooltip title="Start">
                                     <Start />
                                 </Tooltip>
                             </IconButton>
                             <IconButton
-                                onClick = { stopMinecraft }>
+                                onClick = { this.stopMinecraft }>
                                 <Tooltip title="Stop">
                                     <Stop />
                                 </Tooltip>
                             </IconButton>
                             <IconButton
-                                onClick = { restartMinecraft }>
+                                onClick = { this.restartMinecraft }>
                                 <Tooltip title="Restart">
                                     <Restart />
                                 </Tooltip>
                             </IconButton>
-                            { minecraftState && minecraftStatus.updateAvailable ?
-                            <IconButton>
+                            <IconButton disabled>
                                 <Tooltip title="Update">
                                     <UpdateAvailable />
                                 </Tooltip>
                             </IconButton>
-                            : <div></div> }
                         </div> }
                     </ExpansionPanelDetails>
                 </ExpansionPanel>
@@ -108,7 +129,7 @@ class ServerControls extends React.Component {
                         Server Properties
                     </ExpansionPanelSummary>
                     
-                    { minecraftState && minecraftProperties.length ? minecraftProperties.map(property => {
+                    { minecraftProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
                         return (
                             <ExpansionPanelDetails key={ property.name }>
                                 {/* <TextField
@@ -140,6 +161,10 @@ class ServerControls extends React.Component {
                         </Button>
                     </ExpansionPanelActions>
                 </ExpansionPanel>
+                <ProgressDialog
+                    open = { this.state.progressDialogOpen }
+                    onClose = { this.closeProgressDialog }
+                />
             </div>
         );
     }

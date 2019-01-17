@@ -188,8 +188,9 @@ export default class Players extends React.Component {
         />;
 
     render () {
-        let players = this.props.minecraftState.players,
-            summary = this.props.minecraftState.playerSummary;
+        let playerInfo = this.props.playerInfo,
+            summary = playerInfo.summary,
+            players = playerInfo.players;
 
         return (
             <div style = { styles.container }>
@@ -200,6 +201,7 @@ export default class Players extends React.Component {
                         </TableRow>
                     </TableHead>
                 </Table>
+                { players.length ? 
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -211,7 +213,7 @@ export default class Players extends React.Component {
                     <TableBody>
                         { players.map(this.displayPlayerListItems) }
                     </TableBody>
-                </Table>
+                </Table> : <div></div> }
             </div>
         );
     };

@@ -1,4 +1,3 @@
-
 const bodyParser = require('body-parser');
 const express = require('express');
 // var https = require('https');
@@ -6,6 +5,8 @@ const express = require('express');
 const path = require('path');
 
 const MinecraftServer = require('./minecraft-server.js');
+
+const debugApi = false;
 
 let _defaultProperties = {
     app: {},
@@ -21,8 +22,17 @@ class MinecraftApi {
     }
 
     set properties (props) {
-        if (JSON.stringify(props) != {}) {
-            this._properties = props;
+        try {
+            let incoming = JSON.stringify(props);
+            if (incoming.ipAddress) {
+                // assume valid props
+                this._properties = props;
+            }
+        } catch (e) {
+            console.log('Somethings was wrong with the properties passed.');
+            if (debugApi) {
+                console.log(e.stack);
+            }
         }
     }
 
@@ -96,127 +106,173 @@ class MinecraftApi {
     }
 
     connectMinecraftApi () {
-        let app = this.properties.app;
-        let minecraftServer = this.properties.minecraftServer;
-        let minecraftFullHelp = this.properties.minecraftServer.properties.fullHelp;
+        let properties = this.properties;
+        let app = properties.app;
+        let minecraftServer = properties.minecraftServer;
+        let minecraftProperties = minecraftServer.properties;
 
-        if (minecraftServer.properties) {
+        if (minecraftProperties) {
             app.get('/api/bannedIps', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    bannedIps: minecraftServer.properties.bannedIps
+                    bannedIps: minecraftProperties.bannedIps
                 });
             });
             app.get('/api/bannedPlayers', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    bannedPlayers: minecraftServer.properties.bannedPlayers
+                    bannedPlayers: minecraftProperties.bannedPlayers
                 });
             });
             app.get('/api/commands', function (request, response) {
-                if (minecraftServer.properties.fullHelp) {
-                    response.contentType('json');
-                    response.json({
-                        commands: minecraftServer.properties.fullHelp
-                    });
-                } else {
-                    response.contentType('json');
-                    response.json({
-                        commands: null
-                    });
+                // if (!minecraftServer.properties.fullHelp || minecraftServer.properties.fullHelp.length <= 0) {
+                //     minecraftServer.listCommands();
+                // }
+                minecraftServer.listCommands();
+                response.contentType('json');
+                response.json({
+                    commands: minecraftProperties.fullHelp
+                });
+            });
+            app.get('/api/ipInfo', function (request, response) {
+                let ipInfo = {};
+                if (minecraftProperties && minecraftProperties.serverProperties.length) {
+                    for (let item of minecraftProperties.serverProperties) {
+                        if (item.name === 'server-ip') {
+                            if (item.value) {
+                                ipInfo.address = item.value;
+                            } else if (minecraftProperties.ipAddress) {
+                                ipInfo.address = minecraftProperties.ipAddress;
+                            }
+                        } else if (item.name === 'server-port') {
+                            ipInfo.port = item.value;
+                        }
+                    }
                 }
+                response.contentType('json');
+                response.json(ipInfo);
+            });
+            app.get('/api/listPlayers', function (request, response) {
+                minecraftServer.listPlayers((players) => {
+                    response.contentType('json');
+                    response.json(players);
+                });
             });
             app.get('/api/listWorldBackups', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    backupList: minecraftServer.properties.backupList
+                    backupList: minecraftProperties.backupList
                 });
             });
             app.get('/api/ops', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    ops: minecraftServer.properties.ops
+                    ops: minecraftProperties.ops
                 });
             });
             app.get('/api/properties', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    properties: minecraftServer.properties.serverProperties
+                    properties: minecraftProperties.serverProperties
                 });
             });
             app.get('/api/status', function (request, response) {
-                // TODO: Make this more usable
-                let rightNow = Date.now(),
-                    uptime = rightNow - minecraftServer.properties.startTime,
-                    mcuptime = minecraftServer.properties.startTime ? rightNow - minecraftServer.properties.startTime : null;
+                // Some things in the MinecraftServer.properties cannot be sent back to the browser, so clone
+                let serverProps = Object.assign({}, minecraftProperties);
+                serverProps.serverProcess = {};
+                serverProps.startedTimer = {};
                 
                 response.contentType('json');
-                response.json({
-                    minecraftOnline: minecraftServer.properties.started,
-                    minecraftUptime: mcuptime,
-                    minecraftVersion: minecraftServer.properties.detectedVersion,
-                    minecraftAcceptedEula: minecraftServer.properties.acceptedEula,
-                    minecraftEulaUrl: minecraftServer.properties.eulaUrl,
-                    uptime: uptime
-                });
+                try {
+                    JSON.stringify(serverProps);
+                    response.json(serverProps);
+                } catch (e) {
+                    console.log('Got error from Minecraft properties.');
+                    if (debugApi) {
+                        console.log(e.stack);
+                    }
+                } finally {
+                    serverProps = null;
+                }
             });
             app.get('/api/userCache', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    userCache: minecraftServer.properties.userCache
+                    userCache: minecraftProperties.userCache
                 });
             });
             app.get('/api/whitelist', function (request, response) {
                 response.contentType('json');
                 response.json({
-                    whitelist: minecraftServer.properties.whitelist
+                    whitelist: minecraftProperties.whitelist
                 });
             });
-            app.post('/api/start', function (request, response) {
-                minecraftServer.start();
+            app.post('/api/acceptEula', function (request, response) {
+                minecraftServer.acceptEula();
                 response.contentType('json');
                 response.json({
-                    response: 'started'
+                    response: 'accepted'
                 });
             });
-            app.post('/api/stop', function (request, response) {
-                minecraftServer.stop();
-                response.contentType('json');
-                response.json({
-                    response: 'stopped'
+            app.post('/api/backupWorld', function (request, response) {
+                minecraftServer.backupWorld(() => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'Backup complete.'
+                    });
                 });
             });
             app.post('/api/command', function (request, response) {
                 let command = request.query.command;
 
-                if (command === '/start') {
-                    if (!minecraftServer.properties.started) {
-                        minecraftServer.start(() => {
-                            response.contentType('json');
-                            response.json({
-                                minecraftOnline: true
-                            });
-                        });
-                    } else {
-                        response.contentType('json');
-                        response.json({
-                            response: 'Server already running.'
-                        });
-                    }
-                } else if (command === '/list') {
+                if (command === '/list') {
                     minecraftServer.getMinecraftPlayers((list) => {
-                        // debugger;
                         response.contentType('json');
                         response.json({
                             response: list
                         });
                     });
                 } else {
+                    console.log('Got bum command:', command);
+                    response.contentType('json');
+                    response.json({
+                        response: 'noop'
+                    });
+                }
+            });
+            app.post('/api/newWorld', function (request, response) {
+                minecraftServer.deleteWorld(request.param('backup'), () => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'New world created.'
+                    });
+                });
+            });
+            app.post('/api/restart', function (request, response) {
+                minecraftServer.stop(() => {
+                    minecraftServer.start(() => {
+                        response.contentType('json');
+                        response.json({
+                            response: 'restarted'
+                        });
+                    });
+                });
+            });
+            app.post('/api/start', function (request, response) {
+                minecraftServer.start(() => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'started'
+                    });
+                });
+            });
+            app.post('/api/stop', function (request, response) {
+                minecraftServer.stop(() => {
                     response.contentType('json');
                     response.json({
                         response: 'stopped'
                     });
-                }
+                });
             });
         } else {
             console.log('MinecraftServer not operational... ignoring MinecraftServer API requests.');

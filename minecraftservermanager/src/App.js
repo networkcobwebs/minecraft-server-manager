@@ -21,6 +21,7 @@ import Dashboard from './Dashboard/Dashboard.js';
 import Players from './Players/Players.js';
 import ServerControls from './ServerControls/ServerControls.js';
 import WorldControls from './ServerControls/WorldControls.js';
+import Preferences from './Preferences/Preferences.js';
 import About from './About/About.js';
 
 const debug = false;
@@ -47,26 +48,28 @@ export default class App extends React.Component {
 
         this.state = {
             debug: debug,
-            value: 0,
+            ipInfo: {},
             minecraftStatus: {},
             eulaOpen: false,
+            minecraftCommands: [],
             minecraftEulaUrl: 'https://account.mojang.com/documents/minecraft_eula',
+            minecraftProperties: {},
             minecraftServerProperties: [],
             minecraftServerBannedIps: [],
             minecraftServerBannedPlayers: [],
             minecraftServerWhitelist: [],
             minecraftServerOps: [],
             minecraftServerUserCache: [],
-            minecraftCommands: [],
-            playerSummary: '',
+            playersSummary: '',
             playerNames: [],
-            players: []
+            playerInfo: {},
+            value: 0
         };
         if (debug) {
             console.log('App state:', this.state);
         }
+        this.runOnce();
         this.getMinecraftStatus(25);
-        this.getMinecraftPlayers(25);
     };
 
     componentWillUnmount () {
@@ -79,6 +82,21 @@ export default class App extends React.Component {
     handleChange = (event, value) => {
         this.setState({ value });
     };
+
+    runOnce () {
+        this.getIpInfo();
+        this.getMinecraftServerProperties();
+        this.getMinecraftCommands();
+    }
+
+    getIpInfo () {
+        let ipInfo;
+
+        axios(`/api/ipInfo`).then(res => {
+            ipInfo = res.data;
+            this.setState({ ipInfo });
+        });
+    }
       
     getMinecraftCommands = () => {
         return axios({
@@ -115,11 +133,12 @@ export default class App extends React.Component {
 
         this.statusTimerId = setTimeout(() => {
             axios(`/api/status`).then(res => {
-                let minecraftStatus = res.data;
-                this.setState({ minecraftStatus });
-                this.setState({ eulaOpen: !minecraftStatus.minecraftAcceptedEula });
+                // let minecraftStatus = res.data;
+                let minecraftProperties = res.data;
+                // this.setState({ minecraftStatus });
+                this.setState({ minecraftProperties });
+                this.setState({ eulaOpen: !minecraftProperties.acceptedEula });
                 
-                this.getMinecraftServerProperties();
                 this.getMinecraftServerBannedIps();
                 this.getMinecraftServerBannedPlayers();
                 this.getMinecraftServerWhitelist();
@@ -330,6 +349,7 @@ export default class App extends React.Component {
             maxTime = 120 * 1000,
             pingTime,
             minecraftStatus = this.state.minecraftStatus;
+        let minecraftProperties = this.state.minecraftProperties;
 
         // normally ping every 5 seconds
         // if a fast ping was requested (from constructor/DidMount), honor it
@@ -350,35 +370,26 @@ export default class App extends React.Component {
         }
 
         this.playersTimerId = setTimeout(() => {
-            if (minecraftStatus.minecraftOnline) {
+            if (minecraftProperties.started) {
                 axios({
-                    method: 'post',
-                    url: '/api/command',
-                    params: {
-                        command: '/list'
-                    }
+                    url: '/api/listPlayers'
                 }).then(res => {
-                    let result = res.data,
-                        playersInfo = result.response,
-                        playerSummary = playersInfo.summary,
-                        playerNames = playersInfo.players;
-                    this.setState({ playerSummary });
-                    this.setState({ playerNames });
-
+                    let playerInfo = res.data;
+                    this.setState({ playerInfo });
                     if (this.state.debug) {
-                        console.log('PlayersSummary state:', this.state.playerSummary);
-                        console.log('Players state:', this.state.playerNames);
+                        console.log('Players info:', this.state.playerInfo);
                         console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
                     }
 
                     this.getMinecraftPlayers();
                 },
                 err => {
-                    let playerSummary = '',
-                        playerNames = [];
+                    let playerInfo = {
+                        summary: '',
+                        players: []
+                    };
 
-                    this.setState({ playerSummary });
-                    this.setState({ playerNames });
+                    this.setState({ playerInfo });
 
                     pingTime = pingTime + appendTime;
 
@@ -508,9 +519,7 @@ export default class App extends React.Component {
     };
     
     render () {
-        let minecraftStatus = this.state.minecraftStatus,
-            vertical = 'top',
-            horizontal = 'left';
+        let minecraftProperties = this.state.minecraftProperties;
 
         return (
             <MuiThemeProvider theme={ getTheme() }>
@@ -523,28 +532,33 @@ export default class App extends React.Component {
                         <Tab label="Players" />
                         <Tab label="World Controls" />
                         <Tab label="Server Controls" />
-                        {/* <Tab label="Preferences" /> */}
+                        <Tab label="Preferences" />
                         <Tab label="About" />
                     </Tabs>
                 </AppBar>
-                { this.state.value === 0 && <Dashboard minecraftState = { this.state } /> }
-                { this.state.value === 1 && <Players minecraftState = { this.state } /> }
-                { this.state.value === 2 && <WorldControls minecraftState = { this.state } /> }
-                { this.state.value === 3 && <ServerControls minecraftState = { this.state } /> }
-                {/* TODO Preferences (poll times, start Minecraft always, updates, etc.) */}
-                { this.state.value === 4 && <About /> }
+                { this.state.value === 0 && <Dashboard ipInfo = { this.state.ipInfo } minecraftProperties = { minecraftProperties } playerInfo = { this.state.playerInfo } minecraftState = { this.state } /> }
+                { this.state.value === 1 && <Players playerInfo = { this.state.playerInfo } /> }
+                { this.state.value === 2 && <WorldControls minecraftProperties = { minecraftProperties } /> }
+                { this.state.value === 3 && <ServerControls minecraftProperties = { minecraftProperties } minecraftState = { this.state } /> }
+                { this.state.value === 4 && <Preferences /> }
+                { this.state.value === 5 && <About /> }
                 <Snackbar
-                    anchorOrigin = {{ vertical, horizontal }}
-                    open = { !minecraftStatus.minecraftOnline }
-                    message = {<span id="message-id">Minecraft is currently stopped.</span>}
+                    anchorOrigin = {
+                        {
+                            vertical: 'bottom',
+                            horizontal: 'left' 
+                        }
+                    }
+                    open = { !minecraftProperties.started }
+                    message = { <span id="message-id">Minecraft is currently stopped.</span> }
                 />
                 <Dialog
-                    open = { this.state.eulaOpen }>
-                    <DialogTitle>{"Accept Minecraft End User License Agreement?"}</DialogTitle>
+                    open = { minecraftProperties.started && this.state.eulaOpen } >
+                    <DialogTitle>{ "Accept Minecraft End User License Agreement?" }</DialogTitle>
                     <DialogContent>
                         <DialogContentText>
                             By using this application, you agree to the terms of the Minecraft end user
-                            license agreement, available <a href={ minecraftStatus.minecraftEulaUrl || this.state.minecraftEulaUrl }>here</a>.
+                            license agreement, available <a href={ minecraftProperties.eulaUrl }>here</a>.
                         </DialogContentText>
                     </DialogContent>
                     <DialogActions>

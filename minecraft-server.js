@@ -20,10 +20,12 @@ let defaultProperties = {
     fullHelp: [],
     helpPages: 0,
     installed: false,
+    ipAddress: '',
     javaHome: '',
     ops: {},
     osType: os.type(),
     pathToMinecraftDirectory: 'minecraft_server',
+    players: [],
     serverJar: 'minecraft_server.jar',
     serverLog: 'minecraft_server.log',
     serverLogDir: 'logs',
@@ -143,9 +145,19 @@ class MinecraftServer {
         this.getUserCache = this.getUserCache.bind(this);
         this.install = this.install.bind(this);
         this.listCommands = this.listCommands.bind(this);
+        this.listPlayers = this.listPlayers.bind(this);
+        this.parseHelpOutput = this.parseHelpOutput.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.waitForHelpOutput = this.waitForHelpOutput.bind(this);
+
+        this.properties.ipAddress = require('underscore')
+            .chain(require('os').networkInterfaces())
+            .values()
+            .flatten()
+            .find({family: 'IPv4', internal: false})
+            .value()
+            .address;
         
         this.detectMinecraftDir();
         this.detectMinecraftJar();
@@ -198,9 +210,14 @@ class MinecraftServer {
         }
     }
 
-    backupWorld (worldName) {
+    backupWorld (worldName, callback) {
         if (debug) {
             console.log('Backing up MinecraftServer world...');
+        }
+
+        if (typeof worldName === 'function') {
+            callback = worldName;
+            worldName = null;
         }
 
         let properties = this.properties;
@@ -224,12 +241,13 @@ class MinecraftServer {
                 throw err;
             });
             output.on('close', function() {
-                this.start(() => {
-                    console.log('Backup size: ' + archive.pointer() + ' total bytes');
-                    // console.log('Archive has been finalized and the output file descriptor has closed.');
-                    console.log('MinecraftServer World backed up.');
-                });
-            });
+                console.log('Backup size: ' + archive.pointer() + ' total bytes');
+                console.log('MinecraftServer World backed up.');
+                this.start();
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }.bind(this));
     
             if (properties.started) {
                 this.stop(() => {
@@ -325,6 +343,7 @@ class MinecraftServer {
                     properties.serverOutput.length = 0;
                     properties.serverOutputCaptured = false;
                     shouldContinueStart = false;
+                    this.listCommands();
                     if (typeof callback === 'function') {
                         callback();
                     }
@@ -383,30 +402,62 @@ class MinecraftServer {
         }
     }
     
-    deleteWorld (worldName, backupWorld) {
+    newWorld (backupWorld, callback) {
         if (debug) {
             console.log('Deleting MinecraftServer world...');
         }
 
         let properties = this.properties;
+        let worldName = '';
+        for (let item in properties.serverProperties) {
+            if (item.name === 'level-name') {
+                worldName = item.value;
+            }
+        }
+        if (!worldName) {
+            worldName = 'world';
+        }
 
-        worldName = worldName || 'world';
         backupWorld = backupWorld || false;
 
         if (backupWorld) {
-            // TODO backup the world
-        }
+            this.backupWorld(() => {
+                try {
+                    fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
+                        fs.F_OK | fs.R_OK | fs.W_OK);
+            
+                    console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
+                    fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
+                    console.log('World deleted.');
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }
+                catch (e) {
+                    console.log('An error occurred deleting world data:', e.stack);
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }
+            });
+        } else {
+            try {
+                fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
+                    fs.F_OK | fs.R_OK | fs.W_OK);
         
-        try {
-            fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                fs.F_OK | fs.R_OK | fs.W_OK);
-    
-            console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
-            fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
-            console.log('World deleted.');
-        }
-        catch (e) {
-            console.log('An error occurred deleting world data:', e.stack);
+                console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
+                fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
+                console.log('World deleted.');
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
+            catch (e) {
+                console.log('An error occurred deleting world data:', e.stack);
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
         }
     }
 
@@ -775,6 +826,7 @@ class MinecraftServer {
                                         aJar.pipe(fileStream);
                                         fileStream.on('finish', ()  => {
                                             fileStream.close();  // close() is async.
+                                            properties.serverJar = version;
                                             console.log('Download of Minecraft server complete.');
                                             if (!properties.eulaFound) {
                                                 this.getEula();
@@ -821,13 +873,90 @@ class MinecraftServer {
                 setTimeout(() => {
                     this.waitForHelpOutput(serverOutput, callback);
                 }, 100);
-            } else {
+            } else if (started) {
                 setTimeout(() => {
                     this.listCommands(++checkCount, callback);
                 }, 100);
+            } else {
+                console.log('Minecraft appears to not be running. Cannot fetch commands.');
             }
         } else {
             console.log('Could not get MinecraftServer commands.');
+        }
+    }
+
+    listPlayers (callback) {
+        if (debug) {
+            console.log('Listing Minecraft players.');
+        }
+
+        let properties = this.properties;
+        let serverOutputCaptured = properties.serverOutputCaptured;
+        let serverOutput = properties.serverOutput;
+        let serverProcess = properties.serverProcess;
+        let started = properties.started;
+        let userCache = properties.userCache;
+        let playersList = {
+            summary: '',
+            players: []
+        };
+        let player, somePlayerNames, somePlayerName;
+
+        if (started && !serverOutputCaptured) {
+            serverOutputCaptured = true;
+            serverOutput.length = 0;
+            serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+            serverProcess.stdin.write('/list\n');
+            setTimeout(function () {
+                serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+                // First line is the summary,
+                // followed by player names, comma+space separated.
+                let output = serverOutput.join('');
+                let players = output.split(/\n/);
+                let playersSummary = players.shift();
+                // Remove trailing ':'
+                playersSummary = playersSummary.slice(0, -1);
+                // Remove preceding timestamp & server info
+                playersSummary = playersSummary.split(']: ')[1];
+                playersList.summary = playersSummary;
+
+                // Get online player names
+                for (let i = 0; i < players.length; i++) {
+                    // Remove preceding timestamp & server info
+                    somePlayerNames = players[i].split(']: ')[1];
+
+                    if (somePlayerNames) {
+                        somePlayerNames = somePlayerNames.split(',');
+                        for (let p = 0; p < somePlayerNames.length; p++) {
+                            somePlayerName = somePlayerNames[p];
+                            if (somePlayerName) {
+                                // Make sure to check for multiple spaces so as to
+                                // ignore any bad data like things that were
+                                // accidentally in the buffer at the same time we
+                                // queried, etc.
+                                let testData = somePlayerName.split(' ');
+                                if (testData.length <= 2) {
+                                    player = {
+                                        name: somePlayerName.trim(),
+                                        online: true
+                                    };
+                                    // TODO: walk caches for this player
+                                    playersList.players.push(player);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                serverOutputCaptured = false;
+
+                if (typeof callback === 'function') {
+                    callback(playersList);
+                }
+            }.bind(this), 250);
+        } else {
+            console.log('Could not list Minecraft players.');
+            return playersList;
         }
     }
 
@@ -864,6 +993,74 @@ class MinecraftServer {
             properties.backupList = backupList;
         } catch (e) {
             console.log(e.stack);
+        }
+    }
+
+    parseHelpOutput (callback) {
+        let properties = this.properties;
+        let minecraftFullHelp = properties.fullHelp;
+        let minecraftOutput = properties.serverOutput;
+        let line;
+
+        properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+        
+        while ( (line = minecraftOutput.shift()) !== undefined ) {
+            let command = {};
+            let commandLine = line.split(' [Server thread/INFO]: ');
+
+            if (commandLine[1].indexOf('/') === 0) {
+                let aThing = {};
+                aThing.key = minecraftFullHelp.length;
+                aThing.command = commandLine[1];
+                this.properties.fullHelp.push(aThing);
+                let commandLineSpaces = commandLine[1].split(' ');
+                let args = [];
+                let commands = [];
+                
+                command = {
+                    command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
+                };
+
+                commandLineSpaces.shift();
+
+                if (commandLine[1].indexOf(' OR ') !== -1) {
+                    commands = commandLine[1].split(' OR ');
+                } else {
+                    commands.push(commandLine[1]);
+                }
+
+                args.length = 0;
+                for (let c of commands) {
+                    let things = this.getCommand(c, true, false);
+                    for (let thing of things) {
+                        args.push(thing);
+                    }
+                }
+                if (args.length) {
+                    let requiredArgs = new Set(args);
+                    command['requiredArgs'] = Array.from(requiredArgs);
+                }
+
+                args.length = 0;
+                for (let c of commands) {
+                    let things = this.getCommand(c, false, true);
+                    for (let thing of things) {
+                        args.push(thing);
+                    }
+                }
+                if (args.length) {
+                    let optionalArgs = new Set(args);
+                    command['optionalArgs'] = Array.from(optionalArgs);
+                }
+
+                properties.allowedCommands.push(command);
+            }
+        }
+
+        properties.serverOutput.length = 0;
+        properties.serverOutputCaptured = false;
+        if (typeof callback === 'function') {
+            callback();
         }
     }
 
@@ -991,87 +1188,34 @@ class MinecraftServer {
     }
 
     waitForHelpOutput (buffer, callback) {
+        let properties = this.properties;
         let bufferMinecraftOutput = this.bufferMinecraftOutput;
-        let minecraftFullHelp = this.properties.fullHelp;
-        let minecraftHelpPages = this.properties.helpPages;
-        let minecraftOutput = this.properties.serverOutput;
-        let minecraftServerProcess = this.properties.serverProcess;
+        let minecraftHelpPages =properties.helpPages;
+        let minecraftServerProcess = properties.serverProcess;
         let line;
 
-        while( (line = this.properties.serverOutput.shift()) !== undefined ) {
+        // while( (line = properties.serverOutput.shift()) !== undefined ) {
+        for (line of properties.serverOutput) {
             if (line.indexOf('Showing help page') !== -1) {
-                this.properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
-                this.properties.serverOutput.length = 0;
+                // Versions prior to 1.13 "page" the help
+                properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                properties.serverOutput.length = 0;
     
                 let part1 = line.split('Showing help page ');
                 let part2 = part1[1].split(' ');
-                this.properties.helpPages = parseInt(part2[2]);
+                properties.helpPages = parseInt(part2[2]);
     
-                this.properties.serverProcess.stdout.addListener('data', bufferMinecraftOutput);
+                properties.serverProcess.stdout.addListener('data', bufferMinecraftOutput);
                 for (let i = 1; i <= minecraftHelpPages; i++) {
+                    // Get all of the help at once
                     minecraftServerProcess.stdin.write('/help ' + i + '\n');
                 }
                 setTimeout(() => {
-                    this.properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
-                    while ( (line = minecraftOutput.shift()) !== undefined ) {
-                        let command = {};
-                        let commandLine = line.split(' [Server thread/INFO]: ');
-    
-                        if (commandLine[1].indexOf('/') === 0) {
-                            let aThing = {};
-                            aThing.key = minecraftFullHelp.length;
-                            aThing.command = commandLine[1];
-                            this.properties.fullHelp.push(aThing);
-                            let commandLineSpaces = commandLine[1].split(' ');
-                            let args = [];
-                            let commands = [];
-                            
-                            command = {
-                                command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
-                            };
-    
-                            commandLineSpaces.shift();
-    
-                            if (commandLine[1].indexOf(' OR ') !== -1) {
-                                commands = commandLine[1].split(' OR ');
-                            } else {
-                                commands.push(commandLine[1]);
-                            }
-    
-                            args.length = 0;
-                            for (let c of commands) {
-                                let things = this.getCommand(c, true, false);
-                                for (let thing of things) {
-                                    args.push(thing);
-                                }
-                            }
-                            if (args.length) {
-                                let requiredArgs = new Set(args);
-                                command['requiredArgs'] = Array.from(requiredArgs);
-                            }
-    
-                            args.length = 0;
-                            for (let c of commands) {
-                                let things = this.getCommand(c, false, true);
-                                for (let thing of things) {
-                                    args.push(thing);
-                                }
-                            }
-                            if (args.length) {
-                                let optionalArgs = new Set(args);
-                                command['optionalArgs'] = Array.from(optionalArgs);
-                            }
-        
-                            this.properties.allowedCommands.push(command);
-                        }
-                    }
-    
-                    this.properties.serverOutput.length = 0;
-                    this.properties.serverOutputCaptured = false;
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
-                }, 500);
+                    this.parseHelpOutput(callback);
+                }, 1000);
+            } else {
+                // Versions 1.13 and later display all of the help at once, no need to page it
+                this.parseHelpOutput(callback);
             }
         }
     }

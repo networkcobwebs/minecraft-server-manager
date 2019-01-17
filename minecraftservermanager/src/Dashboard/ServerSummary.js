@@ -1,14 +1,16 @@
 import React from 'react';
+import axios from 'axios';
 
+import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import ServerOnline from '@material-ui/icons/CheckCircle';
-import ServerOffline from '@material-ui/icons/Error';
-import UpdateAvailable from '@material-ui/icons/AssignmentLate';
+import CheckCircle from '@material-ui/icons/CheckCircle';
+import Error from '@material-ui/icons/Error';
+import AssignmentLate from '@material-ui/icons/AssignmentLate';
 
 const styles = {
     container: {
@@ -30,32 +32,76 @@ function formatTime (seconds) {
   }
 
 class ServerSummary extends React.Component {
-    minecraftOnline () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
+    handleAcceptEula = () => {
+        axios({
+            method: 'post',
+            url: '/api/acceptEula'
+        }).catch(error => {
+            console.log('An error occurred accepting the EULA:', error);
+        });
+    };
+
+    minecraftAcceptEulaButton () {
+        return (
+            <Button onClick = { this.handleAcceptEula } color="primary" autoFocus>
+                Accept
+            </Button>
+        );
+    }
+    minecraftEulaAcceptedStatus () {
+        let minecraftProperties = this.props.minecraftProperties;
         
-        if (minecraftStatus && minecraftStatus.minecraftOnline) {
+        if (minecraftProperties && minecraftProperties.acceptedEula) {
             return (
-                <Tooltip title="Running">
-                    <ServerOnline />
-                </Tooltip>
+                <div>
+                    <Tooltip title="Accepted">
+                        <CheckCircle />
+                    </Tooltip>
+                </div>
             );
         } else {
             return (
-                <Tooltip title="Problem">
-                    <ServerOffline />
-                </Tooltip>
+                <div>
+                    <Tooltip title="Not accepted">
+                        <Error />
+                    </Tooltip>
+                </div>
+            );
+        }
+    }
+
+    minecraftOnline () {
+        let minecraftProperties = this.props.minecraftProperties;
+        
+        if (minecraftProperties && minecraftProperties.started) {
+            return (
+                <div>
+                    <Tooltip title="Running">
+                        <CheckCircle />
+                    </Tooltip>
+                </div>
+            );
+        } else {
+            return (
+                <div>
+                    <Tooltip title="Minecraft is not running">
+                        <Error />
+                    </Tooltip>
+                </div>
             );
         }
     }
     
     minecraftUpdate () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
+        let minecraftProperties = this.props.minecraftProperties;
     
-        if (minecraftStatus && minecraftStatus.updateAvailable) {
+        if (minecraftProperties && minecraftProperties.updateAvailable) {
             return (
-                <Tooltip title="Update Available">
-                    <UpdateAvailable />
-                </Tooltip>
+                <div>
+                    <Tooltip title="Update Available">
+                        <AssignmentLate />
+                    </Tooltip>
+                </div>
             );
         } else {
             return <div></div>;
@@ -63,11 +109,11 @@ class ServerSummary extends React.Component {
     }
     
     minecraftVersion () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
+        let minecraftProperties = this.props.minecraftProperties;
     
-        if (minecraftStatus && minecraftStatus.minecraftVersion) {
+        if (minecraftProperties && minecraftProperties.detectedVersion) {
             return (
-                <TableCell>{ minecraftStatus.minecraftVersion }</TableCell>
+                <TableCell>{ minecraftProperties.detectedVersion }</TableCell>
             );
         } else {
             return <TableCell></TableCell>;
@@ -75,25 +121,14 @@ class ServerSummary extends React.Component {
     }
 
     minecraftUptime () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
+        let minecraftProperties = this.props.minecraftProperties;
+        let rightNow = Date.now();
+        let uptime = 0;
     
-        if (minecraftStatus && minecraftStatus.uptime && minecraftStatus.uptime > 0) {
+        if (minecraftProperties && minecraftProperties.started && minecraftProperties.startTime > 0) {
+            uptime = (rightNow - minecraftProperties.startTime)/1000;
             return (
-                <TableCell>{ formatTime(minecraftStatus.uptime / 1000) }</TableCell>
-            );
-        } else {
-            return(
-                <TableCell></TableCell>
-            );
-        }
-    }
-
-    minecraftServerUptime () {
-        let minecraftStatus = this.props.minecraftState.minecraftStatus;
-    
-        if (minecraftStatus && minecraftStatus.minecraftUptime) {
-            return (
-                <TableCell>{ formatTime(minecraftStatus.minecraftUptime / 1000) }</TableCell>
+                <TableCell>{ formatTime(uptime) }</TableCell>
             );
         } else {
             return(
@@ -109,16 +144,6 @@ class ServerSummary extends React.Component {
                 <Table>
                     <TableBody>
                         <TableRow>
-                            <TableCell>Server Address</TableCell>
-                            <TableCell>localhost</TableCell>
-                            <TableCell></TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>Server Uptime</TableCell>
-                            { this.minecraftUptime() }
-                            <TableCell></TableCell>
-                        </TableRow>
-                        <TableRow>
                             <TableCell>Minecraft Status</TableCell>
                             <TableCell>
                                 { this.minecraftOnline() }
@@ -128,13 +153,25 @@ class ServerSummary extends React.Component {
                             </TableCell>
                         </TableRow>
                         <TableRow>
+                            <TableCell>EULA Accepted</TableCell>
+                            <TableCell>
+                                { this.minecraftEulaAcceptedStatus() }
+                            </TableCell>
+                            <TableCell>{ this.props.minecraftProperties.acceptedEula ? <div></div> : this.minecraftAcceptEulaButton() }</TableCell>
+                        </TableRow>
+                        <TableRow>
                             <TableCell>Minecraft Version</TableCell>
                             { this.minecraftVersion() }
                             <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>Minecraft Uptime</TableCell>
-                            { this.minecraftServerUptime() }
+                            <TableCell>Server Address</TableCell>
+                            <TableCell>{ this.props.ipInfo.address ? this.props.ipInfo.address + ':' + this.props.ipInfo.port : 'Not known.' }</TableCell>
+                            <TableCell></TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Server Uptime</TableCell>
+                            { this.minecraftUptime() }
                             <TableCell></TableCell>
                         </TableRow>
                     </TableBody>
