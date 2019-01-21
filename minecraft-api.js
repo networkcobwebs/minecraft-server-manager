@@ -125,13 +125,11 @@ class MinecraftApi {
                 });
             });
             app.get('/api/commands', function (request, response) {
-                // if (!minecraftServer.properties.fullHelp || minecraftServer.properties.fullHelp.length <= 0) {
-                //     minecraftServer.listCommands();
-                // }
-                minecraftServer.listCommands();
-                response.contentType('json');
-                response.json({
-                    commands: minecraftProperties.fullHelp
+                minecraftServer.listCommands(0, () => {
+                    response.contentType('json');
+                    response.json({
+                        commands: minecraftProperties.fullHelp
+                    });
                 });
             });
             app.get('/api/ipInfo', function (request, response) {
@@ -152,10 +150,10 @@ class MinecraftApi {
                 response.contentType('json');
                 response.json(ipInfo);
             });
-            app.get('/api/listPlayers', function (request, response) {
-                minecraftServer.listPlayers((players) => {
+            app.get('/api/playerInfo', function (request, response) {
+                minecraftServer.listPlayers((playerInfo) => {
                     response.contentType('json');
-                    response.json(players);
+                    response.json(playerInfo);
                 });
             });
             app.get('/api/listWorldBackups', function (request, response) {
@@ -191,6 +189,7 @@ class MinecraftApi {
                     if (debugApi) {
                         console.log(e.stack);
                     }
+                    response.json({response: 'An error occurred'});
                 } finally {
                     serverProps = null;
                 }
@@ -241,7 +240,7 @@ class MinecraftApi {
                 }
             });
             app.post('/api/newWorld', function (request, response) {
-                minecraftServer.deleteWorld(request.param('backup'), () => {
+                minecraftServer.newWorld(request.param('backup'), () => {
                     response.contentType('json');
                     response.json({
                         response: 'New world created.'
@@ -285,6 +284,16 @@ class MinecraftApi {
         let properties = this.properties,
             app = properties.app,
             minecraftServer = properties.minecraftServer;
+
+
+
+        // this.properties.ipAddress = require('underscore')
+        //     .chain(require('os').networkInterfaces())
+        //     .values()
+        //     .flatten()
+        //     .find({family: 'IPv4', internal: false})
+        //     .value()
+        //     .address;
 
         this.connectMinecraftApi();
 

@@ -6,7 +6,7 @@ const styles = {
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '.95rem'
     }
-  };
+};
 
 class About extends Component {
     render () {

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import ServerSummary from './ServerSummary.js';
 import PlayersSummary from './PlayersSummary.js';
@@ -21,5 +22,11 @@ class Dashboard extends React.Component {
         );
     }
 }
+
+Dashboard.propTypes = {
+    ipInfo: PropTypes.object.isRequired,
+    minecraftProperties: PropTypes.object.isRequired,
+    playerInfo: PropTypes.object.isRequired
+};
 
 export default Dashboard;

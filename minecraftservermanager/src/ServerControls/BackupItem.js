@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 export default class BackupItem extends React.Component {
     render () {
@@ -9,3 +10,7 @@ export default class BackupItem extends React.Component {
         );
     }
 }
+
+BackupItem.propTypes = {
+    backup: PropTypes.object.isRequired
+};

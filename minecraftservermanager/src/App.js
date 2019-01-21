@@ -9,12 +9,12 @@ import { deepOrangeA200 } from '@material-ui/core/colors';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import AppBar from '@material-ui/core/AppBar';
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
+// import Button from '@material-ui/core/Button';
+// import Dialog from '@material-ui/core/Dialog';
+// import DialogActions from '@material-ui/core/DialogActions';
+// import DialogContent from '@material-ui/core/DialogContent';
+// import DialogContentText from '@material-ui/core/DialogContentText';
+// import DialogTitle from '@material-ui/core/DialogTitle';
 import Snackbar from '@material-ui/core/Snackbar';
 
 import Dashboard from './Dashboard/Dashboard.js';
@@ -51,42 +51,40 @@ export default class App extends React.Component {
             ipInfo: {},
             minecraftStatus: {},
             eulaOpen: false,
-            minecraftCommands: [],
-            minecraftEulaUrl: 'https://account.mojang.com/documents/minecraft_eula',
             minecraftProperties: {},
-            minecraftServerProperties: [],
-            minecraftServerBannedIps: [],
-            minecraftServerBannedPlayers: [],
-            minecraftServerWhitelist: [],
-            minecraftServerOps: [],
-            minecraftServerUserCache: [],
-            playersSummary: '',
-            playerNames: [],
             playerInfo: {},
             value: 0
         };
         if (debug) {
             console.log('App state:', this.state);
         }
+        this.handleAcceptEula = this.handleAcceptEula.bind(this);
+        this.handleDeclineEula = this.handleDeclineEula.bind(this);
+        this.getIpInfo = this.getIpInfo.bind(this);
+        this.getMinecraftPlayers = this.getMinecraftPlayers.bind(this);
+        this.getMinecraftServerProperties = this.getMinecraftServerProperties.bind(this);
+        this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+        this.stopMinecraftStatus = this.stopMinecraftStatus.bind(this);
+
         this.runOnce();
         this.getMinecraftStatus(25);
-    };
+    }
 
     componentWillUnmount () {
         if (debug) {
             console.log('Application shutting down.');
         }
         this.stopMinecraftStatus();
-    };
+    }
     
-    handleChange = (event, value) => {
+    handleChange (event, value) {
         this.setState({ value });
-    };
+    }
 
     runOnce () {
         this.getIpInfo();
         this.getMinecraftServerProperties();
-        this.getMinecraftCommands();
     }
 
     getIpInfo () {
@@ -97,15 +95,6 @@ export default class App extends React.Component {
             this.setState({ ipInfo });
         });
     }
-      
-    getMinecraftCommands = () => {
-        return axios({
-            method: 'get',
-            url: '/api/commands'
-        }).then(res => {
-            this.setState({ minecraftCommands: res.data.commands });
-        });
-    };
 
     getMinecraftStatus (pingWait) {
         let normalPingTime = 10 * 1000,
@@ -133,23 +122,20 @@ export default class App extends React.Component {
 
         this.statusTimerId = setTimeout(() => {
             axios(`/api/status`).then(res => {
-                // let minecraftStatus = res.data;
                 let minecraftProperties = res.data;
-                // this.setState({ minecraftStatus });
                 this.setState({ minecraftProperties });
-                this.setState({ eulaOpen: !minecraftProperties.acceptedEula });
                 
-                this.getMinecraftServerBannedIps();
-                this.getMinecraftServerBannedPlayers();
-                this.getMinecraftServerWhitelist();
-                this.getMinecraftServerOps();
-                this.getMinecraftServerUserCache();
                 this.getMinecraftPlayers();
-                this.determinePlayerStates();
+                // this.getMinecraftServerBannedIps();
+                // this.getMinecraftServerBannedPlayers();
+                // this.getMinecraftServerWhitelist();
+                // this.getMinecraftServerOps();
+                // this.getMinecraftServerUserCache();
+                // this.determinePlayerStates();
 
-                if (!this.state.minecraftCommands || this.state.minecraftCommands.length === 0) {
-                    this.getMinecraftCommands();
-                }
+                // if (!this.state.minecraftCommands || this.state.minecraftCommands.length === 0) {
+                //     this.getMinecraftCommands();
+                // }
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -164,21 +150,25 @@ export default class App extends React.Component {
                 pingTime = pingTime + appendTime;
 
                 if (debug) {
+                    console.log('Error occurred:', err);
                     console.log('Application state:', this.state);
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
                 }
                 this.getMinecraftStatus(pingTime);
             });
         }, pingTime);
-    };
+    }
 
     stopMinecraftStatus () {
         if (debug) {
             console.log('Stopping Minecraft server poller.');
         }
 
-        let minecraftStatus = {};
-        this.setState({ minecraftStatus });
+        // let minecraftStatus = {};
+        // this.setState({ minecraftStatus });
+        
+        let minecraftProperties = {};
+        this.setState({ minecraftProperties });
 
         if (this.statusTimerId) {
             clearTimeout(this.statusTimerId);
@@ -187,168 +177,33 @@ export default class App extends React.Component {
         if (this.playersTimerId) {
             clearTimeout(this.playersTimerId);
         }
-    };
+    }
   
     getMinecraftServerProperties () {
         if (debug) {
             console.log('Retrieving Minecraft Server properties.');
         }
 
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (minecraftStatus.minecraftOnline) {
-            axios(`/api/properties`).then(res => {
-                let minecraftServerProperties = res.data;
-                minecraftServerProperties = minecraftServerProperties.properties;
-                this.setState({ minecraftServerProperties });
-                if (debug) {
-                    console.log('App state after fetching properties:', this.state);
-                }
-            },
-            err => {
-                console.log('An error occurred contacting the Minecraft server.', err);
-            }).catch(e => {
-                console.log('An error occurred getting the server properties:', e);
-            });
-        }
-    };
-  
-    getMinecraftServerBannedIps () {
-        if (debug) {
-            console.log('Retrieving Minecraft Server banned IPs.');
-        }
-
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (minecraftStatus.minecraftOnline) {
-            return axios(`/api/bannedIps`).then(res => {
-                let minecraftServerBannedIps = res.data;
-                minecraftServerBannedIps = minecraftServerBannedIps.bannedIps;
-                this.setState({ 
-                    minecraftServerBannedIps
-                });
-                if (debug) {
-                    console.log('App state after fetching banned IPs:', this.state);
-                }
-            },
-            err => {
-                console.log('An error occurred contacting the Minecraft server.', err);
-            }).catch(e => {
-                console.log('An error occurred getting the banned IPs:', e);
-            });
-        }
-    };
-  
-    getMinecraftServerBannedPlayers () {
-        if (debug) {
-            console.log('Retrieving Minecraft Server banned players.');
-        }
-
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (minecraftStatus.minecraftOnline) {
-            return axios(`/api/bannedPlayers`).then(res => {
-                let minecraftServerBannedPlayers = res.data;
-                minecraftServerBannedPlayers = minecraftServerBannedPlayers.bannedPlayers;
-                this.setState({ 
-                    minecraftServerBannedPlayers
-                });
-                if (debug) {
-                    console.log('App state after fetching banned players:', this.state);
-                }
-            },
-            err => {
-                console.log('An error occurred contacting the Minecraft server.', err);
-            }).catch(e => {
-                console.log('An error occurred getting the banned players:', e);
-            });
-        }
-    };
-  
-    getMinecraftServerWhitelist () {
-        if (debug) {
-            console.log('Retrieving Minecraft Server whitelist.');
-        }
-
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (minecraftStatus.minecraftOnline) {
-            return axios(`/api/whitelist`).then(res => {
-                let minecraftServerWhitelist = res.data;
-                minecraftServerWhitelist = minecraftServerWhitelist.whitelist;
-                this.setState({ 
-                    minecraftServerWhitelist
-                });
-                if (debug) {
-                    console.log('App state after fetching whitelist:', this.state);
-                }
-            },
-            err => {
-                console.log('An error occurred contacting the Minecraft server.', err);
-            }).catch(e => {
-                console.log('An error occurred getting the banned players:', e);
-            });
-        }
-    };
-  
-    getMinecraftServerOps () {
-        if (debug) {
-            console.log('Retrieving Minecraft Server ops.');
-        }
-
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (minecraftStatus.minecraftOnline) {
-            return axios(`/api/ops`).then(res => {
-                let minecraftServerOps = res.data;
-                minecraftServerOps = minecraftServerOps.ops;
-                this.setState({ 
-                    minecraftServerOps
-                });
-                if (debug) {
-                    console.log('App state after fetching ops:', this.state);
-                }
-            },
-            err => {
-                console.log('An error occurred contacting the Minecraft server.', err);
-            }).catch(e => {
-                console.log('An error occurred getting the ops:', e);
-            });
-        }
-    };
-  
-    getMinecraftServerUserCache () {
-        if (debug) {
-            console.log('Retrieving Minecraft Server user cache.');
-        }
-
-        let minecraftStatus = this.state.minecraftStatus;
-
-        if (minecraftStatus.minecraftOnline) {
-            return axios(`/api/userCache`).then(res => {
-                let minecraftServerUserCache = res.data;
-                minecraftServerUserCache = minecraftServerUserCache.userCache;
-                this.setState({ 
-                    minecraftServerUserCache
-                });
-                if (debug) {
-                    console.log('App state after fetching user cache:', this.state);
-                }
-            },
-            err => {
-                console.log('An error occurred contacting the Minecraft server.', err);
-            }).catch(e => {
-                console.log('An error occurred getting the user cache:', e);
-            });
-        }
-    };
+        axios(`/api/properties`).then(res => {
+            let minecraftServerProperties = res.data;
+            minecraftServerProperties = minecraftServerProperties.properties;
+            this.setState({ minecraftServerProperties });
+            if (debug) {
+                console.log('MinecraftServer properties:', minecraftServerProperties);
+            }
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+        }).catch(e => {
+            console.log('An error occurred getting the server properties:', e);
+        });
+    }
 
     getMinecraftPlayers (pingWait) {
         let normalPingTime = 5 * 1000,
             appendTime = 5 * 1000,
             maxTime = 120 * 1000,
-            pingTime,
-            minecraftStatus = this.state.minecraftStatus;
+            pingTime;
         let minecraftProperties = this.state.minecraftProperties;
 
         // normally ping every 5 seconds
@@ -372,7 +227,7 @@ export default class App extends React.Component {
         this.playersTimerId = setTimeout(() => {
             if (minecraftProperties.started) {
                 axios({
-                    url: '/api/listPlayers'
+                    url: '/api/playerInfo'
                 }).then(res => {
                     let playerInfo = res.data;
                     this.setState({ playerInfo });
@@ -406,92 +261,13 @@ export default class App extends React.Component {
                 this.getMinecraftPlayers();
             }
         }, pingTime);
-    };
-    
-    determinePlayerStates () {
-        let minecraftState = this.state,
-            minecraftPlayerCache = minecraftState.minecraftServerUserCache,
-            players = [],
-            player;
-
-        minecraftPlayerCache.forEach(cachedPlayer => {
-            player = {};
-            player.name = cachedPlayer.name;
-            player.key = cachedPlayer.uuid;
-            player.online = this.determineOnlineStatus(cachedPlayer);
-            player.banned = this.determineBanStatus(cachedPlayer);
-            player.whitelisted = this.determineWhitelistStatus(cachedPlayer);
-            player.opped = this.determineOpStatus(cachedPlayer);
-            players.push(player);
-        });
-        this.setState({ players });
-    };
-
-    determineBanStatus (player) {
-        let minecraftState = this.state,
-            minecraftBannedPlayers = minecraftState.minecraftServerBannedPlayers,
-            banned = false;
-
-        minecraftBannedPlayers.forEach(bannedPlayer => {
-            if (bannedPlayer.name === player.name) {
-                banned = true;
-            }
-        });
-        return banned;
-    };
-    
-    determineWhitelistStatus (player) {
-        let minecraftState = this.state,
-            minecraftWhitelist = minecraftState.minecraftServerWhitelist,
-            whitelisted = false;
-
-        minecraftWhitelist.forEach(p => {
-            if (p.name === player.name) {
-                whitelisted = true;
-            }
-        });
-        return whitelisted;
     }
-
-    determineOnlineStatus (player) {
-        let minecraftState = this.state,
-            onlinePlayers = minecraftState.playerNames,
-            minecraftPlayerCache = minecraftState.minecraftServerUserCache,
-            online = false;
-
-        minecraftPlayerCache.forEach(c => {
-            onlinePlayers.forEach(o => {
-                if (player.name === o.name || c.name === o.name) {
-                    online = true;
-                }
-            });
-        });
-        return online;
-    };
-
-    determineOpStatus (player) {
-        let minecraftState = this.state,
-            minecraftOps = minecraftState.minecraftServerOps,
-            opped = false;
-
-        minecraftOps.forEach(op => {
-            if (op.name === player.name) {
-                opped = true;
-            }
-        });
-        return opped;
-    };
-
-    handleEulaOpen = () => {
-        this.setState({ eulaOpen: true });
-    };
   
-    handleAcceptEula = () => {
+    handleAcceptEula () {
         axios({
             method: 'post',
             url: '/api/acceptEula'
-        }).then(res => {
-            console.log('res:', res);
+        }).then(() => {
             this.setState({ eulaOpen: false });
         }, error => {
             console.log('error:', error);
@@ -500,14 +276,13 @@ export default class App extends React.Component {
             console.log('error:', error);
             this.setState({ eulaOpen: false });
         });
-    };
+    }
   
-    handleDeclineEula = () => {
+    handleDeclineEula () {
         axios({
             method: 'post',
             url: '/api/command?command=/stop'
-        }).then(res => {
-            console.log('res:', res);
+        }).then(() => {
             this.setState({ eulaOpen: false });
         }, error => {
             console.log('error:', error);
@@ -516,7 +291,7 @@ export default class App extends React.Component {
             console.log('error:', error);
             this.setState({ eulaOpen: false });
         });
-    };
+    }
     
     render () {
         let minecraftProperties = this.state.minecraftProperties;
@@ -536,10 +311,20 @@ export default class App extends React.Component {
                         <Tab label="About" />
                     </Tabs>
                 </AppBar>
-                { this.state.value === 0 && <Dashboard ipInfo = { this.state.ipInfo } minecraftProperties = { minecraftProperties } playerInfo = { this.state.playerInfo } minecraftState = { this.state } /> }
-                { this.state.value === 1 && <Players playerInfo = { this.state.playerInfo } /> }
-                { this.state.value === 2 && <WorldControls minecraftProperties = { minecraftProperties } /> }
-                { this.state.value === 3 && <ServerControls minecraftProperties = { minecraftProperties } minecraftState = { this.state } /> }
+                { this.state.value === 0 && <Dashboard
+                    ipInfo = { this.state.ipInfo }
+                    minecraftProperties = { minecraftProperties }
+                    playerInfo = { this.state.playerInfo }
+                /> }
+                { this.state.value === 1 && <Players
+                    playerInfo = { this.state.playerInfo }
+                /> }
+                { this.state.value === 2 && <WorldControls
+                    minecraftProperties = { minecraftProperties }
+                /> }
+                { this.state.value === 3 && <ServerControls
+                    minecraftProperties = { minecraftProperties }
+                /> }
                 { this.state.value === 4 && <Preferences /> }
                 { this.state.value === 5 && <About /> }
                 <Snackbar
@@ -552,8 +337,8 @@ export default class App extends React.Component {
                     open = { !minecraftProperties.started }
                     message = { <span id="message-id">Minecraft is currently stopped.</span> }
                 />
-                <Dialog
-                    open = { minecraftProperties.started && this.state.eulaOpen } >
+                {/* <Dialog
+                    open = { this.state.eulaOpen } >
                     <DialogTitle>{ "Accept Minecraft End User License Agreement?" }</DialogTitle>
                     <DialogContent>
                         <DialogContentText>
@@ -569,8 +354,8 @@ export default class App extends React.Component {
                         Agree
                         </Button>
                     </DialogActions>
-                </Dialog>
+                </Dialog> */}
             </MuiThemeProvider>
         );
-    };
-};
+    }
+}

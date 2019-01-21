@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
@@ -45,51 +46,69 @@ export default class WorldControls extends React.Component {
             rawCommand: '',
             restoreDialogOpen: false,
             restoreBackup: {  }
-        }
+        };
+        this.backupAndNewMinecraftWorld = this.backupAndNewMinecraftWorld.bind(this);
+        this.backupAndRestoreMinecraftWorld = this.backupAndRestoreMinecraftWorld.bind(this);
+        this.backupMinecraftWorld = this.backupMinecraftWorld.bind(this);
+        this.closeBackupDialog = this.closeBackupDialog.bind(this);
+        this.closeProgressDialog = this.closeProgressDialog.bind(this);
+        this.closeRawCommandDialog = this.closeRawCommandDialog.bind(this);
+        this.closeRestoreDialog = this.closeRestoreDialog.bind(this);
+        this.getMinecraftWorldBackups = this.getMinecraftWorldBackups.bind(this);
+        this.newMinecraftWorld = this.newMinecraftWorld.bind(this);
+        this.onClearCommand = this.onClearCommand.bind(this);
+        this.onSendCommand = this.onSendCommand.bind(this);
+        this.openBackupBeforeNewDialog = this.openBackupBeforeNewDialog.bind(this);
+        this.openProgressDialog = this.openProgressDialog.bind(this);
+        this.openRawCommandDialog = this.openRawCommandDialog.bind(this);
+        this.openRestoreDialog = this.openRestoreDialog.bind(this);
+        this.restoreMinecraftWorld = this.restoreMinecraftWorld.bind(this);
+        this.updateRawCommandDialog = this.updateRawCommandDialog.bind(this);
+        this.updateRawCommandType = this.updateRawCommandType.bind(this);
     }
     
-    openBackupBeforeNewDialog = () => {
+    openBackupBeforeNewDialog () {
         this.setState({ backupDialogOpen: true, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false });
-    };
+    }
     
-    closeBackupDialog = () => {
+    closeBackupDialog () {
         this.setState({ backupDialogOpen: false });
-    };
+    }
     
-    openProgressDialog = (e) => {
+    openProgressDialog () {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true, rawMinecraftCommandDialogOpen: false });
-    };
+    }
     
-    closeProgressDialog = (e) => {
+    closeProgressDialog () {
         this.setState({ progressDialogOpen: false });
-    };
+    }
 
-    openRawCommandDialog = (e) => {
+    openRawCommandDialog () {
         this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: true });
-    };
+    }
 
-    closeRawCommandDialog = (e) => {
+    closeRawCommandDialog () {
         this.setState({ rawMinecraftCommandDialogOpen: false });
-    };
+    }
 
-    updateRawCommandType = event => {
+    updateRawCommandType (event) {
         this.setState({ rawCommand: event.target.value });
-    };
+    }
 
-    updateRawCommandDialog = command => {
+    updateRawCommandDialog (command) {
         this.setState({ rawCommand: command });
-    };
+    }
 
-    onClearCommand = (e) => {
+    onClearCommand () {
         this.setState({ rawCommand: '' });
-    };
+    }
 
-    openRestoreDialog = (e) => {
+    openRestoreDialog () {
         this.getMinecraftWorldBackups();
         this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false, restoreDialogOpen: true });
-    };
+    }
 
-    closeRestoreDialog = worldBackup => {
+    closeRestoreDialog (worldBackup) {
         if (worldBackup.filename) {
             this.setState({ restoreBackup: worldBackup });
             console.log('Would restore world: ', worldBackup);
@@ -98,39 +117,39 @@ export default class WorldControls extends React.Component {
         } else {
             this.setState({ restoreDialogOpen: false });
         }
-    };
+    }
 
-    onSendCommand = (e) => {
+    onSendCommand () {
         axios({
             method: 'post',
             url: '/api/command',
             params: {
                 command: this.state.rawCommand
             }
-        }).then(res => {
+        }).then(() => {
             this.setState({ rawCommand: '' });
         },
         err => {
             console.log('An error occurred contacting the Minecraft server.', err);
             this.setState({ progressDialogOpen: false });
         });
-    };
+    }
       
-    backupMinecraftWorld = () => {
+    backupMinecraftWorld () {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
         axios({
             method: 'post',
             url: '/api/backupWorld'
-        }).then(res => {
+        }).then(() => {
             this.setState({ progressDialogOpen: false });
         },
         err => {
             console.log('An error occurred contacting the Minecraft server.', err);
             this.setState({ progressDialogOpen: false });
         });
-    };
+    }
     
-    newMinecraftWorld = () => {
+    newMinecraftWorld () {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
         axios({
             method: 'post',
@@ -138,22 +157,22 @@ export default class WorldControls extends React.Component {
             params: {
                 backup: false
             }
-        }).then(res => {
+        }).then(() => {
             this.setState({ progressDialogOpen: false });
         },
         err => {
             console.log('An error occurred contacting the Minecraft server.', err);
             this.setState({ progressDialogOpen: false });
         });
-    };
+    }
 
-    backupAndNewMinecraftWorld = () => {
+    backupAndNewMinecraftWorld () {
         // TODO Fix issue of if failed backup then don't nuke
         this.backupMinecraftWorld();
         this.newMinecraftWorld();
-    };
+    }
 
-    getMinecraftWorldBackups = () => {
+    getMinecraftWorldBackups () {
         axios({
             method: 'get',
             url: `/api/listWorldBackups`
@@ -173,9 +192,9 @@ export default class WorldControls extends React.Component {
             console.log('An error occurred contacting the Minecraft server.', err);
             this.setState({ restoreDialogOpen: false });
         });
-    };
+    }
     
-    restoreMinecraftWorld = worldBackup => {
+    restoreMinecraftWorld (worldBackup) {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true, restoreDialogOpen: false });
         axios({
             method: 'post',
@@ -185,7 +204,7 @@ export default class WorldControls extends React.Component {
                 backupFile: worldBackup,
                 backup: false
             }
-        }).then(res => {
+        }).then(() => {
             this.setState({ backupDialogOpen: false, progressDialogOpen: false, restoreDialogOpen: false });
             this.setState({ restoreBackup: {} });
         },
@@ -193,13 +212,13 @@ export default class WorldControls extends React.Component {
             console.log('An error occurred contacting the Minecraft server.', err);
             this.setState({ restoreDialogOpen: false });
         });
-    };
+    }
 
-    backupAndRestoreMinecraftWorld = () => {
+    backupAndRestoreMinecraftWorld () {
         // TODO Fix issue of if failed backup then don't nuke
         this.backupMinecraftWorld();
         this.restoreMinecraftWorld();
-    };
+    }
 
     render () {
         return (
@@ -272,5 +291,9 @@ export default class WorldControls extends React.Component {
                 </ExpansionPanel>
             </div>
         );
-    };
+    }
+}
+
+WorldControls.propTypes = {
+    minecraftProperties: PropTypes.object.isRequired
 };

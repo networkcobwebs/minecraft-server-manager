@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
@@ -19,7 +20,18 @@ const styles = {
 };
 
 export default class Players extends React.Component {
-    banPlayer = player => {
+    constructor(props) {
+        super(props);
+        this.banPlayer = this.banPlayer.bind(this);
+        this.deopPlayer = this.deopPlayer.bind(this);
+        this.displayPlayerListItems = this.displayPlayerListItems.bind(this);
+        this.kickPlayer = this.kickPlayer.bind(this);
+        this.opPlayer = this.opPlayer.bind(this);
+        this.pardonPlayer = this.pardonPlayer.bind(this);
+        this.whitelistPlayer = this.whitelistPlayer.bind(this);
+    }
+
+    banPlayer (player) {
         let found = false,
             players = this.state.players;
 
@@ -36,7 +48,7 @@ export default class Players extends React.Component {
                 params: {
                     command: '/ban ' + player
                 }
-            }).then(res => {
+            }).then(() => {
                 return;
             },
             err => {
@@ -45,7 +57,7 @@ export default class Players extends React.Component {
         }
     }
 
-    pardonPlayer = player => {
+    pardonPlayer (player) {
         let found = false,
             players = this.state.players;
 
@@ -62,7 +74,7 @@ export default class Players extends React.Component {
                 params: {
                     command: '/pardon ' + player
                 }
-            }).then(res => {
+            }).then(() => {
                 return;
             },
             err => {
@@ -71,7 +83,7 @@ export default class Players extends React.Component {
         }
     }
 
-    kickPlayer = player => {
+    kickPlayer (player) {
         let found = false,
             players = this.state.players;
 
@@ -88,7 +100,7 @@ export default class Players extends React.Component {
                 params: {
                     command: '/kick ' + player
                 }
-            }).then(res => {
+            }).then(() => {
                 return;
             },
             err => {
@@ -97,7 +109,7 @@ export default class Players extends React.Component {
         }
     }
 
-    opPlayer = player => {
+    opPlayer (player) {
         let found = false,
             players = this.state.players;
 
@@ -114,7 +126,7 @@ export default class Players extends React.Component {
                 params: {
                     command: '/op ' + player
                 }
-            }).then(res => {
+            }).then(() => {
                 return;
             },
             err => {
@@ -123,7 +135,7 @@ export default class Players extends React.Component {
         }
     }
 
-    deopPlayer = player => {
+    deopPlayer (player) {
         let found = false,
             players = this.state.players;
 
@@ -140,7 +152,7 @@ export default class Players extends React.Component {
                 params: {
                     command: '/deop ' + player
                 }
-            }).then(res => {
+            }).then(() => {
                 return;
             },
             err => {
@@ -149,7 +161,7 @@ export default class Players extends React.Component {
         }
     }
 
-    whitelistPlayer = player => {
+    whitelistPlayer (player) {
         let found = false,
             players = this.state.players;
 
@@ -166,7 +178,7 @@ export default class Players extends React.Component {
                 params: {
                     command: '/whitelist ' + player
                 }
-            }).then(res => {
+            }).then(() => {
                 return;
             },
             err => {
@@ -175,7 +187,7 @@ export default class Players extends React.Component {
         }
     }
 
-    displayPlayerListItems = player =>
+    displayPlayerListItems (player) {
         <PlayerListItem
             key = { player.key }
             player = { player }
@@ -186,9 +198,10 @@ export default class Players extends React.Component {
             deopPlayer = { this.deopPlayer }
             whitelistPlayer = { this.whitelistPlayer }
         />;
+    }
 
     render () {
-        let playerInfo = this.props.playerInfo,
+        let playerInfo = this.props.playerInfo || {summary: '', players: []},
             summary = playerInfo.summary,
             players = playerInfo.players;
 
@@ -201,7 +214,6 @@ export default class Players extends React.Component {
                         </TableRow>
                     </TableHead>
                 </Table>
-                { players.length ? 
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -213,8 +225,12 @@ export default class Players extends React.Component {
                     <TableBody>
                         { players.map(this.displayPlayerListItems) }
                     </TableBody>
-                </Table> : <div></div> }
+                </Table>
             </div>
         );
-    };
+    }
 }
+
+Players.propTypes = {
+    playerInfo: PropTypes.object.isRequired
+};

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -31,3 +32,10 @@ export default class BackupBeforeNewDialog extends React.Component {
         );
     }
 }
+
+BackupBeforeNewDialog.propTypes = {
+    open: PropTypes.func.isRequired,
+    cancelDialog: PropTypes.func.isRequired,
+    newOnly: PropTypes.func.isRequired,
+    backupAndNew: PropTypes.func.isRequired
+};

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -20,13 +21,23 @@ const styles = {
 };
     
 export default class RawMinecraftCommandDialog extends React.Component {
-    closeDialog = event => {
+    closeDialog (event) {
         this.props.updateRawCommandField(event);
         this.props.onClose();
-    };
+    }
+
+    listCommands (command) {
+        return (
+            <div key = { command.key }>
+                <ListItem button onClick = { () => { this.closeDialog(command.command); } }>
+                    <ListItemText primary = { command.command } />
+                    <Divider />
+                </ListItem>
+            </div>
+        );
+    }
 
     render () {
-        // TODO: Close on selection
         return (
             <Dialog fullScreen open = { this.props.open } style = { styles.container } >
                 <DialogTitle>
@@ -37,20 +48,11 @@ export default class RawMinecraftCommandDialog extends React.Component {
                 </DialogTitle>
                 <DialogContent>
                     <List>
-                        { this.props.minecraftCommands.map(command => {
-                            return (
-                            <div key = { command.key }>
-                                <ListItem button onClick = { () => { this.closeDialog(command.command) } }>
-                                    <ListItemText primary = { command.command } />
-                                    <Divider />
-                                </ListItem>
-                            </div>
-                            );
-                        }) }
+                        { this.props.minecraftCommands.map(this.listCommands) }
                     </List>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick = { this.props.cancelDialog } color="primary">
+                    <Button onClick = { this.props.onClose } color="primary">
                         Cancel
                     </Button>
                 </DialogActions>
@@ -58,3 +60,10 @@ export default class RawMinecraftCommandDialog extends React.Component {
         );
     }
 }
+
+RawMinecraftCommandDialog.propTypes = {
+    minecraftCommands: PropTypes.object.isRequired,
+    open: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    updateRawCommandField: PropTypes.func.isRequired
+};

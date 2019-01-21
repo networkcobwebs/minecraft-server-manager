@@ -12,8 +12,8 @@ let defaultProperties = {
     acceptedEula: false,
     allowedCommands: [],
     backupList: [],
-    bannedIps: {},
-    bannedPlayers: {},
+    bannedIps: [],
+    bannedPlayers: [],
     detectedVersion: null,
     eulaFound: false,
     eulaUrl: 'https://account.mojang.com/documents/minecraft_eula',
@@ -22,7 +22,7 @@ let defaultProperties = {
     installed: false,
     ipAddress: '',
     javaHome: '',
-    ops: {},
+    ops: [],
     osType: os.type(),
     pathToMinecraftDirectory: 'minecraft_server',
     players: [],
@@ -31,7 +31,7 @@ let defaultProperties = {
     serverLogDir: 'logs',
     serverOutput: [],
     serverOutputCaptured: false,
-    serverProperties: {},
+    serverProperties: [],
     serverProcess: null,
     starting: false,
     started: false,
@@ -42,7 +42,7 @@ let defaultProperties = {
     stoppedTimer: null,
     userCache: {},
     versions: {},
-    whitelist: {}
+    whitelist: []
 };
 
 // Convert name=value properties to JSON
@@ -325,6 +325,11 @@ class MinecraftServer {
                     properties.serverOutputCaptured = false;
                     shouldContinueStart = false;
                 } else if (!properties.detectedVersion && line.indexOf('server version') !== -1) {
+                    let lines = line.split('\n');
+                    if (lines.length > 1) {
+                        // Get rid of any additional output
+                        line = lines[0];
+                    }
                     versionParts = line.toString().split('.');
                     major = versionParts.shift();
                     minor = versionParts.shift();
@@ -343,17 +348,18 @@ class MinecraftServer {
                     properties.serverOutput.length = 0;
                     properties.serverOutputCaptured = false;
                     shouldContinueStart = false;
-                    this.listCommands();
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
                 }
             }
-        
+            
             if (!properties.started && shouldContinueStart) {
                 properties.startedTimer = setTimeout(() => {
                     this.checkForMinecraftToBeStarted(++checkCount, callback);
                 }, 100);
+            } else {
+                this.listCommands(0, callback);
+                // if (typeof callback === 'function') {
+                //     callback();
+                // }
             }
         }
     }
@@ -552,6 +558,66 @@ class MinecraftServer {
         }
     }
 
+    determineBanStatus (player) {
+        if (debug) {
+            console.log('Determining ban status for player:', player.name);
+        }
+
+        let properties = this.properties;
+        let banned = false;
+        let bannedPlayer;
+
+        if (properties.bannedPlayers.length) {
+            for (bannedPlayer in properties.bannedPlayers) {
+                if (bannedPlayer.name === player.name) {
+                    banned = true;
+                }
+            }
+        }
+
+        return banned;
+    }
+
+    determineOpStatus (player) {
+        if (debug) {
+            console.log('Determining op status for player:', player.name);
+        }
+
+        let properties = this.properties;
+        let op = false;
+        let oppedPlayer;
+
+        if (properties.ops.length) {
+            for (oppedPlayer in properties.ops) {
+                if (oppedPlayer.name === player.name) {
+                    op = true;
+                }
+            }
+        }
+
+        return op;
+    }
+
+    determineWhitelistStatus (player) {
+        if (debug) {
+            console.log('Determining whitelist status for player:', player.name);
+        }
+
+        let properties = this.properties;
+        let whitelisted = false;
+        let whitelistedPlayer;
+
+        if (properties.whitelist.length) {
+            for (whitelistedPlayer in properties.whitelist) {
+                if (whitelistedPlayer.name === player.name) {
+                    whitelisted = true;
+                }
+            }
+        }
+
+        return whitelisted;
+    }
+
     getBannedIps () {
         let properties = this.properties;
         
@@ -563,7 +629,7 @@ class MinecraftServer {
             try {
                 properties.bannedIps = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-ips.json', 'utf8'));
             } catch (e) {
-                properties.bannedIps = {};
+                properties.bannedIps = [];
                 if (debug) {
                     console.log('Failed to read banned-ips.json:', e.stack);
                 }
@@ -582,7 +648,7 @@ class MinecraftServer {
             try {
                 properties.bannedPlayers = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-players.json', 'utf8'));
             } catch (e) {
-                properties.bannedPlayers = {};
+                properties.bannedPlayers = [];
                 if (debug) {
                     console.log('Failed to read banned-players.json:', e.stack);
                 }
@@ -718,7 +784,7 @@ class MinecraftServer {
             try {
                 properties.ops = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/ops.json', 'utf8'));
             } catch (e) {
-                properties.ops = {};
+                properties.ops = [];
                 if (debug) {
                     console.log('Failed to read ops.json:', e.stack);
                 }
@@ -738,7 +804,7 @@ class MinecraftServer {
                 let serverPropertiesFile = fs.readFileSync(properties.pathToMinecraftDirectory + '/server.properties', 'utf8');
                 properties.serverProperties = convertPropertiesToObjects(serverPropertiesFile);
             } catch (e) {
-                properties.serverProperties = {};
+                properties.serverProperties = [];
                 if (debug) {
                     console.log('Failed to read server.properties:', e.stack);
                 }
@@ -757,7 +823,7 @@ class MinecraftServer {
             try {
                 properties.userCache = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/usercache.json', 'utf8'));
             } catch (e) {
-                properties.userCache = {};
+                properties.userCache = [];
                 if (debug) {
                     console.log('Failed to read usercache.json:', e.stack);
                 }
@@ -776,7 +842,7 @@ class MinecraftServer {
             try {
                 properties.whitelist = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/whitelist.json', 'utf8'));
             } catch (e) {
-                properties.whitelist = {};
+                properties.whitelist = [];
                 if (debug) {
                     console.log('Failed to read whitelist.json:', e.stack);
                 }
@@ -895,13 +961,13 @@ class MinecraftServer {
         let serverOutput = properties.serverOutput;
         let serverProcess = properties.serverProcess;
         let started = properties.started;
-        let userCache = properties.userCache;
         let playersList = {
             summary: '',
             players: []
         };
         let player, somePlayerNames, somePlayerName;
 
+        // Get current online players
         if (started && !serverOutputCaptured) {
             serverOutputCaptured = true;
             serverOutput.length = 0;
@@ -912,42 +978,71 @@ class MinecraftServer {
                 // First line is the summary,
                 // followed by player names, comma+space separated.
                 let output = serverOutput.join('');
-                let players = output.split(/\n/);
-                let playersSummary = players.shift();
-                // Remove trailing ':'
+                let players, playersSummary;
+                // Versions prior to 1.13 send newline...
+                if (output.indexOf('\n') !== -1) {
+                    players = output.split(/\n/);
+                    playersSummary = players.shift();
+                    playersSummary = playersSummary.split(']: ')[1];
+                } else {
+                    players = output.split(']: ')[1];
+                    players = players.split(': ');
+                    playersSummary = players.shift();
+                }
+                
                 playersSummary = playersSummary.slice(0, -1);
-                // Remove preceding timestamp & server info
-                playersSummary = playersSummary.split(']: ')[1];
                 playersList.summary = playersSummary;
-
-                // Get online player names
-                for (let i = 0; i < players.length; i++) {
-                    // Remove preceding timestamp & server info
-                    somePlayerNames = players[i].split(']: ')[1];
-
-                    if (somePlayerNames) {
-                        somePlayerNames = somePlayerNames.split(',');
-                        for (let p = 0; p < somePlayerNames.length; p++) {
-                            somePlayerName = somePlayerNames[p];
-                            if (somePlayerName) {
-                                // Make sure to check for multiple spaces so as to
-                                // ignore any bad data like things that were
-                                // accidentally in the buffer at the same time we
-                                // queried, etc.
-                                let testData = somePlayerName.split(' ');
-                                if (testData.length <= 2) {
-                                    player = {
-                                        name: somePlayerName.trim(),
-                                        online: true
-                                    };
-                                    // TODO: walk caches for this player
-                                    playersList.players.push(player);
+                
+                if (players && players.length) {
+                    // Get online player names
+                    for (let i = 0; i < players.length; i++) {
+                        // Versions prior to 1.13 do not contain preceding
+                        // timestamp & server info
+                        somePlayerNames = players[i].split(']: ')[1];
+                        if (somePlayerNames && somePlayerNames.length) {
+                            somePlayerNames = somePlayerNames.split(',');
+                        } else {
+                            somePlayerNames = players;
+                        }
+    
+                        if (somePlayerNames) {
+                            for (let p = 0; p < somePlayerNames.length; p++) {
+                                somePlayerName = somePlayerNames[p];
+                                if (somePlayerName) {
+                                    // Make sure to check for multiple spaces so as to
+                                    // ignore any bad data like things that were
+                                    // accidentally in the buffer at the same time we
+                                    // queried, etc.
+                                    let testData = somePlayerName.split(' ');
+                                    if (testData.length <= 2) {
+                                        player = {
+                                            name: somePlayerName.trim(),
+                                            online: true
+                                        };
+                                        for (let cachedPlayer of properties.userCache) {
+                                            if (cachedPlayer.name === player.name) {
+                                                player.key = cachedPlayer.key;
+                                            }
+                                        }
+                                        player.banned = this.determineBanStatus(player);
+                                        player.opped = this.determineOpStatus(player);
+                                        player.whitelisted = this.determineWhitelistStatus(player);
+                                        playersList.players.push(player);
+                                    }
                                 }
                             }
                         }
                     }
+                } else {
+                    for (let cachedPlayer of properties.userCache) {
+                        cachedPlayer.key = cachedPlayer.uuid;
+                        cachedPlayer.banned = this.determineBanStatus(cachedPlayer);
+                        cachedPlayer.opped = this.determineOpStatus(cachedPlayer);
+                        cachedPlayer.whitelisted = this.determineWhitelistStatus(cachedPlayer);
+                        playersList.players.push(cachedPlayer);
+                    }
                 }
-
+                
                 serverOutputCaptured = false;
 
                 if (typeof callback === 'function') {

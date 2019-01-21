@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
@@ -16,7 +17,8 @@ import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import Start from '@material-ui/icons/PlayArrow';
 import Stop from '@material-ui/icons/Stop';
-import Restart from '@material-ui/icons/Replay';
+import Restart from '@material-ui/icons/Autorenew';
+import Refresh from '@material-ui/icons/Cached';
 import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 
 import ProgressDialog from './ProgressDialog.js';
@@ -27,7 +29,7 @@ const styles = {
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
         fontSize: '0.95rem'
     }
-  };
+};
 
 class ServerControls extends React.Component {
     constructor (props) {
@@ -35,23 +37,28 @@ class ServerControls extends React.Component {
         
         this.state = {
             progressDialogOpen: false
-        }
+        };
+        this.closeProgressDialog = this.closeProgressDialog.bind(this);
+        this.openProgressDialog = this.openProgressDialog.bind(this);
+        this.restartMinecraft = this.restartMinecraft.bind(this);
+        this.startMinecraft = this.startMinecraft.bind(this);
+        this.stopMinecraft = this.stopMinecraft.bind(this);
     }
     
-    openProgressDialog = (e) => {
+    openProgressDialog () {
         this.setState({ progressDialogOpen: true });
-    };
+    }
     
-    closeProgressDialog = (e) => {
+    closeProgressDialog () {
         this.setState({ progressDialogOpen: false });
-    };
+    }
 
-    restartMinecraft = () => {
+    restartMinecraft () {
         this.setState({ progressDialogOpen: true });
         axios({
             method: 'post',
             url: `/api/restart`
-        }).then(res => {
+        }).then(() => {
             this.setState({ progressDialogOpen: false });
         },
         err => {
@@ -59,12 +66,12 @@ class ServerControls extends React.Component {
         });
     }
     
-    startMinecraft = () => {
+    startMinecraft () {
         this.setState({ progressDialogOpen: true });
         axios({
             method: 'post',
             url: `/api/start`
-        }).then(res => {
+        }).then(() => {
             this.setState({ progressDialogOpen: false });
         },
         err => {
@@ -72,12 +79,12 @@ class ServerControls extends React.Component {
         });
     }
   
-    stopMinecraft = () => {
+    stopMinecraft () {
         this.setState({ progressDialogOpen: true });
         axios({
             method: 'post',
             url: `/api/stop`
-        }).then(res => {
+        }).then(() => {
             this.setState({ progressDialogOpen: false });
         },
         err => {
@@ -86,58 +93,63 @@ class ServerControls extends React.Component {
     }
 
     render () {
-        let minecraftProperties = this.props.minecraftProperties,
-            minecraftStatus = minecraftProperties.started;
+        let minecraftProperties = this.props.minecraftProperties;
 
         return (
             <div style={ styles.container }>
+                <ProgressDialog
+                    open = { this.state.progressDialogOpen }
+                    onClose = { this.closeProgressDialog }
+                />
                 <ExpansionPanel defaultExpanded>
                     <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon />} >
                         Server Controls
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
-                        { !minecraftStatus ? <div>Waiting on Minecraft server...</div> : 
-                        <div>
-                            <IconButton
-                                onClick = { this.startMinecraft }>
-                                <Tooltip title="Start">
-                                    <Start />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton
-                                onClick = { this.stopMinecraft }>
-                                <Tooltip title="Stop">
-                                    <Stop />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton
-                                onClick = { this.restartMinecraft }>
-                                <Tooltip title="Restart">
-                                    <Restart />
-                                </Tooltip>
-                            </IconButton>
-                            <IconButton disabled>
-                                <Tooltip title="Update">
-                                    <UpdateAvailable />
-                                </Tooltip>
-                            </IconButton>
-                        </div> }
+                        <IconButton
+                            onClick={ this.startMinecraft }
+                            disabled={ minecraftProperties.started }>
+                            <Tooltip title="Start">
+                                <Start />
+                            </Tooltip>
+                        </IconButton>
+                        <IconButton
+                            onClick = { this.stopMinecraft }
+                            disabled = { !minecraftProperties.started }>
+                            <Tooltip title="Stop">
+                                <Stop />
+                            </Tooltip>
+                        </IconButton>
+                        <IconButton
+                            onClick = { this.restartMinecraft }
+                            disabled = { !minecraftProperties.started }>
+                            <Tooltip title="Restart">
+                                <Restart />
+                            </Tooltip>
+                        </IconButton>
+                        <IconButton 
+                            disabled = { !minecraftProperties.upgradeAvailable }>
+                            <Tooltip title="Update">
+                                <UpdateAvailable />
+                            </Tooltip>
+                        </IconButton>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>
                 <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                        Server Properties
+                    <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon /> }>
+                        <div>
+                            Server Properties
+                            <IconButton >
+                                <Tooltip title="Refresh">
+                                    <Refresh />
+                                </Tooltip>
+                            </IconButton>
+                        </div>
                     </ExpansionPanelSummary>
                     
                     { minecraftProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
                         return (
                             <ExpansionPanelDetails key={ property.name }>
-                                {/* <TextField
-                                    label={ property.name }
-                                    value={ property.value }
-                                    margin="normal"
-                                    fullWidth
-                                /> */}
                                 <FormControl fullWidth>
                                     <InputLabel
                                         htmlFor="{ property.name }">
@@ -149,25 +161,27 @@ class ServerControls extends React.Component {
                                         fullWidth />
                                 </FormControl>
                             </ExpansionPanelDetails>
-                        )
+                        );
                     }) : 'Waiting on Minecraft server...' }
                     
                     <Divider />
 
                     <ExpansionPanelActions>
-                        <Button size="small">Cancel</Button>
+                        <Button size="small">
+                            Cancel
+                        </Button>
                         <Button size="small" color="primary">
                             Save
                         </Button>
                     </ExpansionPanelActions>
                 </ExpansionPanel>
-                <ProgressDialog
-                    open = { this.state.progressDialogOpen }
-                    onClose = { this.closeProgressDialog }
-                />
             </div>
         );
     }
 }
+
+ServerControls.propTypes = {
+    minecraftProperties: PropTypes.object.isRequired
+};
 
 export default ServerControls;
