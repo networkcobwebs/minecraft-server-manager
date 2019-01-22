@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
@@ -11,18 +12,25 @@ import Select from '@material-ui/core/Select';
 import BackupItem from './BackupItem';
 
 export default class RestoreBackupDialog extends Component {
-    state = {
-        backupValue: ""
-    };
+    constructor (props) {
+        super(props);
+        this.state = {
+            backupValue: ""
+        };
+    }
 
-    displayBackupItems = backup => 
-        <BackupItem
-            key = { backup.fileName }
-            backup = { backup }
-        />;
+    displayBackupItems (backup) {
+        return (
+            <BackupItem
+                key = { backup.fileName }
+                backup = { backup }
+            />
+        );
+    }
 
     render () {
         let potentialBackups = this.props.potentialBackups;
+        
         return (
             <Dialog
                 open = { this.props.open }>
@@ -30,7 +38,6 @@ export default class RestoreBackupDialog extends Component {
                     <FormControl>
                         <Select
                             native
-                            // onChange = { this.handleChange('age') }
                             inputProps = {{
                                 id: 'backup',
                             }}
@@ -41,7 +48,7 @@ export default class RestoreBackupDialog extends Component {
                     <FormHelperText>Choose a backup to restore</FormHelperText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick = { this.props.onClose } color="primary" autoFocus>
+                    <Button onClick = { this.props.onClose } color="primary">
                         Cancel
                     </Button>
                     <Button onClick = { this.props.onClose } color="primary" autoFocus>
@@ -50,5 +57,11 @@ export default class RestoreBackupDialog extends Component {
                 </DialogActions>
             </Dialog>
         );
-    };
+    }
 }
+
+RestoreBackupDialog.propTypes = {
+    onClose: PropTypes.func.isRequired,
+    open: PropTypes.func.isRequired,
+    potentialBackups: PropTypes.object.isRequired
+};

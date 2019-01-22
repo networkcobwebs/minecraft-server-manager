@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -7,8 +8,6 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import Button from '@material-ui/core/Button';
 
 export default class ProgressDialog extends React.Component {
-    state = {};
-
     render () {
         return (
             <Dialog { ...this.props }>
@@ -24,5 +23,9 @@ export default class ProgressDialog extends React.Component {
                 </DialogActions>
             </Dialog>
         );
-    };
+    }
+}
+
+ProgressDialog.propTypes = {
+    onClose: PropTypes.func.isRequired
 };

@@ -1,10 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
 import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+
+import PlayerListItem from './PlayerListItem';
 
 const styles = {
     container: {
@@ -15,12 +18,23 @@ const styles = {
 };
 
 export default class PlayersSummary extends React.Component {
-    render () {
-        let playerNames = this.props.minecraftState.playerNames,
-            summary = this.props.minecraftState.playerSummary;
+    displayPlayerListItems (player) {
+        if (player.online) {
+            return (
+                <PlayerListItem
+                    key = { player.key }
+                    player = { player }
+                />
+            );
+        }
+    }
 
+    render () {
+        let players = this.props.playerInfo.players || [];
+        let summary = this.props.playerInfo.summary || '';
+        
         return (
-            <div style={ styles.container }>
+            <div style = { styles.container }>
                 <h3>Connected Players</h3>
                 <Table>
                     <TableHead>
@@ -28,17 +42,17 @@ export default class PlayersSummary extends React.Component {
                             <TableCell>{ summary ? summary : 'Waiting on Minecraft server...' }</TableCell>
                         </TableRow>
                     </TableHead>
+                </Table>
+                <Table>
                     <TableBody>
-                        { playerNames.length ? playerNames.map(player => {
-                            return (
-                                <TableRow key={ player.name }>
-                                    <TableCell>{ player.name }</TableCell>
-                                </TableRow>
-                            )
-                        }) : <TableRow /> }
+                        { players.map(this.displayPlayerListItems) }
                     </TableBody>
                 </Table>
             </div>
         );
     }
 }
+
+PlayersSummary.propTypes = {
+    playerInfo: PropTypes.object.isRequired
+};

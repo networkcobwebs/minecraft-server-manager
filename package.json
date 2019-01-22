@@ -3,9 +3,9 @@
   "version": "1.12.0",
   "description": "Minecraft Server Manager",
   "private": true,
-  "main": "minecraft_server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node minecraft_server.js",
+    "start": "node index.js",
     "start-dev": "cd minecraftservermanager && react-scripts start",
     "build": "cd minecraftservermanager && react-scripts build",
     "test": "cd minecraftservermanager && react-scripts test --env=jsdom",
@@ -28,12 +28,20 @@
     "archiver": "^2.1.1",
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.3",
+    "eslint": "^5.12.0",
+    "eslint-plugin-react": "^7.12.4",
     "express": "^4.16.4",
+    "express-session": "^1.15.6",
     "fs-extra": "^6.0.1",
     "jss": "^9.8.7",
+    "passport": "^0.4.0",
+    "permission": "^1.1.0",
     "prop-types": "^15.6.2",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
-    "react-scripts": "^1.1.5"
+    "react-scripts": "^1.1.5",
+    "underscore": "^1.9.1"
   }
 }
