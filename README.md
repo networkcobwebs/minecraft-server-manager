@@ -1,16 +1,23 @@
 
 # minecraft-server-manager
 
-A web management interface for Minecraft Server
+A web management interface for Minecraft Server.
 
 Includes:
 
 * a Node.js script to control your Minecraft server instance
 * a set of web pages for management created using React
 
+Dashboard
 ![alt text](doc/screenshots/dashboard.png "Dashboard")
+
+Player Management
 ![alt text](doc/screenshots/players.png "Players")
+
+World Management
 ![alt text](doc/screenshots/world.png "World Controls")
+
+Server Management
 ![alt text](doc/screenshots/server.png "Server Controls")
 
 ## Requirements
@@ -39,10 +46,14 @@ script. By default, the web server will run on `localhost` on port 3001.
     pushd minecraft-server-manager && npm run start
 ```
 
+If a Minecraft server executable is not discovered, the latest version will
+be downloaded and used.
+
 2. Navigate to your web server's URL: http://localhost:3001
-3. Start Minecraft and/or accept the Minecraft end user license agreement if
-needed.
-4. Play Minecraft on your server. *(requires paid Minecraft account)*
+3. Start the Minecraft server and/or accept the Minecraft end user license
+agreement if needed.
+4. Play multiplayer Minecraft on your server. *(usually requires paid
+Minecraft account)*
 5. Manage things on the Minecraft server via the web interface.
 
 ### Notes
@@ -76,7 +87,7 @@ page and log an issue if it doesn't exist as issues are discovered. Realize that
 there is no schedule for this project, so a bug fix or enhancement will be
 completed as time allows, regardless of severity, crash, or payment, at the
 developer's discretion. For that matter if you are able, fork the project and
-PR a bug fix back. We'll add you to the About page.
+PR a bug fix back. We'll add you to the About page if the PR is merged.
 
 #### Known Issues
 
@@ -84,7 +95,7 @@ PR a bug fix back. We'll add you to the About page.
 Minecraft server to have been run once.
 - The Restore Backup button of the World Controls is permanently disabled while
 work on that feature continues.
-- Some commands used in the Send Raw Minecraft Command section of the World
+- Some commands available in the Send Raw Minecraft Command section of the World
 Controls will not work.
 - The Update button of the Server Controls section is permanently disabled while
 work on that feature continues.
@@ -96,7 +107,7 @@ There are more, but these are the most annoying ones discovered to date.
 
 If you have a Minecraft world already running and want to use this web
 application to manage it, simply copy the contents of your Minecraft directory
-in the `minecraft_server` location and then start the web application.
+to the `minecraft_server` location and then start the web application.
 
 If anything goes awry with game play, typically a restart of the web application
 will resolve issues. If there are too frequent or disasterly issues, simply run
