@@ -56,9 +56,9 @@ agreement if needed.
 Minecraft account)*
 5. Manage things on the Minecraft server via the web interface.
 
-### Notes
+## Notes
 
-#### SECURITY NOTICE
+### SECURITY NOTICE
 
 The web application is provided "as-is". There is more than likely risk of
 abuse to your Minecraft server by using this application, as there is "little to
@@ -66,7 +66,7 @@ no" security in the web application at all. Securing the machine and access to
 the web application is the responsibility of the person running the Minecraft
 server.
 
-#### Testing
+### Testing
 
 Current OS testing has been with:
 
@@ -78,7 +78,7 @@ Current OS testing has been with:
 That is not to say that it will not run on Windows - it should, but it just has
 not been tested.
 
-#### Logging Issues
+## Logging Issues
 
 There are no doubt bugs waiting to be discovered, and features missing outright.
 Feel free to check the
@@ -89,7 +89,7 @@ completed as time allows, regardless of severity, crash, or payment, at the
 developer's discretion. For that matter if you are able, fork the project and
 PR a bug fix back. We'll add you to the About page if the PR is merged.
 
-#### Known Issues
+### Known Issues
 
 - Accepting the Minecraft end user license agreement (EULA) requires the
 Minecraft server to have been run once.
@@ -103,7 +103,7 @@ work on that feature continues.
 
 There are more, but these are the most annoying ones discovered to date.
 
-#### Helpful Hints
+## Helpful Hints
 
 If you have a Minecraft world already running and want to use this web
 application to manage it, simply copy the contents of your Minecraft directory
