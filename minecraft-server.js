@@ -965,7 +965,7 @@ class MinecraftServer {
             summary: '',
             players: []
         };
-        let player, somePlayerNames, somePlayerName;
+        let somePlayerNames, somePlayerName;
 
         // Get current online players
         if (started && !serverOutputCaptured) {
@@ -978,19 +978,19 @@ class MinecraftServer {
                 // First line is the summary,
                 // followed by player names, comma+space separated.
                 let output = serverOutput.join('');
-                let players, playersSummary;
+                let player, players, playersSummary;
                 // Versions prior to 1.13 send newline...
                 if (output.indexOf('\n') !== -1) {
                     players = output.split(/\n/);
                     playersSummary = players.shift();
                     playersSummary = playersSummary.split(']: ')[1];
+                    playersSummary = playersSummary.slice(0, -1);
                 } else {
                     players = output.split(']: ')[1];
-                    players = players.split(': ');
+                    players = players.split(':');
                     playersSummary = players.shift();
                 }
                 
-                playersSummary = playersSummary.slice(0, -1);
                 playersList.summary = playersSummary;
                 
                 if (players && players.length) {
@@ -1019,16 +1019,25 @@ class MinecraftServer {
                                             name: somePlayerName.trim(),
                                             online: true
                                         };
-                                        for (let cachedPlayer of properties.userCache) {
-                                            if (cachedPlayer.name === player.name) {
-                                                player.key = cachedPlayer.key;
+                                    } else {
+                                        for (let d = 0; d , testData.length; d++) {
+                                            if (testData[d]) {
+                                                player = {
+                                                    name: testData[d].trim(),
+                                                    online: true
+                                                };
                                             }
                                         }
-                                        player.banned = this.determineBanStatus(player);
-                                        player.opped = this.determineOpStatus(player);
-                                        player.whitelisted = this.determineWhitelistStatus(player);
-                                        playersList.players.push(player);
                                     }
+                                    for (let cachedPlayer of properties.userCache) {
+                                        if (cachedPlayer.name === player.name) {
+                                            player.key = cachedPlayer.uuid;
+                                        }
+                                    }
+                                    player.banned = this.determineBanStatus(player);
+                                    player.opped = this.determineOpStatus(player);
+                                    player.whitelisted = this.determineWhitelistStatus(player);
+                                    playersList.players.push(player);
                                 }
                             }
                         }

@@ -188,23 +188,30 @@ export default class Players extends React.Component {
     }
 
     displayPlayerListItems (player) {
-        <PlayerListItem
-            key = { player.key }
-            player = { player }
-            banPlayer = { this.banPlayer }
-            pardonPlayer = { this.pardonPlayer }
-            kickPlayer = { this.kickPlayer }
-            opPlayer = { this.opPlayer }
-            deopPlayer = { this.deopPlayer }
-            whitelistPlayer = { this.whitelistPlayer }
-        />;
+        return (
+            <PlayerListItem
+                key = { player.key }
+                player = { player }
+                banPlayer = { this.banPlayer }
+                pardonPlayer = { this.pardonPlayer }
+                kickPlayer = { this.kickPlayer }
+                opPlayer = { this.opPlayer }
+                deopPlayer = { this.deopPlayer }
+                whitelistPlayer = { this.whitelistPlayer }
+            />
+        );
     }
 
     render () {
-        let playerInfo = this.props.playerInfo || {summary: '', players: []},
-            summary = playerInfo.summary,
+        let playerInfo;
+        if (this.props.playerInfo) {
+            playerInfo = this.props.playerInfo;
+        } else {
+            playerInfo = { summary: '', players: [] };
+        }
+        let summary = playerInfo.summary,
             players = playerInfo.players;
-
+        
         return (
             <div style = { styles.container }>
                 <Table>

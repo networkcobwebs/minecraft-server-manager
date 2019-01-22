@@ -20,10 +20,12 @@ const styles = {
 export default class PlayersSummary extends React.Component {
     displayPlayerListItems (player) {
         if (player.online) {
-            <PlayerListItem
-                key = { player.key }
-                player = { player }
-            />;
+            return (
+                <PlayerListItem
+                    key = { player.key }
+                    player = { player }
+                />
+            );
         }
     }
 
