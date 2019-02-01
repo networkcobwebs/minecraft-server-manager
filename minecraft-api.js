@@ -2,6 +2,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 // var https = require('https');
 // var http = require('http');
+const os = require('os');
 const path = require('path');
 
 const MinecraftServer = require('./minecraft-server.js');
@@ -12,8 +13,13 @@ let _defaultProperties = {
     app: {},
     ipAddress: '127.0.0.1', // or 0.0.0.0 for all interfaces
     ipPort: 3001,
-    pathToWeb: 'minecraftservermanager/build',
-    minecraftServer: {}
+    minecraftServer: {},
+    nodeInfo: {
+        cpus: os.cpus(),
+        mem: os.totalmem(),
+        version: process.version,
+    },
+    pathToWeb: 'minecraftservermanager/build'
 };
 
 class MinecraftApi {
@@ -29,7 +35,7 @@ class MinecraftApi {
                 this._properties = props;
             }
         } catch (e) {
-            console.log('Somethings was wrong with the properties passed.');
+            console.log('Something was wrong with the properties passed.');
             if (debugApi) {
                 console.log(e.stack);
             }
@@ -179,6 +185,7 @@ class MinecraftApi {
                 let serverProps = Object.assign({}, minecraftProperties);
                 serverProps.serverProcess = {};
                 serverProps.startedTimer = {};
+                serverProps.nodeInfo = properties.nodeInfo;
                 
                 response.contentType('json');
                 try {
