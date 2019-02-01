@@ -326,7 +326,9 @@ export default class App extends React.Component {
                     minecraftProperties = { minecraftProperties }
                 /> }
                 { this.state.value === 4 && <Preferences /> }
-                { this.state.value === 5 && <About /> }
+                { this.state.value === 5 && <About
+                    minecraftProperties = { minecraftProperties }
+                /> }
                 <Snackbar
                     anchorOrigin = {
                         {
