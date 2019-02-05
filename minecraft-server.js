@@ -1169,9 +1169,7 @@ class MinecraftServer {
     }
 
     runCommand (command, callback) {
-        // make sure command passed is valid
-        // execute it
-        // return output
+        // TODO: make sure command passed is valid
         if (debug) {
             console.log('Running Minecraft command.');
         }
@@ -1186,24 +1184,24 @@ class MinecraftServer {
             serverOutputCaptured = true;
             serverOutput.length = 0;
             serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-        }
         
-        serverProcess.stdin.write(command + '\n');
-        setTimeout(function () {
-            serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
-            serverOutputCaptured = false;
-            for (let i = 0; i < serverOutput.length; i++) {
-                // Remove Minecraft server timestamp info
-                serverOutput[i] = serverOutput[i].split(']: ')[1];
-            }
-            let output = serverOutput.join('\n');
-            serverOutput.length = 0;
-            if (typeof callback === 'function') {
-                callback(output);
-            } else {
-                return output;
-            }
-        }.bind(this), 250);
+            serverProcess.stdin.write(command + '\n');
+            setTimeout(function () {
+                serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+                serverOutputCaptured = false;
+                for (let i = 0; i < serverOutput.length; i++) {
+                    // Remove Minecraft server timestamp info
+                    serverOutput[i] = serverOutput[i].split(']: ')[1];
+                }
+                let output = serverOutput.join('\n');
+                serverOutput.length = 0;
+                if (typeof callback === 'function') {
+                    callback(output);
+                } else {
+                    return output;
+                }
+            }.bind(this), 250);
+        }
     }
 
     start (version, callback) {
