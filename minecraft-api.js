@@ -232,17 +232,25 @@ class MinecraftApi {
                 let command = request.query.command;
 
                 if (command === '/list') {
-                    minecraftServer.getMinecraftPlayers((list) => {
+                    minecraftServer.listPlayers((list) => {
                         response.contentType('json');
                         response.json({
                             response: list
                         });
                     });
-                } else {
-                    console.log('Got bum command:', command);
+                } else if (command === '/restoreWorld') {
+                    // TODO
+                    console.log('Restore world called.');
                     response.contentType('json');
                     response.json({
-                        response: 'noop'
+                        output: 'Restore world disabled.'
+                    });
+                } else {
+                    minecraftServer.runCommand(command, function (output) {
+                        response.contentType('json');
+                        response.json({
+                            output: output
+                        });
                     });
                 }
             });

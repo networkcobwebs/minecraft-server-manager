@@ -3,26 +3,27 @@ import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
+import Backup from '@material-ui/icons/Backup';
+import Button from '@material-ui/core/Button';
+import Divider from '@material-ui/core/Divider';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FormControl from '@material-ui/core/FormControl';
+import Help from '@material-ui/icons/Help';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
-import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import Divider from '@material-ui/core/Divider';
-import Tooltip from '@material-ui/core/Tooltip';
-import Backup from '@material-ui/icons/Backup';
-import Restore from '@material-ui/icons/Restore';
 import New from '@material-ui/icons/Autorenew';
-import Help from '@material-ui/icons/Help';
+import Restore from '@material-ui/icons/Restore';
+import TextField from '@material-ui/core/TextField';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import BackupBeforeNewDialog from './BackupBeforeNewDialog.js';
-import RawMinecraftCommandDialog from './RawMinecraftCommandDialog.js';
 import ProgressDialog from './ProgressDialog.js';
+import RawMinecraftCommandDialog from './RawMinecraftCommandDialog.js';
 import RestoreBackupDialog from './RestoreBackupDialog.js';
 
 const styles = {
@@ -39,6 +40,7 @@ export default class WorldControls extends React.Component {
         
         this.state = {
             backupDialogOpen: false,
+            commandOutput: '',
             helpDialogOpen: false,
             potentialBackups: [],
             progressDialogOpen: false,
@@ -57,6 +59,7 @@ export default class WorldControls extends React.Component {
         this.getMinecraftWorldBackups = this.getMinecraftWorldBackups.bind(this);
         this.newMinecraftWorld = this.newMinecraftWorld.bind(this);
         this.onClearCommand = this.onClearCommand.bind(this);
+        this.onClearOutput = this.onClearOutput.bind(this);
         this.onSendCommand = this.onSendCommand.bind(this);
         this.openBackupBeforeNewDialog = this.openBackupBeforeNewDialog.bind(this);
         this.openProgressDialog = this.openProgressDialog.bind(this);
@@ -66,73 +69,17 @@ export default class WorldControls extends React.Component {
         this.updateRawCommandDialog = this.updateRawCommandDialog.bind(this);
         this.updateRawCommandType = this.updateRawCommandType.bind(this);
     }
-    
-    openBackupBeforeNewDialog () {
-        this.setState({ backupDialogOpen: true, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false });
-    }
-    
-    closeBackupDialog () {
-        this.setState({ backupDialogOpen: false });
-    }
-    
-    openProgressDialog () {
-        this.setState({ backupDialogOpen: false, progressDialogOpen: true, rawMinecraftCommandDialogOpen: false });
-    }
-    
-    closeProgressDialog () {
-        this.setState({ progressDialogOpen: false });
+
+    backupAndNewMinecraftWorld () {
+        // TODO Fix issue of if failed backup then don't nuke
+        this.backupMinecraftWorld();
+        this.newMinecraftWorld();
     }
 
-    openRawCommandDialog () {
-        this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: true });
-    }
-
-    closeRawCommandDialog () {
-        this.setState({ rawMinecraftCommandDialogOpen: false });
-    }
-
-    updateRawCommandType (event) {
-        this.setState({ rawCommand: event.target.value });
-    }
-
-    updateRawCommandDialog (command) {
-        this.setState({ rawCommand: command });
-    }
-
-    onClearCommand () {
-        this.setState({ rawCommand: '' });
-    }
-
-    openRestoreDialog () {
-        this.getMinecraftWorldBackups();
-        this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false, restoreDialogOpen: true });
-    }
-
-    closeRestoreDialog (worldBackup) {
-        if (worldBackup.filename) {
-            this.setState({ restoreBackup: worldBackup });
-            console.log('Would restore world: ', worldBackup);
-            this.setState({ restoreDialogOpen: false });
-            this.restoreMinecraftWorld(worldBackup);
-        } else {
-            this.setState({ restoreDialogOpen: false });
-        }
-    }
-
-    onSendCommand () {
-        axios({
-            method: 'post',
-            url: '/api/command',
-            params: {
-                command: this.state.rawCommand
-            }
-        }).then(() => {
-            this.setState({ rawCommand: '' });
-        },
-        err => {
-            console.log('An error occurred contacting the Minecraft server.', err);
-            this.setState({ progressDialogOpen: false });
-        });
+    backupAndRestoreMinecraftWorld () {
+        // TODO Fix issue of if failed backup then don't nuke
+        this.backupMinecraftWorld();
+        this.restoreMinecraftWorld();
     }
       
     backupMinecraftWorld () {
@@ -149,27 +96,27 @@ export default class WorldControls extends React.Component {
         });
     }
     
-    newMinecraftWorld () {
-        this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
-        axios({
-            method: 'post',
-            url: '/api/newWorld',
-            params: {
-                backup: false
-            }
-        }).then(() => {
-            this.setState({ progressDialogOpen: false });
-        },
-        err => {
-            console.log('An error occurred contacting the Minecraft server.', err);
-            this.setState({ progressDialogOpen: false });
-        });
+    closeBackupDialog () {
+        this.setState({ backupDialogOpen: false });
+    }
+    
+    closeProgressDialog () {
+        this.setState({ progressDialogOpen: false });
     }
 
-    backupAndNewMinecraftWorld () {
-        // TODO Fix issue of if failed backup then don't nuke
-        this.backupMinecraftWorld();
-        this.newMinecraftWorld();
+    closeRawCommandDialog () {
+        this.setState({ rawMinecraftCommandDialogOpen: false });
+    }
+    
+    closeRestoreDialog (worldBackup) {
+        if (worldBackup.filename) {
+            this.setState({ restoreBackup: worldBackup });
+            console.log('Would restore world: ', worldBackup);
+            this.setState({ restoreDialogOpen: false });
+            this.restoreMinecraftWorld(worldBackup);
+        } else {
+            this.setState({ restoreDialogOpen: false });
+        }
     }
 
     getMinecraftWorldBackups () {
@@ -194,6 +141,66 @@ export default class WorldControls extends React.Component {
         });
     }
     
+    newMinecraftWorld () {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true,  restoreDialogOpen: false });
+        axios({
+            method: 'post',
+            url: '/api/newWorld',
+            params: {
+                backup: false
+            }
+        }).then(() => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ progressDialogOpen: false });
+        });
+    }
+
+    onClearCommand () {
+        this.setState({ rawCommand: '' });
+    }
+
+    onClearOutput () {
+        this.setState({ commandOutput: '' });
+    }
+    
+    onSendCommand () {
+        axios({
+            method: 'post',
+            url: '/api/command',
+            params: {
+                command: this.state.rawCommand
+            }
+        }).then(response => {
+            let commandOutput = response.data.output;
+            this.setState({ rawCommand: '' });
+            this.setState({ commandOutput });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+            this.setState({ progressDialogOpen: false });
+        });
+    }
+    
+    openBackupBeforeNewDialog () {
+        this.setState({ backupDialogOpen: true, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false });
+    }
+    
+    openProgressDialog () {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: true, rawMinecraftCommandDialogOpen: false });
+    }
+
+    openRawCommandDialog () {
+        this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: true });
+    }
+    
+    openRestoreDialog () {
+        this.getMinecraftWorldBackups();
+        this.setState({ backupDialogOpen: false, progressDialogOpen: false, rawMinecraftCommandDialogOpen: false, restoreDialogOpen: true });
+    }
+    
     restoreMinecraftWorld (worldBackup) {
         this.setState({ backupDialogOpen: false, progressDialogOpen: true, restoreDialogOpen: false });
         axios({
@@ -214,10 +221,12 @@ export default class WorldControls extends React.Component {
         });
     }
 
-    backupAndRestoreMinecraftWorld () {
-        // TODO Fix issue of if failed backup then don't nuke
-        this.backupMinecraftWorld();
-        this.restoreMinecraftWorld();
+    updateRawCommandType (event) {
+        this.setState({ rawCommand: event.target.value });
+    }
+
+    updateRawCommandDialog (command) {
+        this.setState({ rawCommand: command });
     }
 
     render () {
@@ -286,6 +295,16 @@ export default class WorldControls extends React.Component {
                                 <Button size = "small" onClick = { this.onClearCommand }>Clear</Button>
                                 <Button size = "small" color="primary" onClick = { this.onSendCommand }>Send Command</Button>
                             </ExpansionPanelActions>
+                            <Divider />
+                            <TextField
+                                label="Command Output"
+                                multiline
+                                rows="4"
+                                margin="normal"
+                                variant="outlined"
+                                value={ this.state.commandOutput }
+                            />
+                            <Button size = "small" onClick = { this.onClearOutput }>Clear</Button>
                         </FormControl>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>

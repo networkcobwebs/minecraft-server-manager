@@ -21,8 +21,15 @@ const styles = {
 };
     
 export default class RawMinecraftCommandDialog extends React.Component {
-    closeDialog (event) {
-        this.props.updateRawCommandField(event);
+    constructor (props) {
+        super(props);
+
+        this.closeDialog = this.closeDialog.bind(this);
+        this.listCommands = this.listCommands.bind(this);
+    }
+
+    closeDialog (command) {
+        this.props.updateRawCommandField(command);
         this.props.onClose();
     }
 
@@ -62,8 +69,8 @@ export default class RawMinecraftCommandDialog extends React.Component {
 }
 
 RawMinecraftCommandDialog.propTypes = {
-    minecraftCommands: PropTypes.object.isRequired,
-    open: PropTypes.func.isRequired,
+    minecraftCommands: PropTypes.array.isRequired,
+    open: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     updateRawCommandField: PropTypes.func.isRequired
 };

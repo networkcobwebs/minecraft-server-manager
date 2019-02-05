@@ -281,7 +281,7 @@ export default class App extends React.Component {
     handleDeclineEula () {
         axios({
             method: 'post',
-            url: '/api/command?command=/stop'
+            url: '/api/stop'
         }).then(() => {
             this.setState({ eulaOpen: false });
         }, error => {
