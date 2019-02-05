@@ -34,7 +34,7 @@ export default class BackupBeforeNewDialog extends React.Component {
 }
 
 BackupBeforeNewDialog.propTypes = {
-    open: PropTypes.func.isRequired,
+    open: PropTypes.bool.isRequired,
     cancelDialog: PropTypes.func.isRequired,
     newOnly: PropTypes.func.isRequired,
     backupAndNew: PropTypes.func.isRequired

@@ -62,6 +62,6 @@ export default class RestoreBackupDialog extends Component {
 
 RestoreBackupDialog.propTypes = {
     onClose: PropTypes.func.isRequired,
-    open: PropTypes.func.isRequired,
-    potentialBackups: PropTypes.object.isRequired
+    open: PropTypes.bool.isRequired,
+    potentialBackups: PropTypes.array.isRequired
 };

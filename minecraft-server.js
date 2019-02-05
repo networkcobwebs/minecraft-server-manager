@@ -407,65 +407,6 @@ class MinecraftServer {
             }
         }
     }
-    
-    newWorld (backupWorld, callback) {
-        if (debug) {
-            console.log('Deleting MinecraftServer world...');
-        }
-
-        let properties = this.properties;
-        let worldName = '';
-        for (let item in properties.serverProperties) {
-            if (item.name === 'level-name') {
-                worldName = item.value;
-            }
-        }
-        if (!worldName) {
-            worldName = 'world';
-        }
-
-        backupWorld = backupWorld || false;
-
-        if (backupWorld) {
-            this.backupWorld(() => {
-                try {
-                    fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                        fs.F_OK | fs.R_OK | fs.W_OK);
-            
-                    console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
-                    fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
-                    console.log('World deleted.');
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
-                }
-                catch (e) {
-                    console.log('An error occurred deleting world data:', e.stack);
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
-                }
-            });
-        } else {
-            try {
-                fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                    fs.F_OK | fs.R_OK | fs.W_OK);
-        
-                console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
-                fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
-                console.log('World deleted.');
-                if (typeof callback === 'function') {
-                    callback();
-                }
-            }
-            catch (e) {
-                console.log('An error occurred deleting world data:', e.stack);
-                if (typeof callback === 'function') {
-                    callback();
-                }
-            }
-        }
-    }
 
     detectJavaHome (callback) {
         if (debug) {
@@ -1099,6 +1040,65 @@ class MinecraftServer {
             console.log(e.stack);
         }
     }
+    
+    newWorld (backupWorld, callback) {
+        if (debug) {
+            console.log('Deleting MinecraftServer world...');
+        }
+
+        let properties = this.properties;
+        let worldName = '';
+        for (let item in properties.serverProperties) {
+            if (item.name === 'level-name') {
+                worldName = item.value;
+            }
+        }
+        if (!worldName) {
+            worldName = 'world';
+        }
+
+        backupWorld = backupWorld || false;
+
+        if (backupWorld) {
+            this.backupWorld(() => {
+                try {
+                    fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
+                        fs.F_OK | fs.R_OK | fs.W_OK);
+            
+                    console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
+                    fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
+                    console.log('World deleted.');
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }
+                catch (e) {
+                    console.log('An error occurred deleting world data:', e.stack);
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }
+            });
+        } else {
+            try {
+                fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
+                    fs.F_OK | fs.R_OK | fs.W_OK);
+        
+                console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
+                fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
+                console.log('World deleted.');
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
+            catch (e) {
+                console.log('An error occurred deleting world data:', e.stack);
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
+        }
+    }
 
     parseHelpOutput (callback) {
         let properties = this.properties;
@@ -1165,6 +1165,42 @@ class MinecraftServer {
         properties.serverOutputCaptured = false;
         if (typeof callback === 'function') {
             callback();
+        }
+    }
+
+    runCommand (command, callback) {
+        // TODO: make sure command passed is valid
+        if (debug) {
+            console.log('Running Minecraft command.');
+        }
+
+        let properties = this.properties;
+        let serverOutputCaptured = properties.serverOutputCaptured;
+        let serverOutput = properties.serverOutput;
+        let serverProcess = properties.serverProcess;
+        let started = properties.started;
+
+        if (started && !serverOutputCaptured) {
+            serverOutputCaptured = true;
+            serverOutput.length = 0;
+            serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+        
+            serverProcess.stdin.write(command + '\n');
+            setTimeout(function () {
+                serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+                serverOutputCaptured = false;
+                for (let i = 0; i < serverOutput.length; i++) {
+                    // Remove Minecraft server timestamp info
+                    serverOutput[i] = serverOutput[i].split(']: ')[1];
+                }
+                let output = serverOutput.join('\n');
+                serverOutput.length = 0;
+                if (typeof callback === 'function') {
+                    callback(output);
+                } else {
+                    return output;
+                }
+            }.bind(this), 250);
         }
     }
 
