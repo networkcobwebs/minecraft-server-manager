@@ -10,6 +10,7 @@
             "name": "Minecraft",
             "program": "${workspaceFolder}/index.js",
             "env": {"JAVA_HOME": "/opt/java"},
+            "runtimeVersion": "10.16.0",
             "args": []
         },
         {  
@@ -18,6 +19,7 @@
             "name": "React",
             "program": "${workspaceRoot}/minecraftservermanager/node_modules/react-scripts/bin/react-scripts.js",
             "args": ["start"],
+            "runtimeVersion": "10.16.0",
             "cwd": "${workspaceFolder}/minecraftservermanager"
         }
     ]
