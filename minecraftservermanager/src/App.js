@@ -26,22 +26,6 @@ import About from './About/About.js';
 
 const debug = false;
 
-const getTheme = () => {
-    const theme = createMuiTheme({
-        "palette": {
-            "primary": blue800,
-            "primary2r": blue300,
-            "accent": deepOrangeA200,
-            "pickerHeader": blue800
-        },
-        "tableRowColumn": {
-            "height": 60
-        }
-    });
-    
-    return theme;
-};
-
 export default class App extends React.Component {
     constructor (props) {
         super(props);
@@ -69,6 +53,27 @@ export default class App extends React.Component {
 
         this.runOnce();
         this.getMinecraftStatus(25);
+    }
+    
+    getTheme () {
+        const theme = createMuiTheme({
+            "palette": {
+                "primary": blue800,
+                "primary2r": blue300,
+                "accent": deepOrangeA200,
+                "pickerHeader": blue800
+            },
+            "tableRowColumn": {
+                "height": 60
+            },
+            "container": {
+                "margin": 10,
+                "fontFamily": '"Roboto", "Helvetica", "Arial", sans-serif',
+                "fontSize": '0.95rem'
+            },
+        });
+        
+        return theme;
     }
 
     componentWillUnmount () {
@@ -297,7 +302,7 @@ export default class App extends React.Component {
         let minecraftProperties = this.state.minecraftProperties;
 
         return (
-            <MuiThemeProvider theme={ getTheme() }>
+            <MuiThemeProvider theme={ this.getTheme() }>
                 <AppBar position="static">
                     <Tabs
                         value = { this.state.value }
