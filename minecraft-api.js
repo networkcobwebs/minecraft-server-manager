@@ -7,7 +7,7 @@ const path = require('path');
 
 const MinecraftServer = require('./minecraft-server.js');
 
-const debugApi = true;
+const debugApi = false;
 
 let _defaultProperties = {
     app: {},
@@ -147,8 +147,10 @@ class MinecraftApi {
             if (this.minecraftServer.properties.installed) {
                 pingTime = normalPingTime;
                 this.minecraftServer.updateStatus();
-                console.log('Got Minecraft status:');
-                console.log(this.minecraftProperties);
+                if (debugApi) {
+                    console.log('Got Minecraft status:');
+                    console.log(this.minecraftServer.properties);
+                }
             } else {
                 pingTime = pingTime + appendTime;
             }
