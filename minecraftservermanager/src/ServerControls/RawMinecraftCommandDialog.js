@@ -55,7 +55,7 @@ export default class RawMinecraftCommandDialog extends React.Component {
                 </DialogTitle>
                 <DialogContent>
                     <List>
-                        { this.props.minecraftCommands.map(this.listCommands) }
+                        { this.props.minecraftCommands ? this.props.minecraftCommands.map(this.listCommands) : <div></div> }
                     </List>
                 </DialogContent>
                 <DialogActions>
