@@ -36,6 +36,7 @@ class ServerControls extends React.Component {
         };
         this.closeProgressDialog = this.closeProgressDialog.bind(this);
         this.openProgressDialog = this.openProgressDialog.bind(this);
+        this.installMinecraft = this.installMinecraft.bind(this);
         this.restartMinecraft = this.restartMinecraft.bind(this);
         this.startMinecraft = this.startMinecraft.bind(this);
         this.stopMinecraft = this.stopMinecraft.bind(this);
@@ -54,6 +55,19 @@ class ServerControls extends React.Component {
         axios({
             method: 'post',
             url: `/api/restart`
+        }).then(() => {
+            this.setState({ progressDialogOpen: false });
+        },
+        err => {
+            console.log('An error occurred contacting the Minecraft server.', err);
+        });
+    }
+
+    installMinecraft () {
+        this.setState({ progressDialogOpen: true });
+        axios({
+            method: 'post',
+            url: `/api/install`
         }).then(() => {
             this.setState({ progressDialogOpen: false });
         },
@@ -156,8 +170,18 @@ class ServerControls extends React.Component {
                                 </Button>
                             </div>
                         </Tooltip>
-                        <Button size="small" color="primary">
+                        <Button
+                            size="small"
+                            variant="contained"
+                            color="primary">
                             Check for updates
+                        </Button>
+                        <Button
+                            onClick = { this.installMinecraft }
+                            size="small"
+                            variant="contained"
+                            color="primary">
+                            Install
                         </Button>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>

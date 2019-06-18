@@ -96,15 +96,15 @@ export default class App extends React.Component {
     }
 
     getMinecraftStatus (pingWait) {
-        let normalPingTime = 10 * 1000,
+        let normalPingTime = 60 * 1000,
             appendTime = 5 * 1000,
-            maxTime = 120 * 1000,
+            maxTime = 300 * 1000,
             pingTime;
 
-        // normally ping every 10 seconds
+        // normally ping every 60 seconds
         // if a fast ping was requested (from constructor/DidMount), honor it
-        // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds
-        // once re/successful, reset to 10 seconds
+        // once trouble hits, add 5 seconds until 5 minutes is reached, then reset to 60 seconds
+        // once re/successful, reset to 60 seconds
         if (!pingWait) {
             pingTime = normalPingTime;
         } else if (pingWait < 1000) {
