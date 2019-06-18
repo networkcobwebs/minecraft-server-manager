@@ -23,6 +23,7 @@ import Refresh from '@material-ui/icons/Cached';
 import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 
 import ProgressDialog from './ProgressDialog.js';
+import ServerProperties from './ServerProperties.js';
 
 const styles = {
     container: {
@@ -143,46 +144,7 @@ class ServerControls extends React.Component {
                         </Button>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon /> }>
-                        <div>
-                            Server Properties
-                            <IconButton >
-                                <Tooltip title="Refresh">
-                                    <Refresh />
-                                </Tooltip>
-                            </IconButton>
-                        </div>
-                    </ExpansionPanelSummary>
-                    
-                    { minecraftProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
-                        return (
-                            <ExpansionPanelDetails key={ property.name }>
-                                <FormControl fullWidth>
-                                    <InputLabel
-                                        htmlFor="{ property.name }">
-                                        { property.name }
-                                    </InputLabel>
-                                    <Input
-                                        id = { property.name }
-                                        value = { property.value }
-                                        fullWidth />
-                                </FormControl>
-                            </ExpansionPanelDetails>
-                        );
-                    }) : 'Waiting on Minecraft server...' }
-                    
-                    <Divider />
-
-                    <ExpansionPanelActions>
-                        <Button size="small">
-                            Cancel
-                        </Button>
-                        <Button size="small" color="primary">
-                            Save
-                        </Button>
-                    </ExpansionPanelActions>
-                </ExpansionPanel>
+                <ServerProperties minecraftProperties = { minecraftProperties }/>
             </div>
         );
     }
