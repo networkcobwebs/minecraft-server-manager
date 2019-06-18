@@ -333,7 +333,9 @@ class MinecraftApi {
         // } else {
         //     console.log('Minecraft EULA not accepted yet.');
         // }
-        minecraftServer.start();
+        if (minecraftServer.properties.installed) {
+            minecraftServer.start();
+        }
 
         console.info('MinecraftApi started.');
     }

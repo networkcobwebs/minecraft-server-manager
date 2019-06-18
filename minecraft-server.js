@@ -4,6 +4,7 @@ const exec = require('child_process').exec;
 const fs = require('fs-extra');
 const https = require('https');
 const os = require('os');
+const path = require('path');
 const spawn = require('child_process').spawn;
 
 const debug = false;
@@ -20,13 +21,15 @@ let defaultProperties = {
     fullHelp: [],
     helpPages: 0,
     installed: false,
+    installedVersions: [],
     ipAddress: '',
     javaHome: '',
+    needsInstallation: true,
     ops: [],
     osType: os.type(),
     pathToMinecraftDirectory: 'minecraft_server',
     players: [],
-    serverJar: 'minecraft_server.jar',
+    serverJar: 'server.jar',
     serverLog: 'minecraft_server.log',
     serverLogDir: 'logs',
     serverOutput: [],
@@ -40,6 +43,7 @@ let defaultProperties = {
     stopping: false,
     stopped: false,
     stoppedTimer: null,
+    updateAvailable: false,
     userCache: {},
     versions: {},
     whitelist: []
@@ -132,10 +136,11 @@ class MinecraftServer {
         
         this.acceptEula = this.acceptEula.bind(this);
         this.bufferMinecraftOutput = this.bufferMinecraftOutput.bind(this);
+        this.checkForMinecraftInstallation = this.checkForMinecraftInstallation.bind(this);
         this.checkForMinecraftToBeStarted = this.checkForMinecraftToBeStarted.bind(this);
         this.checkForMinecraftToBeStopped = this.checkForMinecraftToBeStopped.bind(this);
+        this.checkForMinecraftUpdate = this.checkForMinecraftUpdate.bind(this);
         this.detectJavaHome = this.detectJavaHome.bind(this);
-        this.detectMinecraftDir = this.detectMinecraftDir.bind(this);
         this.detectMinecraftJar = this.detectMinecraftJar.bind(this);
         this.getBannedIps = this.getBannedIps.bind(this);
         this.getBannedPlayers = this.getBannedPlayers.bind(this);
@@ -159,16 +164,17 @@ class MinecraftServer {
             .value()
             .address;
         
-        this.detectMinecraftDir();
-        this.detectMinecraftJar();
         this.getMinecraftVersions();
-        this.getEula();
-        this.getServerProperties();
-        this.getUserCache();
-        this.getOps();
-        this.getBannedIps();
-        this.getBannedPlayers();
-        this.getWhitelist();
+        this.checkForMinecraftInstallation();
+        if (this.properties.installed) {
+            this.getEula();
+            this.getServerProperties();
+            this.getUserCache();
+            this.getOps();
+            this.getBannedIps();
+            this.getBannedPlayers();
+            this.getWhitelist();
+        }
     }
 
     acceptEula () {
@@ -274,6 +280,34 @@ class MinecraftServer {
         this.properties.serverOutput.push(data.toString().trim());
     }
 
+    checkForMinecraftInstallation () {
+        if (debug) {
+            console.log('Checking for MinecraftServer installation...');
+        }
+
+        let properties = this.properties,
+            pathToMinecraftDirectory = properties.pathToMinecraftDirectory,
+            directoryFound = false;
+        
+        try {
+            fs.accessSync(pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
+            directoryFound = true;
+            console.log('Minecraft server directory exists.');
+        } catch (e) {
+            console.log('Creating MinecraftServer directory...');
+            fs.mkdirSync(pathToMinecraftDirectory);
+            console.log('Complete.');
+            properties.installed = false;
+        }
+        if (directoryFound) {
+            this.detectMinecraftJar();
+        }
+
+        if (debug) {
+            console.log('Done checking for MinecraftServer installation.');
+        }
+    }
+
     checkForMinecraftToBeStarted (checkCount, callback) {
         if (debug) {
             console.log('Checking for MinecraftServer process to be started ('+ checkCount +')...');
@@ -357,9 +391,6 @@ class MinecraftServer {
                 }, 100);
             } else {
                 this.listCommands(0, callback);
-                // if (typeof callback === 'function') {
-                //     callback();
-                // }
             }
         }
     }
@@ -405,6 +436,21 @@ class MinecraftServer {
                     this.checkForMinecraftToBeStopped(++checkCount, callback);
                 }, 500);
             }
+        }
+    }
+
+    checkForMinecraftUpdate () {
+        if (debug) {
+            console.log('Checking for Minecraft server update...');
+        }
+
+        this.getMinecraftVersions();
+        if (this.properties.detectedVersion) {
+            // check to see if detected < latest, set properties.updateAvailable to true
+        }
+
+        if (debug) {
+            console.log('Done checking for Minecraft server update.');
         }
     }
 
@@ -468,21 +514,25 @@ class MinecraftServer {
     }
 
     detectMinecraftJar () {
-        // find the server.jar to run
-        // We download versions and name them release_serverJar in the install function
+        // find the server.jar to run.
+        // We download versions and name them {release}_minecraft_server.jar in the install function.
         if (debug) {
             console.log('Detecting MinecraftServer jar...');
         }
 
         let properties = this.properties;
-        let minecraftFiles;
+        let minecraftFiles = [];
 
         try {
             minecraftFiles = fs.readdirSync(properties.pathToMinecraftDirectory);
             minecraftFiles.forEach(file => {
-                if (file.indexOf('server.jar') !== -1) {
+                // detect versions we've installed.
+                if (file.indexOf('_minecraft_server.jar') !== -1) {
+                    properties.installedVersions.push(file);
+                // detect running versions.
+                } else if (file.indexOf('server.jar') !== -1) {
                     properties.installed = true;
-                    properties.serverJar = file; // TODO what about multiple versions?
+                    properties.serverJar = file; 
                     console.log('Found Minecraft jar.');
                 }
             });
@@ -492,6 +542,12 @@ class MinecraftServer {
             if (debug) {
                 console.log(e.stack);
             }
+        }
+
+        if (properties.installedVersions && !properties.installed) {
+            console.log('Found a server but not starting it.');
+            properties.installed = false;
+            properties.needsInstallation = true;
         }
 
         if (debug) {
@@ -557,6 +613,57 @@ class MinecraftServer {
         }
 
         return whitelisted;
+    }
+
+    downloadRelease (version, callback) {
+        let minecraftVersionInfo = [],
+            properties = this.properties,
+            pathToMinecraftDirectory = properties.pathToMinecraftDirectory,
+            release = properties.versions.releaseVersions[0];
+
+        if (version && version !== 'latest') {
+            properties.versions.releaseVersions.forEach(releaseVersion => {
+                if (releaseVersion.id === version) {
+                    release = releaseVersion;
+                }
+            });
+        }
+
+        console.log('Fetching release information for:', release.id);
+        https.get(release.url, (res) => {
+            res.on('data', (d) => {
+                minecraftVersionInfo.push(d);
+            });
+            res.on('end', () => {
+                try {
+                    minecraftVersionInfo = JSON.parse(minecraftVersionInfo.join(''));
+                    if (minecraftVersionInfo.downloads && minecraftVersionInfo.downloads.server && minecraftVersionInfo.downloads.server.url) {
+                        console.log('Downloading Minecraft server...');
+                        let jar = release.id + '_minecraft_server.jar';
+                        let fileStream = fs.createWriteStream(pathToMinecraftDirectory + '/' + jar);
+                        https.get(minecraftVersionInfo.downloads.server.url, (aJar) => {
+                            aJar.pipe(fileStream);
+                            fileStream.on('finish', ()  => {
+                                fileStream.close();  // close() is async.
+                                properties.serverJar = jar;
+                                properties.installedVersions.push(jar);
+                                console.log('Download of Minecraft server version ' + release.id + ' complete.');
+                                if (typeof callback === 'function') {
+                                    callback();
+                                }
+                            });
+                        });
+                    } else {
+                        console.log('Minecraft server version ' + release.id + 'not available for installation.');
+                    }
+                } catch (e) {
+                    console.log('An error occurred processing the Minecraft official version list:', e.stack);
+                    console.log(minecraftVersionInfo.join(''));
+                }
+            });
+        }).on('error', (e) => {
+            console.error('An error occurred retrieving the Minecraft official version list:', e.stack);
+        });
     }
 
     getBannedIps () {
@@ -702,8 +809,7 @@ class MinecraftServer {
                             snapshotVersions.push(version);
                         }
                     });
-                    this.properties.versions = { "releaseVersions": releaseVersions, "snapshotVersions":snapshotVersions };
-                    this.install();
+                    this.properties.versions = { "releaseVersions": releaseVersions, "snapshotVersions": snapshotVersions };
                 } catch (e) {
                     console.log('An error occurred processing the Minecraft official version list:', e.stack);
                     console.log(minecraftVersionsArray.join(''));
@@ -791,68 +897,47 @@ class MinecraftServer {
         }
     }
 
-    install () {
-        let minecraftVersionInfo = [];
-        let properties = this.properties;
-        let pathToMinecraftDirectory = properties.pathToMinecraftDirectory;
-        let serverJar = properties.serverJar;
+    install (version) {
+        if (debug) {
+            console.log('Installing MinecraftServer...');
+        }
+
+        let download = false,
+            jar = '',
+            properties = this.properties,
+            pathToMinecraftDirectory = properties.pathToMinecraftDirectory,
+            release = properties.versions.releaseVersions[0],
+            serverJar = properties.serverJar;
+
+        if (version && version !== 'latest') {
+            properties.versions.releaseVersions.forEach(releaseVersion => {
+                if (releaseVersion.id === version) {
+                    release = releaseVersion;
+                }
+            });
+        }
         
-        if (properties.versions.releaseVersions) {
-            let release = properties.versions.releaseVersions[0];
-            try {
-                fs.accessSync(pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
-                fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
-            } catch (e) {
-                try {
-                    fs.accessSync(pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
-                    console.log('Minecraft server directory exists.');
-                } catch (e) {
-                    console.log('Creating MinecraftServer directory...');
-                    fs.mkdirSync(pathToMinecraftDirectory);
-                    console.log('Complete.');
-                }
-                try {
-                    fs.accessSync(pathToMinecraftDirectory + '/' + release.id + '_' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
-                    properties.serverJar = release.id + '_' + serverJar;
-                    console.log('Minecraft server jar found.');
-                } catch (e) {
-                    // Fetch latest release
-                    console.log('Fetching release information for:', release.id);
-                    https.get(release.url, (res) => {
-                        res.on('data', (d) => {
-                            minecraftVersionInfo.push(d);
-                        });
-                        res.on('end', () => {
-                            try {
-                                minecraftVersionInfo = JSON.parse(minecraftVersionInfo.join(''));
-                                if (minecraftVersionInfo.downloads && minecraftVersionInfo.downloads.server && minecraftVersionInfo.downloads.server.url) {
-                                    console.log('Downloading Minecraft server...');
-                                    let version = release.id + '_' + serverJar;
-                                    let fileStream = fs.createWriteStream(pathToMinecraftDirectory + '/' + version);
-                                    https.get(minecraftVersionInfo.downloads.server.url, (aJar) => {
-                                        aJar.pipe(fileStream);
-                                        fileStream.on('finish', ()  => {
-                                            fileStream.close();  // close() is async.
-                                            properties.serverJar = version;
-                                            console.log('Download of Minecraft server complete.');
-                                            if (!properties.eulaFound) {
-                                                this.getEula();
-                                            }
-                                        });
-                                    });
-                                } else {
-                                    console.log('Minecraft server not available for installation.');
-                                }
-                            } catch (e) {
-                                console.log('An error occurred processing the Minecraft official version list:', e.stack);
-                                console.log(minecraftVersionInfo.join(''));
-                            }
-                        });
-                    }).on('error', (e) => {
-                        console.error('An error occurred retrieving the Minecraft official version list:', e.stack);
-                    });
-                }
+        properties.installedVersions.forEach(installedVersion => {
+            if (installedVersion.indexOf(release.id) !== -1) {
+                jar = installedVersion;
+            } else {
+                download = true;
+                jar = release.id + '_' + serverJar;
             }
+        });
+        
+        let callback = function () {
+            fs.copyFileSync(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar));
+            properties.installed = true;
+            properties.needsInstallation = false;
+
+            if (debug) {
+                console.log('Done installing MinecraftServer.');
+            }
+        };
+
+        if (download) {
+            this.downloadRelease(release.id, callback);
         }
     }
 
@@ -1206,80 +1291,87 @@ class MinecraftServer {
 
     start (version, callback) {
         // TODO: Fix the async-ness of detectJavaHome
-        this.detectJavaHome( () => {
-            console.info('Starting MinecraftServer...');
+        if (this.properties.installed) {
+            this.detectJavaHome( () => {
+                console.info('Starting MinecraftServer...');
 
-            let properties = this.properties;
-            let javaHome = properties.javaHome;
-            let java = javaHome + '/bin/java';
-            let pathToMinecraftDirectory = properties.pathToMinecraftDirectory;
-            let serverJar = properties.serverJar;
-            let serverOutput = properties.serverOutput;
-            let serverOutputCaptured = properties.serverOutputCaptured;
-            let serverProcess = properties.serverProcess;
-            let startedTimer = properties.startedTimer;
-            let starting = properties.starting;
+                let properties = this.properties;
+                let javaHome = properties.javaHome;
+                let java = javaHome + '/bin/java';
+                let pathToMinecraftDirectory = properties.pathToMinecraftDirectory;
+                let serverJar = properties.serverJar;
+                let serverOutput = properties.serverOutput;
+                let serverOutputCaptured = properties.serverOutputCaptured;
+                let serverProcess = properties.serverProcess;
+                let startedTimer = properties.startedTimer;
+                let starting = properties.starting;
 
-            if (typeof version === 'function') {
-                callback = version;
-                version = null;
-            }
-
-            if (javaHome) {
-                try {
-                    fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
-                    // TODO: Make the Java + args configurable
-                    serverProcess = properties.serverProcess = spawn(java, [
-                        '-Xmx1G',
-                        '-Xms1G',
-                        '-jar',
-                        serverJar,
-                        'nogui'
-                    ], {
-                        cwd: pathToMinecraftDirectory,
-                        stdio: [
-                            'pipe', // Use parent's stdin for child stdin
-                            'pipe', // Pipe child's stdout to parent stdout
-                            'pipe'  // Direct child's stderr to parent stderr
-                        ]
-                    });
-                
-                    if (!serverOutputCaptured) {
-                        starting = true;
-                        serverOutputCaptured = true;
-                        serverOutput.length = 0;
-                        serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-                
-                        if (startedTimer) {
-                            clearTimeout(startedTimer);
-                        }
-                    
-                        startedTimer = setTimeout(() => {
-                            this.checkForMinecraftToBeStarted(0, callback);
-                        }, 100);
-                    } else if (starting && serverOutputCaptured) {
-                        clearTimeout(startedTimer);
-                        startedTimer = setTimeout(() => {
-                            this.checkForMinecraftToBeStarted(0, callback);
-                        }, 100);
-                    } else {
-                        setTimeout(() => {
-                            this.start(callback);
-                        }, 1000);
-                    }
-                } catch (e) {
-                    console.log('MinecraftServer executable not found.');
-                    if (debug) {
-                        console.error(e.stack);
-                    }
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
+                // version is optional.
+                if (typeof version === 'function') {
+                    callback = version;
+                    version = null;
                 }
-            } else {
-                console.log('JAVA_HOME not set.');
-            }
-        });
+
+                if (javaHome) {
+                    try {
+                        fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
+                        // TODO: Make the Java + args configurable
+                        serverProcess = properties.serverProcess = spawn(java, [
+                            '-Xmx1G',
+                            '-Xms1G',
+                            '-jar',
+                            serverJar,
+                            'nogui'
+                        ], {
+                            cwd: pathToMinecraftDirectory,
+                            stdio: [
+                                'pipe', // Use parent's stdin for child stdin
+                                'pipe', // Pipe child's stdout to parent stdout
+                                'pipe'  // Direct child's stderr to parent stderr
+                            ]
+                        });
+                    
+                        if (!serverOutputCaptured) {
+                            starting = true;
+                            serverOutputCaptured = true;
+                            serverOutput.length = 0;
+                            serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+                    
+                            if (startedTimer) {
+                                clearTimeout(startedTimer);
+                            }
+                        
+                            startedTimer = setTimeout(() => {
+                                this.checkForMinecraftToBeStarted(0, callback);
+                            }, 100);
+                        } else if (starting && serverOutputCaptured) {
+                            clearTimeout(startedTimer);
+                            startedTimer = setTimeout(() => {
+                                this.checkForMinecraftToBeStarted(0, callback);
+                            }, 100);
+                        } else {
+                            setTimeout(() => {
+                                this.start(callback);
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        console.log('MinecraftServer executable not found.');
+                        if (debug) {
+                            console.error(e.stack);
+                        }
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    }
+                } else {
+                    console.log('JAVA_HOME not set.');
+                }
+            });
+        } else {
+            console.log('Minecraft server not installed.');
+            this.install();
+            this.start();
+        }
     }
 
     stop (callback) {
