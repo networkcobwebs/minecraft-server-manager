@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
+import Typography from '@material-ui/core/Typography';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Tooltip from '@material-ui/core/Tooltip';
 import Icon from '@material-ui/core/Icon';
-import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Start from '@material-ui/icons/PlayArrow';
 import Stop from '@material-ui/icons/Stop';
@@ -99,40 +99,63 @@ class ServerControls extends React.Component {
                 />
                 <ExpansionPanel defaultExpanded>
                     <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon />} >
-                        Server Controls
+                        <Typography>Server Controls</Typography>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <Tooltip title="Start">
-                            <Button
-                                onClick={ this.startMinecraft }
-                                disabled={ minecraftProperties.started }
-                                className={styles.button}>
-                                Start
-                                <Icon>
-                                    <Start />
-                                </Icon>
-                            </Button>
+                            <div>
+                                <Button
+                                    onClick={ this.startMinecraft }
+                                    disabled={ minecraftProperties.started }
+                                    variant="contained"
+                                    color="primary">
+                                    Start
+                                    <Icon>
+                                        <Start />
+                                    </Icon>
+                                </Button>
+                            </div>
                         </Tooltip>
-                        <IconButton
-                            onClick = { this.stopMinecraft }
-                            disabled = { !minecraftProperties.started }>
-                            <Tooltip title="Stop">
-                                <Stop />
-                            </Tooltip>
-                        </IconButton>
-                        <IconButton
-                            onClick = { this.restartMinecraft }
-                            disabled = { !minecraftProperties.started }>
-                            <Tooltip title="Restart">
-                                <Restart />
-                            </Tooltip>
-                        </IconButton>
-                        <IconButton 
-                            disabled = { !minecraftProperties.upgradeAvailable }>
-                            <Tooltip title="Update">
-                                <UpdateAvailable />
-                            </Tooltip>
-                        </IconButton>
+                        <Tooltip title="Stop">
+                            <div>
+                                <Button
+                                    onClick = { this.stopMinecraft }
+                                    disabled = { !minecraftProperties.started }
+                                    variant="contained"
+                                    color="primary">
+                                    Stop
+                                    <Icon>
+                                        <Stop />
+                                    </Icon>
+                                </Button>
+                            </div>
+                        </Tooltip>
+                        <Tooltip title="Restart">
+                            <div>
+                                <Button
+                                    onClick = { this.restartMinecraft }
+                                    disabled = { !minecraftProperties.started }
+                                    variant="contained"
+                                    color="primary">
+                                    Restart
+                                    <Icon>
+                                        <Restart />
+                                    </Icon>
+                                </Button>
+                            </div>
+                        </Tooltip>
+                        <Tooltip title="Update">
+                            <div>
+                                <Button 
+                                    disabled = { !minecraftProperties.upgradeAvailable }
+                                    variant="contained"
+                                    color="primary">
+                                    <Icon>
+                                        <UpdateAvailable />
+                                    </Icon>
+                                </Button>
+                            </div>
+                        </Tooltip>
                         <Button size="small" color="primary">
                             Check for updates
                         </Button>

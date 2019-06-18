@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import 'typeface-roboto';
+import Typography from '@material-ui/core/Typography';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
@@ -11,7 +13,6 @@ import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import Tooltip from '@material-ui/core/Tooltip';
 import Icon from '@material-ui/core/Icon';
-import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import Refresh from '@material-ui/icons/Cached';
@@ -21,14 +22,19 @@ export default function ServerProperties (props) {
     return (
         <ExpansionPanel defaultExpanded>
             <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon /> }>
-                <div>
+                <Typography component="h2" marginRight={ 2 }>
                     Server Properties
-                    <IconButton >
-                        <Tooltip title="Refresh">
-                            <Refresh />
-                        </Tooltip>
-                    </IconButton>
-                </div>
+                </Typography>
+                <Typography>
+                    <Tooltip title="Refresh">
+                        <Button variant="contained" color="primary">
+                            Refresh
+                            <Icon>
+                                <Refresh />
+                            </Icon>
+                        </Button>
+                    </Tooltip>
+                </Typography>
             </ExpansionPanelSummary>
             
             { minecraftProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {

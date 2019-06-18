@@ -28,7 +28,7 @@ class About extends React.Component {
                 <Table>
                     <TableBody>
                         <TableRow>
-                            <TableCell><a href={ minecraftProperties.eulaUrl } target="_blank">Minecraft End User License Agreement</a></TableCell>
+                            <TableCell><a href={ minecraftProperties.eulaUrl } target="_blank" rel="noopener noreferrer">Minecraft End User License Agreement</a></TableCell>
                             <TableCell align='right'> </TableCell>
                         </TableRow>
                     </TableBody>
