@@ -18,7 +18,7 @@ import Divider from '@material-ui/core/Divider';
 import Refresh from '@material-ui/icons/Cached';
 
 export default function ServerProperties (props) {
-    const { minecraftProperties, ...other } = props;
+    const { minecraftProperties } = props;
     return (
         <ExpansionPanel defaultExpanded>
             <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon /> }>
@@ -66,7 +66,7 @@ export default function ServerProperties (props) {
                 </Button>
             </ExpansionPanelActions>
         </ExpansionPanel>
-    )
+    );
 }
 
 ServerProperties.propTypes = {
