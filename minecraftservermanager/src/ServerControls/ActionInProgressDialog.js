@@ -7,7 +7,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import Button from '@material-ui/core/Button';
 
-export default function ProgressDialog (props) {
+export default function ActionInProgressDialog (props) {
     const { onClose, ...other } = props;
     return (
         <Dialog { ...other }>
@@ -25,6 +25,6 @@ export default function ProgressDialog (props) {
     );
 }
 
-ProgressDialog.propTypes = {
+ActionInProgressDialog.propTypes = {
     onClose: PropTypes.func.isRequired
 };

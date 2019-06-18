@@ -16,7 +16,7 @@ import Stop from '@material-ui/icons/Stop';
 import Restart from '@material-ui/icons/Autorenew';
 import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 
-import ProgressDialog from './ProgressDialog.js';
+import ActionInProgressDialog from './ActionInProgressDialog.js/index.js';
 import ServerProperties from './ServerProperties.js';
 
 const styles = {
@@ -107,7 +107,7 @@ class ServerControls extends React.Component {
 
         return (
             <div style={ styles.container }>
-                <ProgressDialog
+                <ActionInProgressDialog
                     open = { this.state.progressDialogOpen }
                     onClose = { this.closeProgressDialog }
                 />

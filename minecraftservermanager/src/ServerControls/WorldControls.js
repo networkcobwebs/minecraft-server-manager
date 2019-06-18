@@ -22,7 +22,7 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 
 import BackupBeforeNewDialog from './BackupBeforeNewDialog.js';
-import ProgressDialog from './ProgressDialog.js';
+import ActionInProgressDialog from './ActionInProgressDialog.js/index.js';
 import RawMinecraftCommandDialog from './RawMinecraftCommandDialog.js';
 import RestoreBackupDialog from './RestoreBackupDialog.js';
 
@@ -238,7 +238,7 @@ export default class WorldControls extends React.Component {
                     cancelDialog = { this.closeBackupDialog }
                     open = { this.state.backupDialogOpen }
                 />
-                <ProgressDialog
+                <ActionInProgressDialog
                     open = { this.state.progressDialogOpen }
                     onClose = { this.closeProgressDialog }
                 />
