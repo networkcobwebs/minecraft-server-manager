@@ -12,6 +12,7 @@ import FormControl from '@material-ui/core/FormControl';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import Tooltip from '@material-ui/core/Tooltip';
+import Icon from '@material-ui/core/Icon';
 import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
@@ -106,13 +107,17 @@ class ServerControls extends React.Component {
                         Server Controls
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
-                        <IconButton
-                            onClick={ this.startMinecraft }
-                            disabled={ minecraftProperties.started }>
-                            <Tooltip title="Start">
-                                <Start />
-                            </Tooltip>
-                        </IconButton>
+                        <Tooltip title="Start">
+                            <Button
+                                onClick={ this.startMinecraft }
+                                disabled={ minecraftProperties.started }
+                                className={styles.button}>
+                                Start
+                                <Icon>
+                                    <Start />
+                                </Icon>
+                            </Button>
+                        </Tooltip>
                         <IconButton
                             onClick = { this.stopMinecraft }
                             disabled = { !minecraftProperties.started }>
@@ -133,6 +138,9 @@ class ServerControls extends React.Component {
                                 <UpdateAvailable />
                             </Tooltip>
                         </IconButton>
+                        <Button size="small" color="primary">
+                            Check for updates
+                        </Button>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>
                 <ExpansionPanel defaultExpanded>
