@@ -204,7 +204,7 @@ export default class Players extends React.Component {
 
     render () {
         let playerInfo;
-        if (this.props.playerInfo) {
+        if (this.props.playerInfo.players) {
             playerInfo = this.props.playerInfo;
         } else {
             playerInfo = { summary: '', players: [] };
