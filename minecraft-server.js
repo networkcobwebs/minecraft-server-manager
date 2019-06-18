@@ -154,6 +154,7 @@ class MinecraftServer {
         this.parseHelpOutput = this.parseHelpOutput.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
+        this.updateStatus = this.updateStatus.bind(this);
         this.waitForHelpOutput = this.waitForHelpOutput.bind(this);
 
         this.properties.ipAddress = require('underscore')
@@ -164,17 +165,7 @@ class MinecraftServer {
             .value()
             .address;
         
-        this.getMinecraftVersions();
         this.checkForMinecraftInstallation();
-        if (this.properties.installed) {
-            this.getEula();
-            this.getServerProperties();
-            this.getUserCache();
-            this.getOps();
-            this.getBannedIps();
-            this.getBannedPlayers();
-            this.getWhitelist();
-        }
     }
 
     acceptEula () {
@@ -390,6 +381,7 @@ class MinecraftServer {
                     this.checkForMinecraftToBeStarted(++checkCount, callback);
                 }, 100);
             } else {
+                this.updateStatus();
                 this.listCommands(0, callback);
             }
         }
@@ -753,7 +745,9 @@ class MinecraftServer {
         let lineNumber;
         let properties = this.properties;
     
-        console.log('Reading MinecraftServer eula.txt...');
+        if (debug) {
+            console.log('Reading MinecraftServer eula.txt...');
+        }
         try {
             eula = fs.readFileSync(this.properties.pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
             
@@ -762,12 +756,16 @@ class MinecraftServer {
                     eulaUrlLine = eula[lineNumber].split('https://');
                     if (eulaUrlLine.length == 2) {
                         properties.eulaUrl = 'https://' + eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
-                        console.log('MinecraftServer EULA location: ' + properties.eulaUrl);
+                        if (debug) {
+                            console.log('MinecraftServer EULA location: ' + properties.eulaUrl);
+                        }
                     }
                     line = eula[lineNumber].split('=');
                     if (line.length == 2) {
                         properties.acceptedEula = !!JSON.parse(line[1]);
-                        console.log('MinecraftServer EULA accepted?', properties.acceptedEula);
+                        if (debug) {
+                            console.log('MinecraftServer EULA accepted?', properties.acceptedEula);
+                        }
                     }
                 }
             }
@@ -880,7 +878,7 @@ class MinecraftServer {
 
     getWhitelist () {
         if (debug) {
-            console.log('Getting MinecraftServer white list...');
+            console.log('Getting MinecraftServer whitelist...');
         }
 
         let properties = this.properties;
@@ -897,7 +895,7 @@ class MinecraftServer {
         }
     }
 
-    install (version) {
+    install (version, callback) {
         if (debug) {
             console.log('Installing MinecraftServer...');
         }
@@ -909,6 +907,12 @@ class MinecraftServer {
             release = properties.versions.releaseVersions[0],
             serverJar = properties.serverJar;
 
+        // version is optional; assume latest if missing.
+        if (typeof version === 'function') {
+            callback = version;
+            version = 'latest';
+        }
+
         if (version && version !== 'latest') {
             properties.versions.releaseVersions.forEach(releaseVersion => {
                 if (releaseVersion.id === version) {
@@ -917,16 +921,23 @@ class MinecraftServer {
             });
         }
         
-        properties.installedVersions.forEach(installedVersion => {
-            if (installedVersion.indexOf(release.id) !== -1) {
-                jar = installedVersion;
-            } else {
-                download = true;
-                jar = release.id + '_' + serverJar;
-            }
-        });
+        if (properties.installedVersions.length > 0) {
+            properties.installedVersions.forEach(installedVersion => {
+                if (installedVersion.indexOf(release.id) !== -1) {
+                    // already downloaded.
+                    download = false;
+                    jar = installedVersion;
+                } else {
+                    download = true;
+                    jar = release.id + '_minecraft_' + serverJar;
+                }
+            });
+        } else {
+            download = true;
+            jar = release.id + '_minecraft_' + serverJar;
+        }
         
-        let callback = function () {
+        let copyCallback = function () {
             fs.copyFileSync(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar));
             properties.installed = true;
             properties.needsInstallation = false;
@@ -934,10 +945,19 @@ class MinecraftServer {
             if (debug) {
                 console.log('Done installing MinecraftServer.');
             }
+
+            if (typeof callback === 'function') {
+                callback();
+            }
         };
 
         if (download) {
-            this.downloadRelease(release.id, callback);
+            this.downloadRelease(release.id, copyCallback);
+        } else {
+            copyCallback();
+            if (typeof callback === 'function') {
+                callback();
+            }
         }
     }
 
@@ -1013,8 +1033,13 @@ class MinecraftServer {
                     playersSummary = playersSummary.slice(0, -1);
                 } else {
                     players = output.split(']: ')[1];
-                    players = players.split(':');
-                    playersSummary = players.shift();
+                    if (players) {
+                        players = players.split(':');
+                        playersSummary = players.shift();
+                    } else {
+                        players = [];
+                        playersSummary = '';
+                    }
                 }
                 
                 playersList.summary = playersSummary;
@@ -1416,6 +1441,19 @@ class MinecraftServer {
                 stopping = false;
                 callback();
             }
+        }
+    }
+
+    updateStatus () {
+        if (this.properties.installed) {
+            this.getMinecraftVersions();
+            this.getEula();
+            this.getServerProperties();
+            this.getUserCache();
+            this.getOps();
+            this.getBannedIps();
+            this.getBannedPlayers();
+            this.getWhitelist();
         }
     }
 
