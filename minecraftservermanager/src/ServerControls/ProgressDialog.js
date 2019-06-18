@@ -7,23 +7,22 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import Button from '@material-ui/core/Button';
 
-export default class ProgressDialog extends React.Component {
-    render () {
-        return (
-            <Dialog { ...this.props }>
-                <DialogContent>
-                    <DialogContentText>
-                        Requested action in progress...
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick = { this.props.onClose } color = "primary" autoFocus>
-                        Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        );
-    }
+export default function ProgressDialog (props) {
+    const { onClose, ...other } = props;
+    return (
+        <Dialog { ...other }>
+            <DialogContent>
+                <DialogContentText>
+                    Requested action in progress...
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick = { onClose } color = "primary" autoFocus>
+                    Close
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 }
 
 ProgressDialog.propTypes = {
