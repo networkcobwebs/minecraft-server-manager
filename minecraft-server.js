@@ -524,6 +524,7 @@ class MinecraftServer {
                 // detect running versions.
                 } else if (file.indexOf('server.jar') !== -1) {
                     properties.installed = true;
+                    properties.needsInstallation = false;
                     properties.serverJar = file; 
                     console.log('Found Minecraft jar.');
                 }
