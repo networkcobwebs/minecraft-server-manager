@@ -9,12 +9,6 @@ import { deepOrangeA200 } from '@material-ui/core/colors';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import AppBar from '@material-ui/core/AppBar';
-// import Button from '@material-ui/core/Button';
-// import Dialog from '@material-ui/core/Dialog';
-// import DialogActions from '@material-ui/core/DialogActions';
-// import DialogContent from '@material-ui/core/DialogContent';
-// import DialogContentText from '@material-ui/core/DialogContentText';
-// import DialogTitle from '@material-ui/core/DialogTitle';
 import Snackbar from '@material-ui/core/Snackbar';
 
 import Dashboard from './Dashboard/Dashboard.js';
@@ -131,16 +125,6 @@ export default class App extends React.Component {
                 this.setState({ minecraftProperties });
                 
                 this.getMinecraftPlayers();
-                // this.getMinecraftServerBannedIps();
-                // this.getMinecraftServerBannedPlayers();
-                // this.getMinecraftServerWhitelist();
-                // this.getMinecraftServerOps();
-                // this.getMinecraftServerUserCache();
-                // this.determinePlayerStates();
-
-                // if (!this.state.minecraftCommands || this.state.minecraftCommands.length === 0) {
-                //     this.getMinecraftCommands();
-                // }
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -151,7 +135,6 @@ export default class App extends React.Component {
                 let minecraftStatus = {};
 
                 this.setState({ minecraftStatus });
-
                 pingTime = pingTime + appendTime;
 
                 if (debug) {
@@ -168,9 +151,6 @@ export default class App extends React.Component {
         if (debug) {
             console.log('Stopping Minecraft server poller.');
         }
-
-        // let minecraftStatus = {};
-        // this.setState({ minecraftStatus });
         
         let minecraftProperties = {};
         this.setState({ minecraftProperties });
@@ -344,24 +324,6 @@ export default class App extends React.Component {
                     open = { !minecraftProperties.started }
                     message = { <span id="message-id">Minecraft is currently stopped.</span> }
                 />
-                {/* <Dialog
-                    open = { this.state.eulaOpen } >
-                    <DialogTitle>{ "Accept Minecraft End User License Agreement?" }</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            By using this application, you agree to the terms of the Minecraft end user
-                            license agreement, available <a href={ minecraftProperties.eulaUrl }>here</a>.
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick = { this.handleDeclineEula } color="primary">
-                        Disagree
-                        </Button>
-                        <Button onClick = { this.handleAcceptEula } color="primary" autoFocus>
-                        Agree
-                        </Button>
-                    </DialogActions>
-                </Dialog> */}
             </MuiThemeProvider>
         );
     }
