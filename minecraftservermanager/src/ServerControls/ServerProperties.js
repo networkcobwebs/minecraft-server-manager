@@ -22,9 +22,11 @@ export default function ServerProperties (props) {
     return (
         <ExpansionPanel defaultExpanded>
             <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon /> }>
-                <Typography component="h2" marginRight={ 2 }>
+                <Typography component="h2">
                     Server Properties
                 </Typography>
+            </ExpansionPanelSummary>
+            <ExpansionPanelDetails>
                 <Typography>
                     <Tooltip title="Refresh">
                         <Button variant="contained" color="primary">
@@ -35,9 +37,8 @@ export default function ServerProperties (props) {
                         </Button>
                     </Tooltip>
                 </Typography>
-            </ExpansionPanelSummary>
-            
-            { minecraftProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
+            </ExpansionPanelDetails>
+            { minecraftProperties && minecraftProperties.serverProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
                 return (
                     <ExpansionPanelDetails key={ property.name }>
                         <FormControl fullWidth>
