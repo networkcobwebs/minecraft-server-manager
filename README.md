@@ -22,7 +22,7 @@ Server Management
 
 ## Requirements
 
-Node.js 8.x or greater LTS release.
+Node.js 10.x or greater LTS release.
 
 ## Installation
 
