@@ -3,9 +3,6 @@ import React from 'react';
 import axios from 'axios';
 
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import { blue800 } from '@material-ui/core/colors';
-import { blue300 } from '@material-ui/core/colors';
-import { deepOrangeA200 } from '@material-ui/core/colors';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import AppBar from '@material-ui/core/AppBar';
@@ -42,21 +39,16 @@ export default class App extends React.Component {
         this.getMinecraftPlayers = this.getMinecraftPlayers.bind(this);
         this.getMinecraftServerProperties = this.getMinecraftServerProperties.bind(this);
         this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
+        this.startMinecraftStatus = this.startMinecraftStatus.bind(this);
+        this.stopMinecraftStatus = this.stopMinecraftStatus.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.stopMinecraftStatus = this.stopMinecraftStatus.bind(this);
 
-        this.runOnce();
-        this.getMinecraftStatus(25);
+        this.startMinecraftStatus();
     }
     
     getTheme () {
         const theme = createMuiTheme({
-            "palette": {
-                "primary": blue800,
-                "primary2r": blue300,
-                "accent": deepOrangeA200,
-                "pickerHeader": blue800
-            },
             "tableRowColumn": {
                 "height": 60
             },
@@ -65,6 +57,13 @@ export default class App extends React.Component {
                 "fontFamily": '"Roboto", "Helvetica", "Arial", sans-serif',
                 "fontSize": '0.95rem'
             },
+            "overrides": {
+                MuiButton: {
+                    root: {
+                        margin: "10px"
+                    }
+                }
+            }
         });
         
         return theme;
@@ -81,11 +80,6 @@ export default class App extends React.Component {
         this.setState({ value });
     }
 
-    runOnce () {
-        this.getIpInfo();
-        this.getMinecraftServerProperties();
-    }
-
     getIpInfo () {
         let ipInfo;
 
@@ -96,14 +90,14 @@ export default class App extends React.Component {
     }
 
     getMinecraftStatus (pingWait) {
-        let normalPingTime = 60 * 1000,
+        let normalPingTime = 5 * 1000,
             appendTime = 5 * 1000,
-            maxTime = 300 * 1000,
+            maxTime = 120 * 1000,
             pingTime;
 
-        // normally ping every 60 seconds
+        // normally ping every 5 seconds
         // if a fast ping was requested (from constructor/DidMount), honor it
-        // once trouble hits, add 5 seconds until 5 minutes is reached, then reset to 60 seconds
+        // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 60 seconds
         // once re/successful, reset to 60 seconds
         if (!pingWait) {
             pingTime = normalPingTime;
@@ -145,23 +139,6 @@ export default class App extends React.Component {
                 this.getMinecraftStatus(pingTime);
             });
         }, pingTime);
-    }
-
-    stopMinecraftStatus () {
-        if (debug) {
-            console.log('Stopping Minecraft server poller.');
-        }
-        
-        let minecraftProperties = {};
-        this.setState({ minecraftProperties });
-
-        if (this.statusTimerId) {
-            clearTimeout(this.statusTimerId);
-        }
-
-        if (this.playersTimerId) {
-            clearTimeout(this.playersTimerId);
-        }
     }
   
     getMinecraftServerProperties () {
@@ -277,6 +254,33 @@ export default class App extends React.Component {
             this.setState({ eulaOpen: false });
         });
     }
+
+    runOnce () {
+        this.getIpInfo();
+        this.getMinecraftServerProperties();
+    }
+
+    startMinecraftStatus () {
+        this.runOnce();
+        this.getMinecraftStatus(25);
+    }
+
+    stopMinecraftStatus () {
+        if (debug) {
+            console.log('Stopping Minecraft server poller.');
+        }
+        
+        let minecraftProperties = {};
+        this.setState({ minecraftProperties });
+
+        if (this.statusTimerId) {
+            clearTimeout(this.statusTimerId);
+        }
+
+        if (this.playersTimerId) {
+            clearTimeout(this.playersTimerId);
+        }
+    }
     
     render () {
         let minecraftProperties = this.state.minecraftProperties;
@@ -306,9 +310,13 @@ export default class App extends React.Component {
                 /> }
                 { this.state.value === 2 && <WorldControls
                     minecraftProperties = { minecraftProperties }
+                    startMinecraftStatus = { this.startMinecraftStatus }
+                    stopMinecraftStatus = { this.stopMinecraftStatus }
                 /> }
                 { this.state.value === 3 && <ServerControls
                     minecraftProperties = { minecraftProperties }
+                    startMinecraftStatus = { this.startMinecraftStatus }
+                    stopMinecraftStatus = { this.stopMinecraftStatus }
                 /> }
                 { this.state.value === 4 && <Preferences /> }
                 { this.state.value === 5 && <About

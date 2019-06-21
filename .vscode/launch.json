@@ -27,7 +27,10 @@
             "program": "${workspaceRoot}/minecraftservermanager/node_modules/react-scripts/bin/react-scripts.js",
             "args": ["start"],
             "runtimeVersion": "10.16.0",
-            "cwd": "${workspaceFolder}/minecraftservermanager"
+            "cwd": "${workspaceFolder}/minecraftservermanager",
+            "env": {
+                "BROWSER": "none"
+            },
         }
     ]
 }

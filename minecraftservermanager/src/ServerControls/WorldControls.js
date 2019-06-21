@@ -16,13 +16,15 @@ import Help from '@material-ui/icons/Help';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import IconButton from '@material-ui/core/IconButton';
-import New from '@material-ui/icons/Autorenew';
+// import New from '@material-ui/icons/Autorenew';
+import New from '@material-ui/icons/Public';
 import Restore from '@material-ui/icons/Restore';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
 
 import BackupBeforeNewDialog from './BackupBeforeNewDialog.js';
-import ActionInProgressDialog from './ActionInProgressDialog.js/index.js';
+import ActionInProgressDialog from './ActionInProgressDialog.js';
 import RawMinecraftCommandDialog from './RawMinecraftCommandDialog.js';
 import RestoreBackupDialog from './RestoreBackupDialog.js';
 
@@ -255,7 +257,9 @@ export default class WorldControls extends React.Component {
                 />
                 <ExpansionPanel style = { styles.container } defaultExpanded>
                     <ExpansionPanelSummary expandIcon = { <ExpandMoreIcon /> }>
-                        World Controls
+                        <Typography variant="subtitle1">
+                            World Controls
+                        </Typography>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <IconButton onClick = { this.backupMinecraftWorld }>
@@ -275,9 +279,11 @@ export default class WorldControls extends React.Component {
                         </IconButton>
                     </ExpansionPanelDetails>
                 </ExpansionPanel>
-                <ExpansionPanel style = { styles.container }>
+                <ExpansionPanel style = { styles.container } defaultExpanded>
                     <ExpansionPanelSummary expandIcon = {<ExpandMoreIcon />}>
-                        Send raw Minecraft command
+                        <Typography variant="subtitle1">
+                            Send raw Minecraft command
+                        </Typography>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <FormControl fullWidth>
@@ -295,7 +301,7 @@ export default class WorldControls extends React.Component {
                                 <Button size = "small" onClick = { this.onClearCommand }>Clear</Button>
                                 <Button size = "small" color="primary" onClick = { this.onSendCommand }>Send Command</Button>
                             </ExpansionPanelActions>
-                            <Divider />
+                            {/* <Divider /> */}
                             <TextField
                                 label="Command Output"
                                 multiline

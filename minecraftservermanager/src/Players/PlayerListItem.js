@@ -4,13 +4,14 @@ import PropTypes from 'prop-types';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
 
 import IconButton from '@material-ui/core/IconButton';
 import OpStatus from '@material-ui/icons/VerifiedUser';
 import NetworkOnline from '@material-ui/icons/SignalWifi4Bar';
 import NetworkOffline from '@material-ui/icons/SignalWifiOff';
-import Kick from '@material-ui/icons/DoNotDisturbOn';
-import Ban from '@material-ui/icons/DoNotDisturb';
+import Kick from '@material-ui/icons/Error';
+import Ban from '@material-ui/icons/Error';
 import WhitelistIcon from '@material-ui/icons/PlaylistAdd';
 
 export default class PlayerListItem extends React.Component {
@@ -39,7 +40,11 @@ export default class PlayerListItem extends React.Component {
 
         return (
             <TableRow>
-                <TableCell>{ player.name }</TableCell>
+                <TableCell>
+                    <Typography>
+                        { player.name }
+                    </Typography>
+                </TableCell>
                 <TableCell>{ player.online ? 
                     <Tooltip title="Online">
                         <NetworkOnline />
@@ -60,37 +65,43 @@ export default class PlayerListItem extends React.Component {
                         <WhitelistIcon />
                     </Tooltip> : <span></span>
                 }</TableCell>
-                <TableCell>{ player.banned ?
-                    <IconButton onClick = { this.pardonPlayer }>
-                        <Tooltip title="Pardon">
-                            <Ban />
-                        </Tooltip>
-                    </IconButton> : 
-                    <IconButton onClick = { this.banPlayer }>
-                        <Tooltip title="Ban">
-                            <Ban />
-                        </Tooltip>
-                    </IconButton> }
+                <TableCell>
+                    { player.banned ?
+                        <IconButton onClick = { this.pardonPlayer }>
+                            <Tooltip title="Pardon">
+                                <Ban />
+                            </Tooltip>
+                        </IconButton> : 
+                        <IconButton onClick = { this.banPlayer }>
+                            <Tooltip title="Ban">
+                                <Ban />
+                            </Tooltip>
+                        </IconButton>
+                    }
                     <IconButton onClick = { this.kickPlayer }>
                         <Tooltip title="Kick">
                             <Kick />
                         </Tooltip>
-                    </IconButton> { player.opped ?
-                    <IconButton onClick = { this.deopPlayer }>
-                        <Tooltip title="De Op">
-                            <OpStatus />
-                        </Tooltip>
-                    </IconButton> : 
-                    <IconButton onClick = { this.opPlayer }>
-                        <Tooltip title="Op">
-                            <OpStatus />
-                        </Tooltip>
-                    </IconButton> }{ !player.whitelisted ?
-                    <IconButton onClick = { this.whitelistPlayer }>
-                        <Tooltip title="Whitelist">
-                            <WhitelistIcon />
-                        </Tooltip>
-                    </IconButton> : <div></div> }
+                    </IconButton>
+                    { player.opped ?
+                        <IconButton onClick = { this.deopPlayer }>
+                            <Tooltip title="De Op">
+                                <OpStatus />
+                            </Tooltip>
+                        </IconButton> : 
+                        <IconButton onClick = { this.opPlayer }>
+                            <Tooltip title="Op">
+                                <OpStatus />
+                            </Tooltip>
+                        </IconButton>
+                    }
+                    { !player.whitelisted ?
+                        <IconButton onClick = { this.whitelistPlayer }>
+                            <Tooltip title="Whitelist">
+                                <WhitelistIcon />
+                            </Tooltip>
+                        </IconButton> : <div></div>
+                    }
                 </TableCell>
             </TableRow>
         );

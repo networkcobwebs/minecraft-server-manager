@@ -6,6 +6,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import Typography from '@material-ui/core/Typography';
 
 import PlayerListItem from './PlayerListItem';
 
@@ -35,11 +36,17 @@ export default class PlayersSummary extends React.Component {
         
         return (
             <div style = { styles.container }>
-                <h3>Connected Players</h3>
-                <Table>
+                <Typography variant="subtitle1">
+                    Connected Players
+                </Typography>
+                <Table size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell>{ summary ? summary : 'Waiting on Minecraft server...' }</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    { summary ? summary : 'Waiting on Minecraft server...' }
+                                </Typography>
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                 </Table>

@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import Button from '@material-ui/core/Button';
+import CloseIcon from '@material-ui/icons/Close';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import Divider from '@material-ui/core/Divider';
+import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
-import Divider from '@material-ui/core/Divider';
-import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
-import CloseIcon from '@material-ui/icons/Close';
 
 const styles = {
     container: {
@@ -35,12 +35,10 @@ export default class RawMinecraftCommandDialog extends React.Component {
 
     listCommands (command) {
         return (
-            <div key = { command.key }>
-                <ListItem button onClick = { () => { this.closeDialog(command.command); } }>
-                    <ListItemText primary = { command.command } />
-                    <Divider />
-                </ListItem>
-            </div>
+            <ListItem key = { command.key } button onClick = { () => { this.closeDialog(command.command); } }>
+                <ListItemText primary = { command.command } />
+                <Divider />
+            </ListItem>
         );
     }
 
@@ -54,7 +52,7 @@ export default class RawMinecraftCommandDialog extends React.Component {
                     Available Minecraft Commands
                 </DialogTitle>
                 <DialogContent>
-                    <List>
+                    <List dense={ true }>
                         { this.props.minecraftCommands ? this.props.minecraftCommands.map(this.listCommands) : <div></div> }
                     </List>
                 </DialogContent>

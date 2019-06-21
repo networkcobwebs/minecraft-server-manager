@@ -17,7 +17,11 @@ export default function ActionInProgressDialog (props) {
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick = { onClose } color = "primary" autoFocus>
+                <Button
+                    onClick = { onClose }
+                    variant="contained"
+                    color = "primary"
+                    autoFocus>
                     Close
                 </Button>
             </DialogActions>

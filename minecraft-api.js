@@ -115,51 +115,6 @@ class MinecraftApi {
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.stopPollers = this.stopPollers.bind(this);
-
-        // this.getMinecraftStatus(100);
-    }
-
-    getMinecraftStatus (pingWait) {
-        let normalPingTime = 60 * 1000,
-            appendTime = 5 * 1000,
-            maxTime = 300 * 1000,
-            pingTime;
-
-        // Normally ping every 60 seconds.
-        // If a fast ping was requested (from constructor/DidMount), honor it.
-        // Once trouble hits, add 5 seconds until 5 minutes is reached, then reset to 60 seconds.
-        // Once trouble fixed/successful, reset to 60 seconds.
-        if (!pingWait) {
-            pingTime = normalPingTime;
-        } else if (pingWait < 1000) {
-            pingTime = pingWait;
-        } else if (pingWait > maxTime) {
-            pingTime = normalPingTime;
-        } else {
-            pingTime = pingWait;
-        }
-
-        if (this.properties.pollers.minecraftStatusTimerId) {
-            clearTimeout(this.properties.minecraftStatusTimerId);
-        }
-
-        this.properties.pollers.minecraftStatusTimerId = setTimeout(() => {
-            if (this.minecraftServer.properties.installed) {
-                pingTime = normalPingTime;
-                this.minecraftServer.updateStatus();
-                if (debugApi) {
-                    console.log('Got Minecraft status:');
-                    console.log(this.minecraftServer.properties);
-                }
-            } else {
-                pingTime = pingTime + appendTime;
-            }
-    
-            if (debugApi) {
-                console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
-            }
-            this.getMinecraftStatus(pingTime);
-        }, pingTime);
     }
 
     connectMinecraftApi () {
@@ -182,12 +137,16 @@ class MinecraftApi {
                 });
             });
             app.get('/api/commands', function (request, response) {
-                minecraftServer.listCommands(0, () => {
-                    response.contentType('json');
-                    response.json({
-                        commands: minecraftProperties.fullHelp
+                response.contentType('json');
+                if (minecraftProperties.started) {
+                    minecraftServer.listCommands(0, () => {
+                        response.json({
+                            commands: minecraftProperties.fullHelp
+                        });
                     });
-                });
+                } else {
+                    response.json({commands: {}});
+                }
             });
             app.get('/api/ipInfo', function (request, response) {
                 let ipInfo = {};
@@ -208,10 +167,8 @@ class MinecraftApi {
                 response.json(ipInfo);
             });
             app.get('/api/playerInfo', function (request, response) {
-                minecraftServer.listPlayers((playerInfo) => {
-                    response.contentType('json');
-                    response.json(playerInfo);
-                });
+                response.contentType('json');
+                response.json(minecraftProperties.playerInfo);
             });
             app.get('/api/listWorldBackups', function (request, response) {
                 response.contentType('json');
@@ -247,7 +204,7 @@ class MinecraftApi {
                     if (debugApi) {
                         console.log(e.stack);
                     }
-                    response.json({response: 'An error occurred'});
+                    response.json({response: 'An error occurred.'});
                 } finally {
                     serverProps = null;
                 }
@@ -283,12 +240,16 @@ class MinecraftApi {
                 let command = request.query.command;
 
                 if (command === '/list') {
-                    minecraftServer.listPlayers((list) => {
-                        response.contentType('json');
-                        response.json({
-                            response: list
+                    response.contentType('json');
+                    if (minecraftProperties.started) {
+                        minecraftServer.listPlayers((list) => {
+                            response.json({
+                                response: list
+                            });
                         });
-                    });
+                    } else {
+                        response.json({response: []});
+                    }
                 } else if (command === '/restoreWorld') {
                     // TODO
                     console.log('Restore world called.');
@@ -297,31 +258,34 @@ class MinecraftApi {
                         output: 'Restore world disabled.'
                     });
                 } else {
-                    minecraftServer.runCommand(command, function (output) {
-                        response.contentType('json');
-                        response.json({
-                            output: output
+                    response.contentType('json');
+                    if (minecraftProperties.started) {
+                        minecraftServer.runCommand(command, function (output) {
+                            response.json({
+                                output: output
+                            });
                         });
-                    });
+                    } else {
+                        response.json({output: {}});
+                    }
                 }
             });
+            app.post('/api/install', [function (request, response) {
+                this.stopPollers();
+                minecraftServer.install(request.param('version'), function () {
+                    minecraftServer.start(function () {
+                        response.contentType('json');
+                        response.json({
+                            response: 'installed'
+                        });
+                    });
+                });
+            }.bind(this), this.getMinecraftStatus]);
             app.post('/api/newWorld', function (request, response) {
                 minecraftServer.newWorld(request.param('backup'), () => {
                     response.contentType('json');
                     response.json({
                         response: 'New world created.'
-                    });
-                });
-            });
-            app.post('/api/install', function (request, response) {
-                minecraftServer.stop(() => {
-                    minecraftServer.install(() => {
-                        minecraftServer.start(() => {
-                            response.contentType('json');
-                            response.json({
-                                response: 'installed'
-                            });
-                        });
                     });
                 });
             });
@@ -342,18 +306,62 @@ class MinecraftApi {
                         response: 'started'
                     });
                 });
-            });
+            }, this.getMinecraftStatus);
             app.post('/api/stop', function (request, response) {
-                minecraftServer.stop(() => {
+                minecraftServer.stop(function () {
                     response.contentType('json');
                     response.json({
                         response: 'stopped'
                     });
                 });
-            });
+            }, this.stopPollers).bind(this);
         } else {
             console.log('MinecraftServer not operational... ignoring MinecraftServer API requests.');
         }
+    }
+
+    getMinecraftStatus (pingWait) {
+        let normalPingTime = 10 * 1000,
+            appendTime = 5 * 1000,
+            maxTime = 120 * 1000,
+            pingTime;
+
+        // Normally ping every 10 seconds.
+        // If a fast ping was requested (from constructor/DidMount), honor it.
+        // Once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds.
+        // Once trouble fixed/successful, reset to 10 seconds.
+        if (!pingWait) {
+            pingTime = normalPingTime;
+        } else if (pingWait < 1000) {
+            pingTime = pingWait;
+        } else if (pingWait > maxTime) {
+            pingTime = normalPingTime;
+        } else {
+            pingTime = pingWait;
+        }
+
+        if (this.properties.pollers.minecraftStatusTimerId) {
+            clearTimeout(this.properties.minecraftStatusTimerId);
+        }
+
+        this.properties.pollers.minecraftStatusTimerId = setTimeout(() => {
+            if (this.minecraftServer.properties.installed) {
+                pingTime = normalPingTime;
+                this.minecraftServer.updateStatus(() => {
+                    if (debugApi) {
+                        console.log('Got Minecraft status:');
+                        console.log(this.minecraftServer.properties);
+                    }
+                });
+            } else {
+                pingTime = pingTime + appendTime;
+            }
+    
+            if (debugApi) {
+                console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
+            }
+            this.getMinecraftStatus(pingTime);
+        }, pingTime);
     }
 
     start () {
@@ -389,10 +397,23 @@ class MinecraftApi {
         if (minecraftServer.properties.installed) {
             minecraftServer.start(null, () => {
                 this.getMinecraftStatus(100);
+                minecraftServer.listPlayers();
             });
         }
 
         console.info('MinecraftApi started.');
+    }
+
+    startMinecraft (callback) {
+        let properties = this.properties,
+            minecraftServer = properties.minecraftServer;
+
+        minecraftServer.start(() => {
+            this.getMinecraftStatus();
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
     }
 
     stop () {
@@ -401,15 +422,26 @@ class MinecraftApi {
         let properties = this.properties,
             minecraftServer = properties.minecraftServer;
 
-        this.stopPollers();
-        
+            
         if (minecraftServer.properties.started) {
             minecraftServer.stop(() => {
                 console.log('MinecraftServer stopped.');
-                properties.minecraftServer = null;
+                this.stopPollers();
             });
         }
         console.log('MinecraftApi stopped.');
+    }
+
+    stopMinecraft (callback) {
+        let properties = this.properties,
+            minecraftServer = properties.minecraftServer;
+
+        this.stopPollers();
+        minecraftServer.stop(() => {
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
     }
 
     stopPollers () {

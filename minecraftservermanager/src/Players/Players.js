@@ -8,6 +8,7 @@ import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import Typography from '@material-ui/core/Typography';
 
 import PlayerListItem from './PlayerListItem';
 
@@ -214,19 +215,27 @@ export default class Players extends React.Component {
         
         return (
             <div style = { styles.container }>
+                <Typography variant="subtitle1">
+                    { summary ? summary : 'Waiting on Minecraft server...' }
+                </Typography>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>{ summary ? summary : 'Waiting on Minecraft server...' }</TableCell>
-                        </TableRow>
-                    </TableHead>
-                </Table>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Player</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Actions</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Player
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Status
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Actions
+                                </Typography>
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

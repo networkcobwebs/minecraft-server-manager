@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 const spawn = require('child_process').spawn;
 
-const debug = false;
+const debugMinecraftServer = false;
 
 let defaultProperties = {
     acceptedEula: false,
@@ -28,7 +28,7 @@ let defaultProperties = {
     ops: [],
     osType: os.type(),
     pathToMinecraftDirectory: 'minecraft_server',
-    players: [],
+    playerInfo: {},
     serverJar: 'server.jar',
     serverLog: 'minecraft_server.log',
     serverLogDir: 'logs',
@@ -51,7 +51,7 @@ let defaultProperties = {
 
 // Convert name=value properties to JSON
 function convertPropertiesToObjects (props) {
-    if (debug) {
+    if (debugMinecraftServer) {
         console.log('Converting properties', props, 'to object.');
     }
 
@@ -74,7 +74,7 @@ function convertPropertiesToObjects (props) {
         }
     }
 
-    if (debug) {
+    if (debugMinecraftServer) {
         console.log('Converted to:');
         console.log(properties);
     }
@@ -128,6 +128,10 @@ class MinecraftServer {
         }
     }
 
+    get running () {
+        return this._properties.started;
+    }
+
     constructor () {
         // TODO Deal with properties passed in
         if (!this._properties) {
@@ -166,10 +170,11 @@ class MinecraftServer {
             .address;
         
         this.checkForMinecraftInstallation();
+        this.getMinecraftVersions();
     }
 
     acceptEula () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Checking and accepting MinecraftServer EULA...');
         }
 
@@ -191,7 +196,7 @@ class MinecraftServer {
                     }
                 }
             } catch (e) {
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read eula.txt:', e.stack);
                 }
             }
@@ -208,7 +213,7 @@ class MinecraftServer {
     }
 
     backupWorld (worldName, callback) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Backing up MinecraftServer world...');
         }
 
@@ -272,7 +277,7 @@ class MinecraftServer {
     }
 
     checkForMinecraftInstallation () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Checking for MinecraftServer installation...');
         }
 
@@ -294,19 +299,20 @@ class MinecraftServer {
             this.detectMinecraftJar();
         }
 
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Done checking for MinecraftServer installation.');
         }
     }
 
     checkForMinecraftToBeStarted (checkCount, callback) {
-        if (debug) {
-            console.log('Checking for MinecraftServer process to be started ('+ checkCount +')...');
-        }
+        // if (debugMinecraftServer) {
+        //     console.log('Checking for MinecraftServer process to be started ('+ checkCount +')...');
+        // }
 
         let properties = this.properties;
         let threshold = 1000;
-        let line = "";
+        let outputLines = [];
+        let outputString = '';
         let versionParts = [];
         let major, minor, release;
         let shouldContinueStart = true;
@@ -321,7 +327,13 @@ class MinecraftServer {
                 callback();
             }
         } else {
-            while( (line = properties.serverOutput.shift()) !== undefined ) {
+            // Output buffer could be array of arrays, so combine into something usable.
+            if (Array.isArray(properties.serverOutput) && properties.serverOutput.length) {
+                outputString = properties.serverOutput.join('\n');
+                outputLines = outputString.split('\n');
+                properties.serverOutput = [];
+            }
+            for (let line of outputLines) {
                 if (line.indexOf('eula.txt') !== -1) {
                     properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
                     properties.serverOutput.length = 0;
@@ -349,13 +361,8 @@ class MinecraftServer {
                     properties.serverOutput.length = 0;
                     properties.serverOutputCaptured = false;
                     shouldContinueStart = false;
-                } else if (!properties.detectedVersion && line.indexOf('server version') !== -1) {
-                    let lines = line.split('\n');
-                    if (lines.length > 1) {
-                        // Get rid of any additional output
-                        line = lines[0];
-                    }
-                    versionParts = line.toString().split('.');
+                } else if (line.indexOf('server version') !== -1) {
+                    versionParts = line.split('.');
                     major = versionParts.shift();
                     minor = versionParts.shift();
                     release = versionParts.shift().trim();
@@ -381,15 +388,16 @@ class MinecraftServer {
                     this.checkForMinecraftToBeStarted(++checkCount, callback);
                 }, 100);
             } else {
-                this.updateStatus();
-                this.listCommands(0, callback);
+                this.updateStatus(() => {
+                    this.listCommands(0, callback);
+                });
             }
         }
     }
     
     checkForMinecraftToBeStopped (checkCount, callback) {
-        if (debug) {
-            console.log('Checking for MinecraftServer process to be stopped...');
+        if (debugMinecraftServer) {
+            console.log('Checking for MinecraftServer process to be stopped('+ checkCount +')...');
         }
 
         let properties = this.properties;
@@ -407,7 +415,7 @@ class MinecraftServer {
             }
         } else {
             properties.serverOutput.forEach((line) => {
-                if (line.indexOf('Shutdown Thread') !== -1 && line.indexOf('Saving') !== -1) {
+                if (line.indexOf('Saving') !== -1 || line.indexOf('Stopping server') !== -1) {
                     console.log('MinecraftServer stopped.');
                     properties.started = false;
                     properties.startTime = null;
@@ -415,11 +423,8 @@ class MinecraftServer {
                     properties.serverOutputCaptured = false;
                     properties.serverOutput.length = 0;
                     properties.stopping = false;
-                    properties.serverProcess.kill();
+                    // properties.serverProcess.kill();
                     properties.stopped = true;
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
                 }
             });
         
@@ -427,12 +432,16 @@ class MinecraftServer {
                 properties.stoppedTimer = setTimeout(() => {
                     this.checkForMinecraftToBeStopped(++checkCount, callback);
                 }, 500);
+            } else {
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         }
     }
 
     checkForMinecraftUpdate () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Checking for Minecraft server update...');
         }
 
@@ -441,13 +450,13 @@ class MinecraftServer {
             // check to see if detected < latest, set properties.updateAvailable to true
         }
 
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Done checking for Minecraft server update.');
         }
     }
 
     detectJavaHome (callback) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Detecting Java...');
         }
         let properties = this.properties;
@@ -468,14 +477,14 @@ class MinecraftServer {
                     throw err;
                 } else {
                     properties.javaHome = stdout.trim();
-                    if (debug) {
+                    if (debugMinecraftServer) {
                         console.log('Using java from', properties.javaHome);
                     }
                 }
                 if (typeof callback === 'function') {
                     callback();
                 }
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Done detecting Java.');
                 }
             });
@@ -484,7 +493,7 @@ class MinecraftServer {
 
     detectMinecraftDir () {
         // find the Minecraft server directory
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Detecting MinecraftServer directory...');
         }
 
@@ -495,12 +504,12 @@ class MinecraftServer {
             console.log('Found MinecraftServer directory.');
         } catch (e) {
             console.log('MinecraftServer directory does not exist.');
-            if (debug) {
+            if (debugMinecraftServer) {
                 console.log('An error occurred reading the Minecraft server directory:', e.stack);
             }
         }
 
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Done detecting MinecraftServer directory.');
         }
     }
@@ -508,7 +517,7 @@ class MinecraftServer {
     detectMinecraftJar () {
         // find the server.jar to run.
         // We download versions and name them {release}_minecraft_server.jar in the install function.
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Detecting MinecraftServer jar...');
         }
 
@@ -532,7 +541,7 @@ class MinecraftServer {
         } catch (e) {
             console.log('MinecraftServer not installed.');
             properties.installed = false;
-            if (debug) {
+            if (debugMinecraftServer) {
                 console.log(e.stack);
             }
         }
@@ -543,13 +552,13 @@ class MinecraftServer {
             properties.needsInstallation = true;
         }
 
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Done detecting MinecraftServer jar.');
         }
     }
 
     determineBanStatus (player) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Determining ban status for player:', player.name);
         }
 
@@ -569,7 +578,7 @@ class MinecraftServer {
     }
 
     determineOpStatus (player) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Determining op status for player:', player.name);
         }
 
@@ -589,7 +598,7 @@ class MinecraftServer {
     }
 
     determineWhitelistStatus (player) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Determining whitelist status for player:', player.name);
         }
 
@@ -638,6 +647,7 @@ class MinecraftServer {
                             aJar.pipe(fileStream);
                             fileStream.on('finish', ()  => {
                                 fileStream.close();  // close() is async.
+                                // TODO: Verify download hash.
                                 properties.serverJar = jar;
                                 properties.installedVersions.push(jar);
                                 console.log('Download of Minecraft server version ' + release.id + ' complete.');
@@ -663,7 +673,7 @@ class MinecraftServer {
         let properties = this.properties;
         
         if (properties.eulaFound) {
-            if (debug) {
+            if (debugMinecraftServer) {
                 console.log('Getting MinecraftServer banned IPs...');
             }
 
@@ -671,7 +681,7 @@ class MinecraftServer {
                 properties.bannedIps = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-ips.json', 'utf8'));
             } catch (e) {
                 properties.bannedIps = [];
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read banned-ips.json:', e.stack);
                 }
             }
@@ -682,7 +692,7 @@ class MinecraftServer {
         let properties = this.properties;
         
         if (properties.eulaFound) {
-            if (debug) {
+            if (debugMinecraftServer) {
                 console.log('Getting MinecraftServer banned players...');
             }
 
@@ -690,7 +700,7 @@ class MinecraftServer {
                 properties.bannedPlayers = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-players.json', 'utf8'));
             } catch (e) {
                 properties.bannedPlayers = [];
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read banned-players.json:', e.stack);
                 }
             }
@@ -736,7 +746,7 @@ class MinecraftServer {
     }
 
     getEula () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Getting MinecraftServer EULA acceptance state...');
         }
 
@@ -746,7 +756,7 @@ class MinecraftServer {
         let lineNumber;
         let properties = this.properties;
     
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Reading MinecraftServer eula.txt...');
         }
         try {
@@ -757,14 +767,14 @@ class MinecraftServer {
                     eulaUrlLine = eula[lineNumber].split('https://');
                     if (eulaUrlLine.length == 2) {
                         properties.eulaUrl = 'https://' + eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
-                        if (debug) {
+                        if (debugMinecraftServer) {
                             console.log('MinecraftServer EULA location: ' + properties.eulaUrl);
                         }
                     }
                     line = eula[lineNumber].split('=');
                     if (line.length == 2) {
                         properties.acceptedEula = !!JSON.parse(line[1]);
-                        if (debug) {
+                        if (debugMinecraftServer) {
                             console.log('MinecraftServer EULA accepted?', properties.acceptedEula);
                         }
                     }
@@ -774,7 +784,7 @@ class MinecraftServer {
             properties.installed = true;
         } catch (e) {
             console.log('Failed to read eula.txt.');
-            if (debug) {
+            if (debugMinecraftServer) {
                 console.log(e.stack);
             }
             console.log('Minecraft probably needs to be run once to stage new files.');
@@ -798,7 +808,7 @@ class MinecraftServer {
             res.on('end', () => {
                 try {
                     minecraftVersions = JSON.parse(minecraftVersionsArray.join(''));
-                    if (debug) {
+                    if (debugMinecraftServer) {
                         console.log('Got Minecraft version list.');
                     }
                     minecraftVersions.versions.forEach(version => {
@@ -820,7 +830,7 @@ class MinecraftServer {
     }
     
     getOps () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Getting MinecraftServer ops...');
         }
 
@@ -831,7 +841,7 @@ class MinecraftServer {
                 properties.ops = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/ops.json', 'utf8'));
             } catch (e) {
                 properties.ops = [];
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read ops.json:', e.stack);
                 }
             }
@@ -839,7 +849,7 @@ class MinecraftServer {
     }
 
     getServerProperties () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Getting MinecraftServer properties...');
         }
 
@@ -851,7 +861,7 @@ class MinecraftServer {
                 properties.serverProperties = convertPropertiesToObjects(serverPropertiesFile);
             } catch (e) {
                 properties.serverProperties = [];
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read server.properties:', e.stack);
                 }
             }
@@ -859,7 +869,7 @@ class MinecraftServer {
     }
 
     getUserCache () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Getting MinecraftServer user cache...');
         }
 
@@ -870,7 +880,7 @@ class MinecraftServer {
                 properties.userCache = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/usercache.json', 'utf8'));
             } catch (e) {
                 properties.userCache = [];
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read usercache.json:', e.stack);
                 }
             }
@@ -878,7 +888,7 @@ class MinecraftServer {
     }
 
     getWhitelist () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Getting MinecraftServer whitelist...');
         }
 
@@ -889,7 +899,7 @@ class MinecraftServer {
                 properties.whitelist = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/whitelist.json', 'utf8'));
             } catch (e) {
                 properties.whitelist = [];
-                if (debug) {
+                if (debugMinecraftServer) {
                     console.log('Failed to read whitelist.json:', e.stack);
                 }
             }
@@ -897,9 +907,7 @@ class MinecraftServer {
     }
 
     install (version, callback) {
-        if (debug) {
-            console.log('Installing MinecraftServer...');
-        }
+        console.log('Installing MinecraftServer version ', version, '...');
 
         let download = false,
             jar = '',
@@ -914,51 +922,55 @@ class MinecraftServer {
             version = 'latest';
         }
 
-        if (version && version !== 'latest') {
-            properties.versions.releaseVersions.forEach(releaseVersion => {
-                if (releaseVersion.id === version) {
-                    release = releaseVersion;
-                }
-            });
-        }
+        properties.versions.releaseVersions.forEach(releaseVersion => {
+            if (releaseVersion.id === version) {
+                release = releaseVersion;
+            }
+        });
         
         if (properties.installedVersions.length > 0) {
-            properties.installedVersions.forEach(installedVersion => {
+            for (let installedVersion of properties.installedVersions) {
                 if (installedVersion.indexOf(release.id) !== -1) {
                     // already downloaded.
                     download = false;
                     jar = installedVersion;
-                } else {
-                    download = true;
-                    jar = release.id + '_minecraft_' + serverJar;
+                    break;
                 }
-            });
+            }
+            if (!jar) {
+                download = true;
+                jar = version + '_minecraft_' + serverJar;
+            }
         } else {
             download = true;
             jar = release.id + '_minecraft_' + serverJar;
         }
         
         let copyCallback = function () {
-            fs.copyFileSync(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar));
-            properties.installed = true;
-            properties.needsInstallation = false;
+            this.stop(() => {
+                fs.copyFileSync(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar));
+                properties.installed = true;
+                properties.needsInstallation = false;
+    
+                if (debugMinecraftServer) {
+                    console.log('Done installing MinecraftServer.');
+                }
 
-            if (debug) {
-                console.log('Done installing MinecraftServer.');
-            }
-
-            if (typeof callback === 'function') {
-                callback();
-            }
-        };
-
+                // TODO: Only create new world on downgrade.
+                if (version !== properties.detectedVersion) {
+                    this.newWorld(false, callback);
+                } else {
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }
+            });
+        }.bind(this);
+        
         if (download) {
             this.downloadRelease(release.id, copyCallback);
         } else {
             copyCallback();
-            if (typeof callback === 'function') {
-                callback();
-            }
         }
     }
 
@@ -992,14 +1004,19 @@ class MinecraftServer {
                 }, 100);
             } else {
                 console.log('Minecraft appears to not be running. Cannot fetch commands.');
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         } else {
-            console.log('Could not get MinecraftServer commands.');
+            if (typeof callback === 'function') {
+                callback();
+            }
         }
     }
 
     listPlayers (callback) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Listing Minecraft players.');
         }
 
@@ -1013,6 +1030,8 @@ class MinecraftServer {
             players: []
         };
         let somePlayerNames, somePlayerName;
+        let minecraftLogTimeRegex = /\[[0-2]?[0-9]:[0-5]?[0-9]:[0-5]?[0-9]\] /;
+        let minecraftLogPrefixRegex = /\[\w*\s\w*\/\w*\]:/;
 
         // Get current online players
         if (started && !serverOutputCaptured) {
@@ -1026,24 +1045,34 @@ class MinecraftServer {
                 // followed by player names, comma+space separated.
                 let output = serverOutput.join('');
                 let player, players, playersSummary;
-                // Versions prior to 1.13 send newline...
-                if (output.indexOf('\n') !== -1) {
-                    players = output.split(/\n/);
-                    playersSummary = players.shift();
-                    playersSummary = playersSummary.split(']: ')[1];
-                    playersSummary = playersSummary.slice(0, -1);
-                } else {
-                    players = output.split(']: ')[1];
-                    if (players) {
-                        players = players.split(':');
-                        playersSummary = players.shift();
-                    } else {
-                        players = [];
-                        playersSummary = '';
+                // Versions later than 1.13 send newline...
+                // if (output.indexOf('\n') !== -1) {
+                //     players = output.split(/\n/);
+                //     playersSummary = players.shift();
+                //     playersSummary = playersSummary.split(']: ')[1];
+                //     playersSummary = playersSummary.slice(0, -1);
+                // } else {
+                players = output.split(minecraftLogTimeRegex).filter(function (value) {
+                    return value !== "";
+                });
+                if (players && players.length > 0) {
+                    for (let i = 0; i < players.length; i++) {
+                        if (players[i]) {
+                            players[i] = players[i].split(minecraftLogPrefixRegex)[1];
+                            players[i].trim();
+                        }
                     }
+                    playersSummary = players.shift();
+                    players = players.filter(function (value) {
+                        return value !== "";
+                    });
+                } else {
+                    players = [];
+                    playersSummary = '';
                 }
+                // }
                 
-                playersList.summary = playersSummary;
+                playersList.summary = playersSummary.trim().slice(0, -1);
                 
                 if (players && players.length) {
                     // Get online player names
@@ -1105,19 +1134,25 @@ class MinecraftServer {
                 }
                 
                 serverOutputCaptured = false;
+                properties.playerInfo = playersList;
 
                 if (typeof callback === 'function') {
                     callback(playersList);
+                } else {
+                    return playersList;
                 }
             }.bind(this), 250);
         } else {
-            console.log('Could not list Minecraft players.');
-            return playersList;
+            if (typeof callback === 'function') {
+                callback(playersList);
+            } else {
+                return playersList;
+            }
         }
     }
 
     listWorldBackups () {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Getting list of MinecraftServer world backups...');
         }
 
@@ -1153,7 +1188,7 @@ class MinecraftServer {
     }
     
     newWorld (backupWorld, callback) {
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Deleting MinecraftServer world...');
         }
 
@@ -1178,7 +1213,7 @@ class MinecraftServer {
             
                     console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
                     fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
-                    console.log('World deleted.');
+                    console.log('World deleted after backup.');
                     if (typeof callback === 'function') {
                         callback();
                     }
@@ -1203,7 +1238,7 @@ class MinecraftServer {
                 }
             }
             catch (e) {
-                console.log('An error occurred deleting world data:', e.stack);
+                console.log('An error occurred deleting world data: Specified world probably doesn\'t exist.', e.stack);
                 if (typeof callback === 'function') {
                     callback();
                 }
@@ -1281,7 +1316,7 @@ class MinecraftServer {
 
     runCommand (command, callback) {
         // TODO: make sure command passed is valid
-        if (debug) {
+        if (debugMinecraftServer) {
             console.log('Running Minecraft command.');
         }
 
@@ -1315,7 +1350,7 @@ class MinecraftServer {
         }
     }
 
-    start (version, callback) {
+    start (callback) {
         // TODO: Fix the async-ness of detectJavaHome
         if (this.properties.installed) {
             this.detectJavaHome( () => {
@@ -1332,71 +1367,66 @@ class MinecraftServer {
                 let startedTimer = properties.startedTimer;
                 let starting = properties.starting;
 
-                // version is optional.
-                if (typeof version === 'function') {
-                    callback = version;
-                    version = null;
-                }
-
                 if (javaHome) {
-                    try {
-                        fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
-                        // TODO: Make the Java + args configurable
-                        serverProcess = properties.serverProcess = spawn(java, [
-                            '-Xmx1G',
-                            '-Xms1G',
-                            '-jar',
-                            serverJar,
-                            'nogui'
-                        ], {
-                            cwd: pathToMinecraftDirectory,
-                            stdio: [
-                                'pipe', // Use parent's stdin for child stdin
-                                'pipe', // Pipe child's stdout to parent stdout
-                                'pipe'  // Direct child's stderr to parent stderr
-                            ]
-                        });
-                    
-                        if (!serverOutputCaptured) {
-                            starting = true;
-                            serverOutputCaptured = true;
-                            serverOutput.length = 0;
-                            serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-                    
-                            if (startedTimer) {
-                                clearTimeout(startedTimer);
+                    if (!serverOutputCaptured && !starting) {
+                        try {
+                            fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
+                            // TODO: Make the Java + args configurable
+                            serverProcess = properties.serverProcess = spawn(java, [
+                                '-Xmx1G',
+                                '-Xms1G',
+                                '-jar',
+                                serverJar,
+                                'nogui'
+                            ], {
+                                cwd: pathToMinecraftDirectory,
+                                stdio: [
+                                    'pipe', // Use parent's stdin for child stdin
+                                    'pipe', // Pipe child's stdout to parent stdout
+                                    'pipe'  // Direct child's stderr to parent stderr
+                                ]
+                            });
+                        } catch (e) {
+                            console.log('MinecraftServer executable not found.');
+                            if (debugMinecraftServer) {
+                                console.error(e.stack);
                             }
+                            if (typeof callback === 'function') {
+                                callback();
+                            }
+                        }
                         
-                            startedTimer = setTimeout(() => {
-                                this.checkForMinecraftToBeStarted(0, callback);
-                            }, 100);
-                        } else if (starting && serverOutputCaptured) {
+                        starting = true;
+                        serverOutputCaptured = true;
+                        serverOutput.length = 0;
+                        serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+                
+                        if (startedTimer) {
                             clearTimeout(startedTimer);
-                            startedTimer = setTimeout(() => {
-                                this.checkForMinecraftToBeStarted(0, callback);
-                            }, 100);
-                        } else {
-                            setTimeout(() => {
-                                this.start(callback);
-                            }, 1000);
                         }
-                    } catch (e) {
-                        console.log('MinecraftServer executable not found.');
-                        if (debug) {
-                            console.error(e.stack);
-                        }
-                        if (typeof callback === 'function') {
-                            callback();
-                        }
+                    
+                        startedTimer = setTimeout(() => {
+                            this.checkForMinecraftToBeStarted(0, callback);
+                        }, 100);
+                            
+                    } else if (starting && serverOutputCaptured) {
+                        clearTimeout(startedTimer);
+                        startedTimer = setTimeout(() => {
+                            this.checkForMinecraftToBeStarted(0, callback);
+                        }, 100);
+                    } else {
+                        // Something already attached to serverOutput. Wait and try again.
+                        setTimeout(() => {
+                            this.start(callback);
+                        }, 1000);
                     }
                 } else {
                     console.log('JAVA_HOME not set.');
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
                 }
             });
-        } else {
-            console.log('Minecraft server not installed.');
-            this.install();
-            this.start();
         }
     }
 
@@ -1412,18 +1442,16 @@ class MinecraftServer {
         let stopping = properties.stopping;
 
         if (started) {
-            if (!serverOutputCaptured) {
+            if (!serverOutputCaptured && !stopping) {
                 stopping = true;
                 serverOutputCaptured = true;
                 serverOutput.length = 0;
-                serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-    
-                serverProcess.stdin.write('/stop\n');
-    
                 if (stoppedTimer) {
                     clearTimeout(stoppedTimer);
+                    properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
                 }
-    
+                serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+                serverProcess.stdin.write('/stop\n');
                 stoppedTimer = setTimeout(() => {
                     this.checkForMinecraftToBeStopped(0, callback);
                 }, 1000);
@@ -1433,21 +1461,23 @@ class MinecraftServer {
                     this.checkForMinecraftToBeStopped(0, callback);
                 }, 1000);
             } else {
+                // Someone is using the output stream, wait a bit.
                 setTimeout(() => {
                     this.stop(callback);
-                }, 100);
+                }, 1000);
             }
         } else {
+            stopping = false;
+            properties.stopped = true;
             if (typeof callback === 'function') {
-                stopping = false;
                 callback();
             }
         }
     }
 
-    updateStatus () {
+    updateStatus (callback) {
         if (this.properties.installed) {
-            this.getMinecraftVersions();
+            // this.getMinecraftVersions();
             this.getEula();
             this.getServerProperties();
             this.getUserCache();
@@ -1455,6 +1485,9 @@ class MinecraftServer {
             this.getBannedIps();
             this.getBannedPlayers();
             this.getWhitelist();
+            if (this.properties.started) {
+                this.listPlayers(callback);
+            }
         }
     }
 
@@ -1465,29 +1498,40 @@ class MinecraftServer {
         let minecraftServerProcess = properties.serverProcess;
         let line;
 
-        // while( (line = properties.serverOutput.shift()) !== undefined ) {
-        for (line of properties.serverOutput) {
-            if (line.indexOf('Showing help page') !== -1) {
-                // Versions prior to 1.13 "page" the help
-                properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
-                properties.serverOutput.length = 0;
-    
-                let part1 = line.split('Showing help page ');
-                let part2 = part1[1].split(' ');
-                properties.helpPages = parseInt(part2[2]);
-    
-                properties.serverProcess.stdout.addListener('data', bufferMinecraftOutput);
-                for (let i = 1; i <= minecraftHelpPages; i++) {
-                    // Get all of the help at once
-                    minecraftServerProcess.stdin.write('/help ' + i + '\n');
-                }
-                setTimeout(() => {
+        if (!buffer) {
+            buffer = properties.serverOutput;
+        }
+
+        if (buffer && buffer.length) {
+            for (line of buffer) {
+                if (line.indexOf('Showing help page') !== -1) {
+                    // Versions prior to 1.13 "page" the help
+                    properties.serverProcess.stdout.removeListener('data', bufferMinecraftOutput);
+                    properties.serverOutput.length = 0;
+        
+                    let part1 = line.split('Showing help page ');
+                    let part2 = part1[1].split(' ');
+                    properties.helpPages = parseInt(part2[2]);
+        
+                    properties.serverProcess.stdout.addListener('data', bufferMinecraftOutput);
+                    for (let i = 1; i <= minecraftHelpPages; i++) {
+                        // Get all of the help at once
+                        minecraftServerProcess.stdin.write('/help ' + i + '\n');
+                    }
+                    setTimeout(() => {
+                        this.parseHelpOutput(callback);
+                    }, 1000);
+                    break;
+                } else {
+                    // Versions 1.13 and later display all of the help at once, no need to page it
                     this.parseHelpOutput(callback);
-                }, 1000);
-            } else {
-                // Versions 1.13 and later display all of the help at once, no need to page it
-                this.parseHelpOutput(callback);
+                    break;
+                }
             }
+        } else {
+            setTimeout(() => {
+                this.waitForHelpOutput(buffer, callback);
+            }, 1000);
         }
     }
 }

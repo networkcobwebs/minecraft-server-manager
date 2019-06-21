@@ -2,70 +2,71 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import 'typeface-roboto';
-import Typography from '@material-ui/core/Typography';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import Button from '@material-ui/core/Button';
 import FormControl from '@material-ui/core/FormControl';
+import Icon from '@material-ui/core/Icon';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
-import Tooltip from '@material-ui/core/Tooltip';
-import Icon from '@material-ui/core/Icon';
-import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
 import Refresh from '@material-ui/icons/Cached';
+import Save from '@material-ui/icons/Save';
+import Undo from '@material-ui/icons/Undo';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import Typography from '@material-ui/core/Typography';
 
 export default function ServerProperties (props) {
     const { minecraftProperties } = props;
     return (
-        <ExpansionPanel defaultExpanded>
-            <ExpansionPanelSummary expandIcon={ <ExpandMoreIcon /> }>
-                <Typography component="h2">
-                    Server Properties
-                </Typography>
-            </ExpansionPanelSummary>
-            <ExpansionPanelDetails>
-                <Typography>
-                    <Tooltip title="Refresh">
-                        <Button variant="contained" color="primary">
-                            Refresh
-                            <Icon>
-                                <Refresh />
-                            </Icon>
-                        </Button>
-                    </Tooltip>
-                </Typography>
-            </ExpansionPanelDetails>
-            { minecraftProperties && minecraftProperties.serverProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
-                return (
-                    <ExpansionPanelDetails key={ property.name }>
-                        <FormControl fullWidth>
-                            <InputLabel
-                                htmlFor="{ property.name }">
-                                { property.name }
-                            </InputLabel>
-                            <Input
-                                id = { property.name }
-                                value = { property.value }
-                                fullWidth />
-                        </FormControl>
-                    </ExpansionPanelDetails>
-                );
-            }) : 'Waiting on Minecraft server...' }
-            
-            <Divider />
-
-            <ExpansionPanelActions>
-                <Button size="small">
-                    Cancel
-                </Button>
-                <Button size="small" color="primary">
-                    Save
-                </Button>
-            </ExpansionPanelActions>
-        </ExpansionPanel>
+        <div>
+            <Typography variant="subtitle1">
+                Server Properties
+            </Typography>
+            <Button disabled variant="contained" color="primary">
+                Refresh
+                <Icon>
+                    <Refresh />
+                </Icon>
+            </Button>
+            <Button disabled variant="contained" color="primary">
+                Save
+                <Icon>
+                    <Save />
+                </Icon>
+            </Button>
+            <Button disabled variant="contained" color="primary">
+                Undo
+                <Icon>
+                    <Undo />
+                </Icon>
+            </Button>
+            <div style={{maxHeight: "100vh", overflow: "auto"}}>
+                <Table size="small">
+                    <TableBody>
+                        <TableRow><TableCell></TableCell></TableRow>
+                        { minecraftProperties && minecraftProperties.serverProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
+                            return (
+                                <TableRow key={ property.name }>
+                                    <TableCell>
+                                        <FormControl fullWidth>
+                                            <InputLabel
+                                                htmlFor="{ property.name }">
+                                                { property.name }
+                                            </InputLabel>
+                                            <Input
+                                                id = { property.name }
+                                                value = { property.value }
+                                                fullWidth />
+                                        </FormControl>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        }) : 'Waiting on Minecraft server...' }
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
     );
 }
 
