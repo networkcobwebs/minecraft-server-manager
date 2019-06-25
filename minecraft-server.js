@@ -15,7 +15,7 @@ let defaultProperties = {
     backupList: [],
     bannedIps: [],
     bannedPlayers: [],
-    detectedVersion: null,
+    detectedVersion: {},
     eulaFound: false,
     eulaUrl: 'https://account.mojang.com/documents/minecraft_eula',
     fullHelp: [],
@@ -28,7 +28,7 @@ let defaultProperties = {
     ops: [],
     osType: os.type(),
     pathToMinecraftDirectory: 'minecraft_server',
-    playerInfo: {},
+    playerInfo: {players: [], summary: ''},
     serverJar: 'server.jar',
     serverLog: 'minecraft_server.log',
     serverLogDir: 'logs',
@@ -365,11 +365,14 @@ class MinecraftServer {
                     versionParts = line.split('.');
                     major = versionParts.shift();
                     minor = versionParts.shift();
-                    release = versionParts.shift().trim();
+                    release = versionParts.shift().trim() || "0";
                     versionParts = major.split('version ');
                     major = versionParts[versionParts.length - 1];
-                    properties.detectedVersion = major + '.' + minor + '.' + release;
-                    console.log('Detected MinecraftServer version:', properties.detectedVersion);
+                    properties.detectedVersion.major = parseInt(major);
+                    properties.detectedVersion.minor = parseInt(minor);
+                    properties.detectedVersion.release = parseInt(release);
+                    properties.detectedVersion.full = major + '.' + minor + '.' + release;
+                    console.log('Detected MinecraftServer version: ' + properties.detectedVersion.full);
                     shouldContinueStart = true;
                 } else if (!properties.started && line.indexOf('Done') !== -1) {
                     console.log('MinecraftServer started.');
@@ -423,8 +426,10 @@ class MinecraftServer {
                     properties.serverOutputCaptured = false;
                     properties.serverOutput.length = 0;
                     properties.stopping = false;
-                    // properties.serverProcess.kill();
+                    properties.serverProcess.kill();
                     properties.stopped = true;
+                    properties.allowedCommands = [];
+                    properties.playerInfo = {players: [], summary: ''};
                 }
             });
         
@@ -445,14 +450,41 @@ class MinecraftServer {
             console.log('Checking for Minecraft server update...');
         }
 
-        this.getMinecraftVersions();
-        if (this.properties.detectedVersion) {
-            // check to see if detected < latest, set properties.updateAvailable to true
-        }
+        let detectedVersion = this.properties.detectedVersion;
+        let release = {major: '', minor: '', release: '', full: ''};
+        let releaseVersions = this.properties.versions.releaseVersions;
 
-        if (debugMinecraftServer) {
-            console.log('Done checking for Minecraft server update.');
-        }
+        this.getMinecraftVersions(() => {
+            if (this.properties.detectedVersion) {
+                // check to see if detected < latest, set properties.updateAvailable to true
+                for (let r = 0; r < releaseVersions.length; r++) {
+                    release.full = releaseVersions[r].id;
+                    let releaseParts = release.full.split('.');
+                    release.major = parseInt(releaseParts[0]);
+                    release.minor = parseInt(releaseParts[1]);
+                    release.release = parseInt(releaseParts[2]) || 0;
+                    if (release.full !== detectedVersion.full) {
+                        if (release.major > detectedVersion.major) {
+                            this.properties.updateAvailable = true;
+                            break;
+                        } else if (release.major == detectedVersion.major && release.minor > detectedVersion.minor) {
+                            this.properties.updateAvailable = true;
+                            break;
+                        } else if (release.major == detectedVersion.major && release.minor == detectedVersion.minor && release.release > detectedVersion.release) {
+                            this.properties.updateAvailable = true;
+                            break;
+                        }
+                    } else {
+                        this.properties.updateAvailable = false;
+                        break;
+                    }
+                }
+            }
+    
+            if (debugMinecraftServer) {
+                console.log('Done checking for Minecraft server update.');
+            }
+        });
     }
 
     detectJavaHome (callback) {
@@ -523,6 +555,8 @@ class MinecraftServer {
 
         let properties = this.properties;
         let minecraftFiles = [];
+
+        properties.installedVersions = [];
 
         try {
             minecraftFiles = fs.readdirSync(properties.pathToMinecraftDirectory);
@@ -648,7 +682,7 @@ class MinecraftServer {
                             fileStream.on('finish', ()  => {
                                 fileStream.close();  // close() is async.
                                 // TODO: Verify download hash.
-                                properties.serverJar = jar;
+                                // properties.serverJar = jar;
                                 properties.installedVersions.push(jar);
                                 console.log('Download of Minecraft server version ' + release.id + ' complete.');
                                 if (typeof callback === 'function') {
@@ -794,7 +828,7 @@ class MinecraftServer {
         }
     }
     
-    getMinecraftVersions () {
+    getMinecraftVersions (callback) {
         // TODO enable snapshot updates with a property/preference
         let minecraftVersionsArray = [],
             minecraftVersions = {},
@@ -819,13 +853,22 @@ class MinecraftServer {
                         }
                     });
                     this.properties.versions = { "releaseVersions": releaseVersions, "snapshotVersions": snapshotVersions };
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
                 } catch (e) {
                     console.log('An error occurred processing the Minecraft official version list:', e.stack);
                     console.log(minecraftVersionsArray.join(''));
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
                 }
             });
         }).on('error', (e) => {
             console.error('An error occurred retrieving the Minecraft official version list:', e.stack);
+            if (typeof callback === 'function') {
+                callback();
+            }
         });
     }
     
@@ -907,7 +950,6 @@ class MinecraftServer {
     }
 
     install (version, callback) {
-        console.log('Installing MinecraftServer version ', version, '...');
 
         let download = false,
             jar = '',
@@ -921,6 +963,8 @@ class MinecraftServer {
             callback = version;
             version = 'latest';
         }
+
+        this.detectMinecraftJar();
 
         properties.versions.releaseVersions.forEach(releaseVersion => {
             if (releaseVersion.id === version) {
@@ -939,7 +983,7 @@ class MinecraftServer {
             }
             if (!jar) {
                 download = true;
-                jar = version + '_minecraft_' + serverJar;
+                jar = release.id + '_minecraft_' + serverJar;
             }
         } else {
             download = true;
@@ -948,7 +992,30 @@ class MinecraftServer {
         
         let copyCallback = function () {
             this.stop(() => {
-                fs.copyFileSync(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar));
+                let jarPath = path.resolve(path.normalize(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar)));
+                let serverJarPath = path.resolve(path.normalize(path.join(pathToMinecraftDirectory, serverJar)));
+                
+                console.log("Deleting Minecraft server version:", properties.detectedVersion.full, "...");
+                try {
+                    fs.unlinkSync(serverJarPath);
+                } catch (e) {
+                    if (e.code !== 'ENOENT') {
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                        throw e;
+                    }
+                }
+
+                console.log('Installing MinecraftServer version', version, '...');
+                try {
+                    fs.copyFileSync(jarPath, serverJarPath);
+                } catch (e) {
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                    throw e;
+                }
                 properties.installed = true;
                 properties.needsInstallation = false;
     
@@ -957,7 +1024,9 @@ class MinecraftServer {
                 }
 
                 // TODO: Only create new world on downgrade.
-                if (version !== properties.detectedVersion) {
+                let majorminorrelease = properties.detectedVersion.major + '.' + properties.detectedVersion.minor + '.' + properties.detectedVersion.release;
+                properties.detectedVersion = {major: '', minor: '', release: ''};
+                if (version !== majorminorrelease) {
                     this.newWorld(false, callback);
                 } else {
                     if (typeof callback === 'function') {
@@ -1258,7 +1327,7 @@ class MinecraftServer {
             let command = {};
             let commandLine = line.split(' [Server thread/INFO]: ');
 
-            if (commandLine[1].indexOf('/') === 0) {
+            if (commandLine.length > 1 && commandLine[1].indexOf('/') === 0) {
                 let aThing = {};
                 aThing.key = minecraftFullHelp.length;
                 aThing.command = commandLine[1];
@@ -1475,9 +1544,13 @@ class MinecraftServer {
         }
     }
 
+    /**
+     * Reads the current state of files from the Minecraft server and gets
+     * player status if running.
+     * @param {function} callback An optional function to call when complete.
+     */
     updateStatus (callback) {
         if (this.properties.installed) {
-            // this.getMinecraftVersions();
             this.getEula();
             this.getServerProperties();
             this.getUserCache();
@@ -1485,8 +1558,13 @@ class MinecraftServer {
             this.getBannedIps();
             this.getBannedPlayers();
             this.getWhitelist();
+            this.checkForMinecraftUpdate();
             if (this.properties.started) {
                 this.listPlayers(callback);
+            } else {
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         }
     }

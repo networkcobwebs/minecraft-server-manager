@@ -117,8 +117,6 @@ export default class App extends React.Component {
             axios(`/api/status`).then(res => {
                 let minecraftProperties = res.data;
                 this.setState({ minecraftProperties });
-                
-                this.getMinecraftPlayers();
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -270,8 +268,8 @@ export default class App extends React.Component {
             console.log('Stopping Minecraft server poller.');
         }
         
-        let minecraftProperties = {};
-        this.setState({ minecraftProperties });
+        // let minecraftProperties = {};
+        // this.setState({ minecraftProperties });
 
         if (this.statusTimerId) {
             clearTimeout(this.statusTimerId);
@@ -303,10 +301,9 @@ export default class App extends React.Component {
                 { this.state.value === 0 && <Dashboard
                     ipInfo = { this.state.ipInfo }
                     minecraftProperties = { minecraftProperties }
-                    playerInfo = { this.state.playerInfo }
                 /> }
                 { this.state.value === 1 && <Players
-                    playerInfo = { this.state.playerInfo }
+                    minecraftProperties = { minecraftProperties }
                 /> }
                 { this.state.value === 2 && <WorldControls
                     minecraftProperties = { minecraftProperties }

@@ -3,11 +3,12 @@ import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
+import 'typeface-roboto';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
 import Typography from '@material-ui/core/Typography';
 
 import PlayerListItem from './PlayerListItem';
@@ -204,14 +205,14 @@ export default class Players extends React.Component {
     }
 
     render () {
-        let playerInfo;
-        if (this.props.playerInfo.players) {
-            playerInfo = this.props.playerInfo;
-        } else {
-            playerInfo = { summary: '', players: [] };
-        }
-        let summary = playerInfo.summary,
+        let minecraftProperties = this.props.minecraftProperties;
+        let playerInfo = minecraftProperties.playerInfo;
+        let players = [];
+        let summary = '';
+        if (playerInfo.players) {
+            summary = playerInfo.summary;
             players = playerInfo.players;
+        }
         
         return (
             <div style = { styles.container }>
@@ -248,5 +249,5 @@ export default class Players extends React.Component {
 }
 
 Players.propTypes = {
-    playerInfo: PropTypes.object.isRequired
+    minecraftProperties: PropTypes.object.isRequired
 };

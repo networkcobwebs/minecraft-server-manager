@@ -17,7 +17,7 @@ class Dashboard extends React.Component {
         return (
             <div style={ styles.container }>
                 <ServerSummary ipInfo = { this.props.ipInfo } minecraftProperties = { this.props.minecraftProperties } />
-                <PlayersSummary playerInfo = { this.props.playerInfo } />
+                <PlayersSummary minecraftProperties = { this.props.minecraftProperties } />
             </div>
         );
     }
@@ -25,8 +25,7 @@ class Dashboard extends React.Component {
 
 Dashboard.propTypes = {
     ipInfo: PropTypes.object.isRequired,
-    minecraftProperties: PropTypes.object.isRequired,
-    playerInfo: PropTypes.object.isRequired
+    minecraftProperties: PropTypes.object.isRequired
 };
 
 export default Dashboard;

@@ -2,11 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 
+import 'typeface-roboto';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 
@@ -113,11 +114,11 @@ class ServerSummary extends React.Component {
     minecraftVersion () {
         let minecraftProperties = this.props.minecraftProperties;
     
-        if (minecraftProperties && minecraftProperties.detectedVersion) {
+        if (minecraftProperties && minecraftProperties.detectedVersion && minecraftProperties.detectedVersion.major) {
             return (
                 <TableCell>
                     <Typography>
-                        { minecraftProperties.detectedVersion }
+                        { minecraftProperties.detectedVersion.major + '.' + minecraftProperties.detectedVersion.minor + '.' + minecraftProperties.detectedVersion.release }
                     </Typography>
                 </TableCell>
             );

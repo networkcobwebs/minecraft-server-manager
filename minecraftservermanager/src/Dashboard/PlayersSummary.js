@@ -1,11 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import 'typeface-roboto';
 import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import TableBody from '@material-ui/core/TableBody';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 
 import PlayerListItem from './PlayerListItem';
@@ -31,8 +32,15 @@ export default class PlayersSummary extends React.Component {
     }
 
     render () {
-        let players = this.props.playerInfo.players || [];
-        let summary = this.props.playerInfo.summary || '';
+        let minecraftProperties = this.props.minecraftProperties;
+        let playerInfo = minecraftProperties.playerInfo;
+        let players = [];
+        let summary = '';
+
+        if (playerInfo) {
+            players = playerInfo.players;
+            summary = playerInfo.summary;
+        }
         
         return (
             <div style = { styles.container }>
@@ -61,5 +69,5 @@ export default class PlayersSummary extends React.Component {
 }
 
 PlayersSummary.propTypes = {
-    playerInfo: PropTypes.object.isRequired
+    minecraftProperties: PropTypes.object.isRequired
 };

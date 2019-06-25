@@ -1,12 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import 'typeface-roboto';
 import Help from '@material-ui/icons/Help';
 import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import TableBody from '@material-ui/core/TableBody';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 
@@ -112,7 +113,11 @@ class About extends React.Component {
                                     NodeJS Version
                                 </Typography>
                             </TableCell>
-                            <TableCell>{ minecraftProperties.nodeInfo.version }</TableCell>
+                            <TableCell>
+                                <Typography>
+                                    { minecraftProperties.nodeInfo.version }
+                                </Typography>
+                            </TableCell>
                             <TableCell> </TableCell>
                         </TableRow>
                     </TableBody>

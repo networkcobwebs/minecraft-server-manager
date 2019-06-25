@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
+import 'typeface-roboto';
 import Button from '@material-ui/core/Button';
-import Icon from '@material-ui/core/Icon';
 import MenuItem from '@material-ui/core/MenuItem';
 import Restart from '@material-ui/icons/Autorenew';
 import Select from '@material-ui/core/Select';
@@ -12,8 +12,8 @@ import Start from '@material-ui/icons/PlayArrow';
 import Stop from '@material-ui/icons/Stop';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
 import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 
@@ -32,9 +32,10 @@ const styles = {
 class ServerControls extends React.Component {
     constructor (props) {
         super(props);
+
         let detectedVersion = props.minecraftProperties.detectedVersion;
-        if (!detectedVersion) {
-            detectedVersion = 'latest';
+        if (!detectedVersion || !detectedVersion.full) {
+            detectedVersion = { full: 'latest' };
         }
         
         this.state = {
@@ -68,7 +69,7 @@ class ServerControls extends React.Component {
     }
     
     checkVersionToInstall () {
-        if (this.state.versionToInstall !== this.props.minecraftProperties.detectedVersion) {
+        if (this.state.versionToInstall.full !== this.props.minecraftProperties.detectedVersion.full) {
             this.setState({ versionDialogOpen: true });
         }
     }
@@ -84,21 +85,21 @@ class ServerControls extends React.Component {
     }
 
     handleVersionConfirmation (value) {
-        this.closeVersionDialog();
-
-        if (value) {
-            this.installMinecraft();
+        if (value && typeof value === 'string') {
+            this.setState({ versionToInstall: {full: value} });
         }
+        this.setState({ versionDialogOpen: false });
+        this.installMinecraft();
     }
 
     installMinecraft () {
         this.setState({ progressDialogOpen: true });
-        this.props.stopMinecraftStatus();
+        // this.props.stopMinecraftStatus();
         axios({
             method: 'post',
             url: `/api/install`,
             params: {
-                version: this.state.versionToInstall
+                version: this.state.versionToInstall.full
             }
         }).then(() => {
             this.props.startMinecraftStatus();
@@ -112,7 +113,7 @@ class ServerControls extends React.Component {
 
     restartMinecraft () {
         this.setState({ progressDialogOpen: true });
-        this.props.stopMinecraftStatus();
+        // this.props.stopMinecraftStatus();
         axios({
             method: 'post',
             url: `/api/restart`
@@ -127,19 +128,25 @@ class ServerControls extends React.Component {
 
     selectVersionToInstall (selectedVersionToInstall) {
         let minecraftProperties = this.props.minecraftProperties,
-            releaseVersions = minecraftProperties.versions.releaseVersions,
+            releaseVersions = {},
             versionToInstall = '';
 
-        for (let releaseVersion of releaseVersions) {
-            if (releaseVersion.id === selectedVersionToInstall.target.value) {
-                versionToInstall = releaseVersion.id;
-                break;
+        if (minecraftProperties.versions) {
+            releaseVersions = minecraftProperties.versions.releaseVersions;
+        }
+        
+        if (releaseVersions && releaseVersions.length) {
+            for (let releaseVersion of releaseVersions) {
+                if (releaseVersion.id === selectedVersionToInstall.target.value) {
+                    versionToInstall = { full: releaseVersion.id };
+                    break;
+                }
             }
+            if (!versionToInstall) {
+                versionToInstall = { full: 'latest' };
+            }
+            this.setState({ versionToInstall });
         }
-        if (!versionToInstall) {
-            versionToInstall = 'latest';
-        }
-        this.setState({ versionToInstall });
     }
     
     startMinecraft () {
@@ -162,7 +169,7 @@ class ServerControls extends React.Component {
             method: 'post',
             url: `/api/stop`
         }).then(() => {
-            this.props.stopMinecraftStatus();
+            // this.props.stopMinecraftStatus();
             this.setState({ progressDialogOpen: false });
         },
         err => {
@@ -198,42 +205,35 @@ class ServerControls extends React.Component {
                                     disabled={ minecraftProperties.started }
                                     variant="contained"
                                     color="primary">
+                                    <Start />
                                     Start
-                                    <Icon>
-                                        <Start />
-                                    </Icon>
                                 </Button>
                                 <Button
                                     onClick = { this.stopMinecraft }
                                     disabled = { !minecraftProperties.started }
                                     variant="contained"
                                     color="primary">
+                                    <Stop />
                                     Stop
-                                    <Icon>
-                                        <Stop />
-                                    </Icon>
                                 </Button>
                                 <Button
                                     onClick = { this.restartMinecraft }
                                     disabled = { !minecraftProperties.started }
                                     variant="contained"
                                     color="primary">
+                                    <Restart />
                                     Restart
-                                    <Icon>
-                                        <Restart />
-                                    </Icon>
                                 </Button>
                             </TableCell>
                             <TableCell>
                                 <Button
                                     onClick = { this.checkVersionToInstall }
-                                    size="small"
                                     variant="contained"
                                     color="primary">
                                     Install
                                 </Button>
                                 <Select
-                                    value={ this.state.versionToInstall }
+                                    value={ this.state.versionToInstall.full }
                                     onChange={ this.selectVersionToInstall }>
                                     <MenuItem value="latest">
                                         <em>latest</em>
@@ -243,16 +243,13 @@ class ServerControls extends React.Component {
                             </TableCell>
                             <TableCell>
                                 <Button 
-                                    disabled = { !minecraftProperties.upgradeAvailable }
+                                    disabled = { !minecraftProperties.updateAvailable }
                                     variant="contained"
                                     color="primary">
-                                    <Icon>
-                                        <UpdateAvailable />
-                                    </Icon>
+                                    <UpdateAvailable />
                                 </Button>
                                 <Button
                                     disabled
-                                    size="small"
                                     variant="contained"
                                     color="primary">
                                     Check for updates

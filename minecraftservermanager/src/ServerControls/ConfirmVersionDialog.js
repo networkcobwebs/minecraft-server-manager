@@ -10,14 +10,20 @@ import Button from '@material-ui/core/Button';
 
 export default function ConfirmVersionDialog (props) {
     const { detectedVersion, selectedVersionToInstall, onNo, onYes, ...other } = props;
+    // console.log('props:', props);
+    let version = "";
+
+    if (detectedVersion && detectedVersion.full) {
+        version = detectedVersion.full;
+    }
     // TODO: Detect "downgrade".
     return (
         <Dialog { ...other }>
             <DialogTitle>Confirm Version Change</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    The current running version is { detectedVersion }, but the
-                    selected version is { selectedVersionToInstall }. Changing
+                    The current running version is { version }, but the
+                    selected version is { selectedVersionToInstall ? selectedVersionToInstall.full : 'unknown' }. Changing
                     to a lower version may delete the current world.
                 </DialogContentText>
                 <DialogContentText>
@@ -44,8 +50,8 @@ export default function ConfirmVersionDialog (props) {
 }
 
 ConfirmVersionDialog.propTypes = {
-    detectedVersion: PropTypes.string,
-    selectedVersionToInstall: PropTypes.string,
+    detectedVersion: PropTypes.object,
+    selectedVersionToInstall: PropTypes.object,
     onNo: PropTypes.func.isRequired,
     onYes: PropTypes.func.isRequired
 };

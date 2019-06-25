@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
-import Tooltip from '@material-ui/core/Tooltip';
-import Typography from '@material-ui/core/Typography';
-
+import 'typeface-roboto';
+import Ban from '@material-ui/icons/Error';
 import IconButton from '@material-ui/core/IconButton';
-import OpStatus from '@material-ui/icons/VerifiedUser';
+import Kick from '@material-ui/icons/Error';
 import NetworkOnline from '@material-ui/icons/SignalWifi4Bar';
 import NetworkOffline from '@material-ui/icons/SignalWifiOff';
-import Kick from '@material-ui/icons/Error';
-import Ban from '@material-ui/icons/Error';
+import OpStatus from '@material-ui/icons/VerifiedUser';
+import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
+import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
 import WhitelistIcon from '@material-ui/icons/PlaylistAdd';
 
 export default class PlayerListItem extends React.Component {

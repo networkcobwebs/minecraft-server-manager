@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import 'typeface-roboto';
 import Button from '@material-ui/core/Button';
 import FormControl from '@material-ui/core/FormControl';
-import Icon from '@material-ui/core/Icon';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import Refresh from '@material-ui/icons/Cached';
@@ -23,23 +22,29 @@ export default function ServerProperties (props) {
             <Typography variant="subtitle1">
                 Server Properties
             </Typography>
+            <Typography>
+                Change Minecraft server properties. When finished, click <strong>Save</strong>.&nbsp;
+                <Typography variant="caption">
+                    (Saving changes will require a Minecraft restart.)
+                </Typography>
+            </Typography>
+            <Typography>
+                <strong>Undo</strong> will reset all fields to the current running settings.
+            </Typography>
+            <Typography>
+                <strong>Refresh</strong> reads current values from the Minecraft server files.
+            </Typography>
             <Button disabled variant="contained" color="primary">
+                <Refresh />
                 Refresh
-                <Icon>
-                    <Refresh />
-                </Icon>
             </Button>
             <Button disabled variant="contained" color="primary">
+                <Save />
                 Save
-                <Icon>
-                    <Save />
-                </Icon>
             </Button>
             <Button disabled variant="contained" color="primary">
+                <Undo />
                 Undo
-                <Icon>
-                    <Undo />
-                </Icon>
             </Button>
             <div style={{maxHeight: "100vh", overflow: "auto"}}>
                 <Table size="small">
@@ -62,7 +67,7 @@ export default function ServerProperties (props) {
                                     </TableCell>
                                 </TableRow>
                             );
-                        }) : 'Waiting on Minecraft server...' }
+                        }) : <TableRow><TableCell>Waiting on Minecraft server...</TableCell></TableRow> }
                     </TableBody>
                 </Table>
             </div>

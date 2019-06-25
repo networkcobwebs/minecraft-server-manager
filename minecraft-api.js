@@ -112,6 +112,7 @@ class MinecraftApi {
 
         this.connectMinecraftApi = this.connectMinecraftApi.bind(this);
         this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
+        this.restartMinecraft = this.restartMinecraft.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.stopPollers = this.stopPollers.bind(this);
@@ -270,17 +271,20 @@ class MinecraftApi {
                     }
                 }
             });
-            app.post('/api/install', [function (request, response) {
-                this.stopPollers();
-                minecraftServer.install(request.param('version'), function () {
-                    minecraftServer.start(function () {
-                        response.contentType('json');
-                        response.json({
-                            response: 'installed'
-                        });
+            app.post('/api/install', [function (request, response, next) {
+                this.stopMinecraft(() => {
+                    minecraftServer.install(request.param('version'), () => {
+                        next();
                     });
                 });
-            }.bind(this), this.getMinecraftStatus]);
+            }.bind(this), function (request, response) {
+                this.startMinecraft(() => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'installed'
+                    });
+                });
+            }.bind(this)]);
             app.post('/api/newWorld', function (request, response) {
                 minecraftServer.newWorld(request.param('backup'), () => {
                     response.contentType('json');
@@ -290,31 +294,29 @@ class MinecraftApi {
                 });
             });
             app.post('/api/restart', function (request, response) {
-                minecraftServer.stop(() => {
-                    minecraftServer.start(() => {
-                        response.contentType('json');
-                        response.json({
-                            response: 'restarted'
-                        });
+                this.restartMinecraft(() => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'restarted'
                     });
                 });
-            });
+            }.bind(this));
             app.post('/api/start', function (request, response) {
-                minecraftServer.start(() => {
+                this.startMinecraft(() => {
                     response.contentType('json');
                     response.json({
                         response: 'started'
                     });
                 });
-            }, this.getMinecraftStatus);
+            }.bind(this));
             app.post('/api/stop', function (request, response) {
-                minecraftServer.stop(function () {
+                this.stopMinecraft(function () {
                     response.contentType('json');
                     response.json({
                         response: 'stopped'
                     });
                 });
-            }, this.stopPollers).bind(this);
+            }.bind(this));
         } else {
             console.log('MinecraftServer not operational... ignoring MinecraftServer API requests.');
         }
@@ -341,7 +343,7 @@ class MinecraftApi {
         }
 
         if (this.properties.pollers.minecraftStatusTimerId) {
-            clearTimeout(this.properties.minecraftStatusTimerId);
+            clearTimeout(this.properties.pollers.minecraftStatusTimerId);
         }
 
         this.properties.pollers.minecraftStatusTimerId = setTimeout(() => {
@@ -352,16 +354,27 @@ class MinecraftApi {
                         console.log('Got Minecraft status:');
                         console.log(this.minecraftServer.properties);
                     }
+    
+                    if (debugApi) {
+                        console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
+                    }
+                    this.getMinecraftStatus(pingTime);
                 });
             } else {
                 pingTime = pingTime + appendTime;
+                this.getMinecraftStatus(pingTime);
             }
-    
-            if (debugApi) {
-                console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
-            }
-            this.getMinecraftStatus(pingTime);
         }, pingTime);
+    }
+
+    restartMinecraft (callback) {
+        this.stopMinecraft(() => {
+            this.startMinecraft(() => {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+        });
     }
 
     start () {
@@ -395,10 +408,7 @@ class MinecraftApi {
         //     console.log('Minecraft EULA not accepted yet.');
         // }
         if (minecraftServer.properties.installed) {
-            minecraftServer.start(null, () => {
-                this.getMinecraftStatus(100);
-                minecraftServer.listPlayers();
-            });
+            this.startMinecraft();
         }
 
         console.info('MinecraftApi started.');
@@ -409,7 +419,7 @@ class MinecraftApi {
             minecraftServer = properties.minecraftServer;
 
         minecraftServer.start(() => {
-            this.getMinecraftStatus();
+            this.getMinecraftStatus(100);
             if (typeof callback === 'function') {
                 callback();
             }
@@ -448,7 +458,7 @@ class MinecraftApi {
         let properties = this.properties;
 
         if (properties.pollers.minecraftStatusTimerId) {
-            clearTimeout(properties.minecraftStatusTimerId);
+            clearTimeout(properties.pollers.minecraftStatusTimerId);
         }
     }
 }

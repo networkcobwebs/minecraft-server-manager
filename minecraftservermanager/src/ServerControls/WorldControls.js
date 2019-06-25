@@ -3,22 +3,20 @@ import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
+import 'typeface-roboto';
 import Backup from '@material-ui/icons/Backup';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FormControl from '@material-ui/core/FormControl';
 import Help from '@material-ui/icons/Help';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
-import IconButton from '@material-ui/core/IconButton';
-// import New from '@material-ui/icons/Autorenew';
 import New from '@material-ui/icons/Public';
 import Restore from '@material-ui/icons/Restore';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
@@ -169,21 +167,23 @@ export default class WorldControls extends React.Component {
     }
     
     onSendCommand () {
-        axios({
-            method: 'post',
-            url: '/api/command',
-            params: {
-                command: this.state.rawCommand
-            }
-        }).then(response => {
-            let commandOutput = response.data.output;
-            this.setState({ rawCommand: '' });
-            this.setState({ commandOutput });
-        },
-        err => {
-            console.log('An error occurred contacting the Minecraft server.', err);
-            this.setState({ progressDialogOpen: false });
-        });
+        if (this.state.rawCommand) {
+            axios({
+                method: 'post',
+                url: '/api/command',
+                params: {
+                    command: this.state.rawCommand
+                }
+            }).then(response => {
+                let commandOutput = response.data.output;
+                this.setState({ rawCommand: '' });
+                this.setState({ commandOutput });
+            },
+            err => {
+                console.log('An error occurred contacting the Minecraft server.', err);
+                this.setState({ progressDialogOpen: false });
+            });
+        }
     }
     
     openBackupBeforeNewDialog () {
@@ -224,7 +224,11 @@ export default class WorldControls extends React.Component {
     }
 
     updateRawCommandType (event) {
-        this.setState({ rawCommand: event.target.value });
+        if (event.key === 'Enter') {
+            this.onSendCommand();
+        } else {
+            this.setState({ rawCommand: event.target.value });
+        }
     }
 
     updateRawCommandDialog (command) {
@@ -233,7 +237,7 @@ export default class WorldControls extends React.Component {
 
     render () {
         return (
-            <div>
+            <div style={ styles.container }>
                 <BackupBeforeNewDialog 
                     backupAndNew = { this.backupAndNewMinecraftWorld } 
                     newOnly = { this.newMinecraftWorld }
@@ -255,65 +259,79 @@ export default class WorldControls extends React.Component {
                     onClose = { this.closeRestoreDialog }
                     potentialBackups = { this.state.potentialBackups }
                 />
-                <ExpansionPanel style = { styles.container } defaultExpanded>
-                    <ExpansionPanelSummary expandIcon = { <ExpandMoreIcon /> }>
-                        <Typography variant="subtitle1">
-                            World Controls
-                        </Typography>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
-                        <IconButton onClick = { this.backupMinecraftWorld }>
-                            <Tooltip title = "Backup">
-                                <Backup />
-                            </Tooltip>
-                        </IconButton>
-                        <IconButton onClick = { this.openRestoreDialog } disabled>
-                            <Tooltip title = "Restore">
-                                <Restore />
-                            </Tooltip>
-                        </IconButton>
-                        <IconButton onClick = { this.openBackupBeforeNewDialog }>
-                            <Tooltip title = "New">
-                                <New />
-                            </Tooltip>
-                        </IconButton>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
-                <ExpansionPanel style = { styles.container } defaultExpanded>
-                    <ExpansionPanelSummary expandIcon = {<ExpandMoreIcon />}>
-                        <Typography variant="subtitle1">
-                            Send raw Minecraft command
-                        </Typography>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
-                        <FormControl fullWidth>
-                            <InputLabel htmlFor = "rawCommand">
-                                Enter command. Click the Help icon for a full list of supported commands.
-                            </InputLabel>
-                            <Input id = 'rawCommand' fullWidth value = { this.state.rawCommand } onChange = { this.updateRawCommandType }/>
-                            <Divider />
-                            <ExpansionPanelActions>
-                                <IconButton onClick = { this.openRawCommandDialog }>
-                                    <Tooltip title = "List available Minecraft commands">
-                                        <Help />
-                                    </Tooltip>
-                                </IconButton>
-                                <Button size = "small" onClick = { this.onClearCommand }>Clear</Button>
-                                <Button size = "small" color="primary" onClick = { this.onSendCommand }>Send Command</Button>
-                            </ExpansionPanelActions>
-                            {/* <Divider /> */}
-                            <TextField
-                                label="Command Output"
-                                multiline
-                                rows="4"
-                                margin="normal"
-                                variant="outlined"
-                                value={ this.state.commandOutput }
-                            />
-                            <Button size = "small" onClick = { this.onClearOutput }>Clear</Button>
-                        </FormControl>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
+                <Typography variant="subtitle1">
+                    World Controls
+                </Typography>
+                <Table>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick = { this.backupMinecraftWorld }>
+                                    <Backup />
+                                    Backup World
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick = { this.openRestoreDialog } disabled>
+                                    <Restore />
+                                    Restore World
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick = { this.openBackupBeforeNewDialog }>
+                                    <New />
+                                    New World
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+                <Typography variant="subtitle1">
+                    Send Minecraft Command
+                </Typography>
+                <FormControl fullWidth>
+                    <InputLabel htmlFor = "rawCommand">
+                        Enter command. Click the Help icon for a full list of supported commands.
+                    </InputLabel>
+                    <Input id = 'rawCommand' fullWidth value = { this.state.rawCommand } onChange = { this.updateRawCommandType } onKeyPress = { this.updateRawCommandType }/>
+                    <Divider />
+                </FormControl>
+                <Tooltip title = "List available Minecraft commands">
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick = { this.openRawCommandDialog }>
+                        <Help />
+                    </Button>
+                </Tooltip>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick = { this.onClearCommand }>Clear Command</Button>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={ !this.props.minecraftProperties.started && !this.state.rawCommand === '' }
+                    onClick = { this.onSendCommand }>Send Command</Button>
+                <FormControl fullWidth>
+                    <TextField
+                        label="Command Output"
+                        multiline
+                        rows="6"
+                        margin="normal"
+                        variant="outlined"
+                        value={ this.state.commandOutput }
+                    />
+                </FormControl>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick = { this.onClearOutput }>Clear Output</Button>
             </div>
         );
     }
