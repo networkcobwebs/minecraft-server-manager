@@ -20,6 +20,7 @@ import UpdateAvailable from '@material-ui/icons/AssignmentLate';
 import ActionInProgressDialog from './ActionInProgressDialog.js';
 import ConfirmVersionDialog from './ConfirmVersionDialog.js';
 import ServerProperties from './ServerProperties.js';
+import { Tooltip } from '@material-ui/core';
 
 const styles = {
     container: {
@@ -242,12 +243,14 @@ class ServerControls extends React.Component {
                                 </Select>
                             </TableCell>
                             <TableCell>
-                                <Button 
-                                    disabled = { !minecraftProperties.updateAvailable }
-                                    variant="contained"
-                                    color="primary">
-                                    <UpdateAvailable />
-                                </Button>
+                                { minecraftProperties.updateAvailable ?
+                                    <Tooltip
+                                        title="Update Available">
+                                        <Button>
+                                            <UpdateAvailable />
+                                        </Button>
+                                    </Tooltip> : <div></div>
+                                }
                                 <Button
                                     disabled
                                     variant="contained"
