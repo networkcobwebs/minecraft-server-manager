@@ -1,7 +1,7 @@
 
 # minecraft-server-manager
 
-A web management interface for Minecraft Server.
+A browser-based management interface for Minecraft Server.
 
 Includes:
 
@@ -9,20 +9,20 @@ Includes:
 * a set of web pages for management created using React
 
 Dashboard
-![alt text](doc/screenshots/dashboard.png "Dashboard")
+![Dashboard](doc/screenshots/dashboard.png "Dashboard")
 
 Player Management
-![alt text](doc/screenshots/players.png "Players")
+![Player Management](doc/screenshots/players.png "Players")
 
-World Management
-![alt text](doc/screenshots/world.png "World Controls")
+World Controls
+![World Controls](doc/screenshots/world.png "World Controls")
 
-Server Management
-![alt text](doc/screenshots/server.png "Server Controls")
+Server Controls
+![Server Controls](doc/screenshots/server.png "Server Controls")
 
 ## Requirements
 
-Node.js 8.x or greater LTS release.
+Node.js 10.x or greater LTS release.
 
 ## Installation
 
@@ -46,8 +46,8 @@ script. By default, the web server will run on `localhost` on port 3001.
     pushd minecraft-server-manager && npm run start
 ```
 
-If a Minecraft server executable is not discovered, the latest version will
-be downloaded and used.
+If a Minecraft server executable is not discovered, one can be installed from the
+Server Controls tab.
 
 2. Navigate to your web server's URL: http://localhost:3001
 3. Start the Minecraft server and/or accept the Minecraft end user license
@@ -73,9 +73,9 @@ Current OS testing has been with:
 * Ubuntu 16.04, 18.04
 * CentOS 7
 * OS X Sierra (10.12) and higher
-* Node.js 8.11.3 and Node.js 10.15.0
+* Node.js 10.16.0
 
-That is not to say that it will not run on Windows - it should, but it just has
+That is not to say that it will not run on Windows - it should, but it has
 not been tested.
 
 ## Logging Issues
@@ -94,10 +94,6 @@ PR a bug fix back. We'll add you to the About page if the PR is merged.
 - Accepting the Minecraft end user license agreement (EULA) requires the
 Minecraft server to have been run once.
 - The Restore Backup button of the World Controls is permanently disabled while
-work on that feature continues.
-- Some commands available in the Send Raw Minecraft Command section of the World
-Controls will not work.
-- The Update button of the Server Controls section is permanently disabled while
 work on that feature continues.
 - The Server Properties section of the Server Controls is not editable.
 

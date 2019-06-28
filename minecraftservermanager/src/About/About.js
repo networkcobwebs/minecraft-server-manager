@@ -1,21 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import 'typeface-roboto';
 import Help from '@material-ui/icons/Help';
 import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import TableBody from '@material-ui/core/TableBody';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
-
-const styles = {
-    container: {
-        margin: 10,
-        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-        fontSize: '.95rem'
-    }
-};
+import Typography from '@material-ui/core/Typography';
 
 class About extends React.Component {
     render () {
@@ -24,62 +18,107 @@ class About extends React.Component {
         let mem = minecraftProperties.nodeInfo.mem / GB;
 
         return (
-            <div style={styles.container}>
+            <div>
                 <Table>
                     <TableBody>
                         <TableRow>
-                            <TableCell><a href={ minecraftProperties.eulaUrl }>Minecraft End User License Agreement</a></TableCell>
-                            <TableCell align='right'> </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Contributors</TableCell>
-                            <TableCell> </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>Author</TableCell>
-                            <TableCell align='right'>nickrnet</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>Testing</TableCell>
-                            <TableCell align='right'> </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-                <Table padding='dense'>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>System Information</TableCell>
-                            <TableCell> </TableCell>
-                            <TableCell align='right'> </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>CPU</TableCell>
-                            <TableCell align='right'>
-                                { minecraftProperties.nodeInfo.cpus[0].model + ', ' + minecraftProperties.nodeInfo.cpus.length + ' cores' }
+                            <TableCell>
+                                <Typography variant="h6">
+                                    <a href={ minecraftProperties.eulaUrl } target="_blank" rel="noopener noreferrer">Minecraft End User License Agreement</a>
+                                </Typography>
                             </TableCell>
-                            <TableCell align='right'>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Contributors
+                                </Typography>
+                            </TableCell>
+                            <TableCell> </TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Author
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography>
+                                    nickrnet
+                                </Typography>
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Testing
+                                </Typography>
+                            </TableCell>
+                            <TableCell> </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    System Information
+                                </Typography>
+                            </TableCell>
+                            <TableCell> </TableCell>
+                            <TableCell> </TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    CPU
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography>
+                                    { minecraftProperties.nodeInfo.cpus[0].model + ', ' + minecraftProperties.nodeInfo.cpus.length + ' cores' }
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
                                 <Tooltip title = "Logical CPUs, both physical and virtual">
                                     <Help />
                                 </Tooltip>
                             </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>RAM</TableCell>
-                            <TableCell align='right'>{ mem } GB</TableCell>
-                            <TableCell align='right'> </TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    RAM
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography>
+                                    { mem } GB
+                                </Typography>
+                            </TableCell>
+                            <TableCell> </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>NodeJS Version</TableCell>
-                            <TableCell align='right'>{ minecraftProperties.nodeInfo.version }</TableCell>
-                            <TableCell align='right'> </TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    NodeJS Version
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography>
+                                    { minecraftProperties.nodeInfo.version }
+                                </Typography>
+                            </TableCell>
+                            <TableCell> </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>

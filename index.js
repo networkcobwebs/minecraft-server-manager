@@ -6,6 +6,6 @@ let minecraftApi = new MinecraftApi(minecraftServer);
 
 minecraftApi.start();
 
-process.on('exit', function() {
+process.on('exit', () => {
     minecraftApi.stop();
 });

@@ -2,12 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 
+import 'typeface-roboto';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
 import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
 
 import CheckCircle from '@material-ui/icons/CheckCircle';
 import Error from '@material-ui/icons/Error';
@@ -30,7 +32,7 @@ function formatTime (seconds) {
         m > 9 ? m : '0' + m,
         s > 9 ? s : '0' + s,
     ].filter(s => s).join(':');
-  }
+}
 
 class ServerSummary extends React.Component {
     handleAcceptEula = () => {
@@ -112,9 +114,13 @@ class ServerSummary extends React.Component {
     minecraftVersion () {
         let minecraftProperties = this.props.minecraftProperties;
     
-        if (minecraftProperties && minecraftProperties.detectedVersion) {
+        if (minecraftProperties && minecraftProperties.detectedVersion && minecraftProperties.detectedVersion.major) {
             return (
-                <TableCell>{ minecraftProperties.detectedVersion }</TableCell>
+                <TableCell>
+                    <Typography>
+                        { minecraftProperties.detectedVersion.major + '.' + minecraftProperties.detectedVersion.minor + '.' + minecraftProperties.detectedVersion.release }
+                    </Typography>
+                </TableCell>
             );
         } else {
             return <TableCell></TableCell>;
@@ -129,7 +135,11 @@ class ServerSummary extends React.Component {
         if (minecraftProperties && minecraftProperties.started && minecraftProperties.startTime > 0) {
             uptime = (rightNow - minecraftProperties.startTime)/1000;
             return (
-                <TableCell>{ formatTime(uptime) }</TableCell>
+                <TableCell>
+                    <Typography>
+                        { formatTime(uptime) }
+                    </Typography>
+                </TableCell>
             );
         } else {
             return(
@@ -141,11 +151,17 @@ class ServerSummary extends React.Component {
     render () {
         return (
             <div style={ styles.container }>
-                <h3>Server Information</h3>
-                <Table>
+                <Typography variant="subtitle1">
+                    Server Information
+                </Typography>
+                <Table size="small">
                     <TableBody>
                         <TableRow>
-                            <TableCell>Minecraft Status</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Minecraft Status
+                                </Typography>
+                            </TableCell>
                             <TableCell>
                                 { this.minecraftOnline() }
                             </TableCell>
@@ -154,24 +170,44 @@ class ServerSummary extends React.Component {
                             </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>EULA Accepted</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    EULA Accepted
+                                </Typography>
+                            </TableCell>
                             <TableCell>
                                 { this.minecraftEulaAcceptedStatus() }
                             </TableCell>
                             <TableCell>{ this.props.minecraftProperties.acceptedEula ? <div></div> : this.minecraftAcceptEulaButton() }</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>Minecraft Version</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Minecraft Version
+                                </Typography>
+                            </TableCell>
                             { this.minecraftVersion() }
                             <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>Server Address</TableCell>
-                            <TableCell>{ this.props.ipInfo.address ? this.props.ipInfo.address + ':' + this.props.ipInfo.port : 'Not known.' }</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Server Address
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography>
+                                    { this.props.ipInfo.address ? this.props.ipInfo.address + ':' + this.props.ipInfo.port : 'Not known.' }
+                                </Typography>
+                            </TableCell>
                             <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell>Server Uptime</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Server Uptime
+                                </Typography>
+                            </TableCell>
                             { this.minecraftUptime() }
                             <TableCell></TableCell>
                         </TableRow>

@@ -3,18 +3,9 @@ import React from 'react';
 import axios from 'axios';
 
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import { blue800 } from '@material-ui/core/colors';
-import { blue300 } from '@material-ui/core/colors';
-import { deepOrangeA200 } from '@material-ui/core/colors';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import AppBar from '@material-ui/core/AppBar';
-// import Button from '@material-ui/core/Button';
-// import Dialog from '@material-ui/core/Dialog';
-// import DialogActions from '@material-ui/core/DialogActions';
-// import DialogContent from '@material-ui/core/DialogContent';
-// import DialogContentText from '@material-ui/core/DialogContentText';
-// import DialogTitle from '@material-ui/core/DialogTitle';
 import Snackbar from '@material-ui/core/Snackbar';
 
 import Dashboard from './Dashboard/Dashboard.js';
@@ -25,22 +16,6 @@ import Preferences from './Preferences/Preferences.js';
 import About from './About/About.js';
 
 const debug = false;
-
-const getTheme = () => {
-    const theme = createMuiTheme({
-        "palette": {
-            "primary": blue800,
-            "primary2r": blue300,
-            "accent": deepOrangeA200,
-            "pickerHeader": blue800
-        },
-        "tableRowColumn": {
-            "height": 60
-        }
-    });
-    
-    return theme;
-};
 
 export default class App extends React.Component {
     constructor (props) {
@@ -64,11 +39,34 @@ export default class App extends React.Component {
         this.getMinecraftPlayers = this.getMinecraftPlayers.bind(this);
         this.getMinecraftServerProperties = this.getMinecraftServerProperties.bind(this);
         this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
+        this.startMinecraftStatus = this.startMinecraftStatus.bind(this);
+        this.stopMinecraftStatus = this.stopMinecraftStatus.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.stopMinecraftStatus = this.stopMinecraftStatus.bind(this);
 
-        this.runOnce();
-        this.getMinecraftStatus(25);
+        this.startMinecraftStatus();
+    }
+    
+    getTheme () {
+        const theme = createMuiTheme({
+            "tableRowColumn": {
+                "height": 60
+            },
+            "container": {
+                "margin": 10,
+                "fontFamily": '"Roboto", "Helvetica", "Arial", sans-serif',
+                "fontSize": '0.95rem'
+            },
+            "overrides": {
+                MuiButton: {
+                    root: {
+                        margin: "10px"
+                    }
+                }
+            }
+        });
+        
+        return theme;
     }
 
     componentWillUnmount () {
@@ -82,11 +80,6 @@ export default class App extends React.Component {
         this.setState({ value });
     }
 
-    runOnce () {
-        this.getIpInfo();
-        this.getMinecraftServerProperties();
-    }
-
     getIpInfo () {
         let ipInfo;
 
@@ -97,15 +90,15 @@ export default class App extends React.Component {
     }
 
     getMinecraftStatus (pingWait) {
-        let normalPingTime = 10 * 1000,
+        let normalPingTime = 5 * 1000,
             appendTime = 5 * 1000,
             maxTime = 120 * 1000,
             pingTime;
 
-        // normally ping every 10 seconds
+        // normally ping every 5 seconds
         // if a fast ping was requested (from constructor/DidMount), honor it
-        // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds
-        // once re/successful, reset to 10 seconds
+        // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 60 seconds
+        // once re/successful, reset to 60 seconds
         if (!pingWait) {
             pingTime = normalPingTime;
         } else if (pingWait < 1000) {
@@ -124,18 +117,6 @@ export default class App extends React.Component {
             axios(`/api/status`).then(res => {
                 let minecraftProperties = res.data;
                 this.setState({ minecraftProperties });
-                
-                this.getMinecraftPlayers();
-                // this.getMinecraftServerBannedIps();
-                // this.getMinecraftServerBannedPlayers();
-                // this.getMinecraftServerWhitelist();
-                // this.getMinecraftServerOps();
-                // this.getMinecraftServerUserCache();
-                // this.determinePlayerStates();
-
-                // if (!this.state.minecraftCommands || this.state.minecraftCommands.length === 0) {
-                //     this.getMinecraftCommands();
-                // }
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -146,7 +127,6 @@ export default class App extends React.Component {
                 let minecraftStatus = {};
 
                 this.setState({ minecraftStatus });
-
                 pingTime = pingTime + appendTime;
 
                 if (debug) {
@@ -157,26 +137,6 @@ export default class App extends React.Component {
                 this.getMinecraftStatus(pingTime);
             });
         }, pingTime);
-    }
-
-    stopMinecraftStatus () {
-        if (debug) {
-            console.log('Stopping Minecraft server poller.');
-        }
-
-        // let minecraftStatus = {};
-        // this.setState({ minecraftStatus });
-        
-        let minecraftProperties = {};
-        this.setState({ minecraftProperties });
-
-        if (this.statusTimerId) {
-            clearTimeout(this.statusTimerId);
-        }
-
-        if (this.playersTimerId) {
-            clearTimeout(this.playersTimerId);
-        }
     }
   
     getMinecraftServerProperties () {
@@ -292,12 +252,39 @@ export default class App extends React.Component {
             this.setState({ eulaOpen: false });
         });
     }
+
+    runOnce () {
+        this.getIpInfo();
+        this.getMinecraftServerProperties();
+    }
+
+    startMinecraftStatus () {
+        this.runOnce();
+        this.getMinecraftStatus(25);
+    }
+
+    stopMinecraftStatus () {
+        if (debug) {
+            console.log('Stopping Minecraft server poller.');
+        }
+        
+        // let minecraftProperties = {};
+        // this.setState({ minecraftProperties });
+
+        if (this.statusTimerId) {
+            clearTimeout(this.statusTimerId);
+        }
+
+        if (this.playersTimerId) {
+            clearTimeout(this.playersTimerId);
+        }
+    }
     
     render () {
         let minecraftProperties = this.state.minecraftProperties;
 
         return (
-            <MuiThemeProvider theme={ getTheme() }>
+            <MuiThemeProvider theme={ this.getTheme() }>
                 <AppBar position="static">
                     <Tabs
                         value = { this.state.value }
@@ -314,16 +301,19 @@ export default class App extends React.Component {
                 { this.state.value === 0 && <Dashboard
                     ipInfo = { this.state.ipInfo }
                     minecraftProperties = { minecraftProperties }
-                    playerInfo = { this.state.playerInfo }
                 /> }
                 { this.state.value === 1 && <Players
-                    playerInfo = { this.state.playerInfo }
+                    minecraftProperties = { minecraftProperties }
                 /> }
                 { this.state.value === 2 && <WorldControls
                     minecraftProperties = { minecraftProperties }
+                    startMinecraftStatus = { this.startMinecraftStatus }
+                    stopMinecraftStatus = { this.stopMinecraftStatus }
                 /> }
                 { this.state.value === 3 && <ServerControls
                     minecraftProperties = { minecraftProperties }
+                    startMinecraftStatus = { this.startMinecraftStatus }
+                    stopMinecraftStatus = { this.stopMinecraftStatus }
                 /> }
                 { this.state.value === 4 && <Preferences /> }
                 { this.state.value === 5 && <About
@@ -339,24 +329,6 @@ export default class App extends React.Component {
                     open = { !minecraftProperties.started }
                     message = { <span id="message-id">Minecraft is currently stopped.</span> }
                 />
-                {/* <Dialog
-                    open = { this.state.eulaOpen } >
-                    <DialogTitle>{ "Accept Minecraft End User License Agreement?" }</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            By using this application, you agree to the terms of the Minecraft end user
-                            license agreement, available <a href={ minecraftProperties.eulaUrl }>here</a>.
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick = { this.handleDeclineEula } color="primary">
-                        Disagree
-                        </Button>
-                        <Button onClick = { this.handleAcceptEula } color="primary" autoFocus>
-                        Agree
-                        </Button>
-                    </DialogActions>
-                </Dialog> */}
             </MuiThemeProvider>
         );
     }

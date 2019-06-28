@@ -5,11 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug React in Chrome",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "type": "node",
             "request": "launch",
-            "name": "Minecraft",
+            "name": "Minecraft Server + API",
             "program": "${workspaceFolder}/index.js",
             "env": {"JAVA_HOME": "/opt/java"},
+            "runtimeVersion": "10.16.0",
             "args": []
         },
         {  
@@ -18,7 +26,11 @@
             "name": "React",
             "program": "${workspaceRoot}/minecraftservermanager/node_modules/react-scripts/bin/react-scripts.js",
             "args": ["start"],
-            "cwd": "${workspaceFolder}/minecraftservermanager"
+            "runtimeVersion": "10.16.0",
+            "cwd": "${workspaceFolder}/minecraftservermanager",
+            "env": {
+                "BROWSER": "none"
+            },
         }
     ]
 }

@@ -1,8 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import TableRow from '@material-ui/core/TableRow';
+import 'typeface-roboto';
 import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
+import Typography from '@material-ui/core/Typography';
 
 export default class PlayerListItem extends React.Component {
 
@@ -11,7 +13,11 @@ export default class PlayerListItem extends React.Component {
 
         return (
             <TableRow>
-                <TableCell>{ player.name }</TableCell>
+                <TableCell>
+                    <Typography>
+                        { player.name }
+                    </Typography>
+                </TableCell>
             </TableRow>
         );
     }

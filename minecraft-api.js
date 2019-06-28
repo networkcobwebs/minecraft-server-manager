@@ -14,12 +14,14 @@ let _defaultProperties = {
     ipAddress: '127.0.0.1', // or 0.0.0.0 for all interfaces
     ipPort: 3001,
     minecraftServer: {},
+    minecraftStatusTimerId: 0,
     nodeInfo: {
         cpus: os.cpus(),
         mem: os.totalmem(),
         version: process.version,
     },
-    pathToWeb: 'minecraftservermanager/build'
+    pathToWeb: 'minecraftservermanager/build',
+    pollers: {}
 };
 
 class MinecraftApi {
@@ -31,7 +33,7 @@ class MinecraftApi {
         try {
             let incoming = JSON.stringify(props);
             if (incoming.ipAddress) {
-                // assume valid props
+                // TODO: Validate props. For now, assume valid props.
                 this._properties = props;
             }
         } catch (e) {
@@ -81,9 +83,10 @@ class MinecraftApi {
             app.use(bodyParser.urlencoded({ extended: false }));
             
             // Serve React app @ root
-            // TODO Make the path on disk make sense
+            // TODO Make the path on disk make sense.
             app.use(express.static(path.join(__dirname, pathToWeb)));
-            // Allow browsers to make requests for us
+            // Allow browsers to make requests for us.
+            // TODO: Tighten up the Allow-Origin. Preference in the web app?
             app.use(function(request, response, next) {
                 response.setHeader('Access-Control-Allow-Origin', '*');
                 response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
@@ -92,7 +95,8 @@ class MinecraftApi {
                 next();
             });
 
-            // Trap bad URLs and redirect to '/'
+            // TODO: Trap bad URLs and redirect to '/'.
+            // This seems broken
             // app.get('/*', function (req, res) {
             //     res.sendFile(path.join(__dirname, pathToWeb));
             // });
@@ -107,8 +111,11 @@ class MinecraftApi {
         }
 
         this.connectMinecraftApi = this.connectMinecraftApi.bind(this);
+        this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
+        this.restartMinecraft = this.restartMinecraft.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
+        this.stopPollers = this.stopPollers.bind(this);
     }
 
     connectMinecraftApi () {
@@ -131,12 +138,16 @@ class MinecraftApi {
                 });
             });
             app.get('/api/commands', function (request, response) {
-                minecraftServer.listCommands(0, () => {
-                    response.contentType('json');
-                    response.json({
-                        commands: minecraftProperties.fullHelp
+                response.contentType('json');
+                if (minecraftProperties.started) {
+                    minecraftServer.listCommands(0, () => {
+                        response.json({
+                            commands: minecraftProperties.fullHelp
+                        });
                     });
-                });
+                } else {
+                    response.json({commands: {}});
+                }
             });
             app.get('/api/ipInfo', function (request, response) {
                 let ipInfo = {};
@@ -157,10 +168,8 @@ class MinecraftApi {
                 response.json(ipInfo);
             });
             app.get('/api/playerInfo', function (request, response) {
-                minecraftServer.listPlayers((playerInfo) => {
-                    response.contentType('json');
-                    response.json(playerInfo);
-                });
+                response.contentType('json');
+                response.json(minecraftProperties.playerInfo);
             });
             app.get('/api/listWorldBackups', function (request, response) {
                 response.contentType('json');
@@ -196,7 +205,7 @@ class MinecraftApi {
                     if (debugApi) {
                         console.log(e.stack);
                     }
-                    response.json({response: 'An error occurred'});
+                    response.json({response: 'An error occurred.'});
                 } finally {
                     serverProps = null;
                 }
@@ -232,12 +241,16 @@ class MinecraftApi {
                 let command = request.query.command;
 
                 if (command === '/list') {
-                    minecraftServer.listPlayers((list) => {
-                        response.contentType('json');
-                        response.json({
-                            response: list
+                    response.contentType('json');
+                    if (minecraftProperties.started) {
+                        minecraftServer.listPlayers((list) => {
+                            response.json({
+                                response: list
+                            });
                         });
-                    });
+                    } else {
+                        response.json({response: []});
+                    }
                 } else if (command === '/restoreWorld') {
                     // TODO
                     console.log('Restore world called.');
@@ -246,14 +259,32 @@ class MinecraftApi {
                         output: 'Restore world disabled.'
                     });
                 } else {
-                    minecraftServer.runCommand(command, function (output) {
-                        response.contentType('json');
-                        response.json({
-                            output: output
+                    response.contentType('json');
+                    if (minecraftProperties.started) {
+                        minecraftServer.runCommand(command, function (output) {
+                            response.json({
+                                output: output
+                            });
                         });
-                    });
+                    } else {
+                        response.json({output: {}});
+                    }
                 }
             });
+            app.post('/api/install', [function (request, response, next) {
+                this.stopMinecraft(() => {
+                    minecraftServer.install(request.param('version'), () => {
+                        next();
+                    });
+                });
+            }.bind(this), function (request, response) {
+                this.startMinecraft(() => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'installed'
+                    });
+                });
+            }.bind(this)]);
             app.post('/api/newWorld', function (request, response) {
                 minecraftServer.newWorld(request.param('backup'), () => {
                     response.contentType('json');
@@ -263,34 +294,87 @@ class MinecraftApi {
                 });
             });
             app.post('/api/restart', function (request, response) {
-                minecraftServer.stop(() => {
-                    minecraftServer.start(() => {
-                        response.contentType('json');
-                        response.json({
-                            response: 'restarted'
-                        });
+                this.restartMinecraft(() => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'restarted'
                     });
                 });
-            });
+            }.bind(this));
             app.post('/api/start', function (request, response) {
-                minecraftServer.start(() => {
+                this.startMinecraft(() => {
                     response.contentType('json');
                     response.json({
                         response: 'started'
                     });
                 });
-            });
+            }.bind(this));
             app.post('/api/stop', function (request, response) {
-                minecraftServer.stop(() => {
+                this.stopMinecraft(function () {
                     response.contentType('json');
                     response.json({
                         response: 'stopped'
                     });
                 });
-            });
+            }.bind(this));
         } else {
             console.log('MinecraftServer not operational... ignoring MinecraftServer API requests.');
         }
+    }
+
+    getMinecraftStatus (pingWait) {
+        let normalPingTime = 10 * 1000,
+            appendTime = 5 * 1000,
+            maxTime = 120 * 1000,
+            pingTime;
+
+        // Normally ping every 10 seconds.
+        // If a fast ping was requested (from constructor/DidMount), honor it.
+        // Once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds.
+        // Once trouble fixed/successful, reset to 10 seconds.
+        if (!pingWait) {
+            pingTime = normalPingTime;
+        } else if (pingWait < 1000) {
+            pingTime = pingWait;
+        } else if (pingWait > maxTime) {
+            pingTime = normalPingTime;
+        } else {
+            pingTime = pingWait;
+        }
+
+        if (this.properties.pollers.minecraftStatusTimerId) {
+            clearTimeout(this.properties.pollers.minecraftStatusTimerId);
+        }
+
+        this.properties.pollers.minecraftStatusTimerId = setTimeout(() => {
+            if (this.minecraftServer.properties.installed) {
+                pingTime = normalPingTime;
+                this.minecraftServer.updateStatus(() => {
+                    if (debugApi) {
+                        console.log('Got Minecraft status:');
+                        console.log(this.minecraftServer.properties);
+                    }
+    
+                    if (debugApi) {
+                        console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
+                    }
+                    this.getMinecraftStatus(pingTime);
+                });
+            } else {
+                pingTime = pingTime + appendTime;
+                this.getMinecraftStatus(pingTime);
+            }
+        }, pingTime);
+    }
+
+    restartMinecraft (callback) {
+        this.stopMinecraft(() => {
+            this.startMinecraft(() => {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+        });
     }
 
     start () {
@@ -300,16 +384,6 @@ class MinecraftApi {
             app = properties.app,
             minecraftServer = properties.minecraftServer;
 
-
-
-        // this.properties.ipAddress = require('underscore')
-        //     .chain(require('os').networkInterfaces())
-        //     .values()
-        //     .flatten()
-        //     .find({family: 'IPv4', internal: false})
-        //     .value()
-        //     .address;
-
         this.connectMinecraftApi();
 
         app.listen(properties.ipPort, properties.ipAddress, function () {
@@ -317,7 +391,7 @@ class MinecraftApi {
             console.info('Web application running at ' + url);
         });
         
-        // TODO - these appear to be broken. determine if need fixing. Might for SSL EVERYWHERE.
+        // TODO: These appear to be broken. Determine if need fixing (might for SSL-everywhere).
         // http.createServer(app).listen(8080, properties.ipAddress, function () {
         //     let url = 'http://' + this.address().address + ':' + this.address().port;
         //     console.log('Web application running at ' + url);
@@ -327,15 +401,29 @@ class MinecraftApi {
         //     console.log('Web application running at ' + url);
         // });
         
-        // TODO Make starting Minecraft Server a preference, and check EULA?
+        // TODO: Make starting Minecraft Server a preference, and check EULA?
         // if (minecraftServer.properties.acceptedEula) {
         //     minecraftServer.start();
         // } else {
         //     console.log('Minecraft EULA not accepted yet.');
         // }
-        minecraftServer.start();
+        if (minecraftServer.properties.installed) {
+            this.startMinecraft();
+        }
 
         console.info('MinecraftApi started.');
+    }
+
+    startMinecraft (callback) {
+        let properties = this.properties,
+            minecraftServer = properties.minecraftServer;
+
+        minecraftServer.start(() => {
+            this.getMinecraftStatus(100);
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
     }
 
     stop () {
@@ -343,218 +431,36 @@ class MinecraftApi {
         
         let properties = this.properties,
             minecraftServer = properties.minecraftServer;
-        
+
+            
         if (minecraftServer.properties.started) {
             minecraftServer.stop(() => {
                 console.log('MinecraftServer stopped.');
-                properties.minecraftServer = null;
+                this.stopPollers();
             });
         }
         console.log('MinecraftApi stopped.');
     }
+
+    stopMinecraft (callback) {
+        let properties = this.properties,
+            minecraftServer = properties.minecraftServer;
+
+        this.stopPollers();
+        minecraftServer.stop(() => {
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
+    }
+
+    stopPollers () {
+        let properties = this.properties;
+
+        if (properties.pollers.minecraftStatusTimerId) {
+            clearTimeout(properties.pollers.minecraftStatusTimerId);
+        }
+    }
 }
 
 module.exports = MinecraftApi;
-
-// TODO Refactor these up^ there but after minecraft-server refactor.
-
-// app.get('/api/command', function (request, response) {
-//     let command = request.query.command;
-    
-//     if (command === '/list') {
-//         if (minecraftStarted) {
-//             // buffer output for a quarter of a second, then reply to HTTP request
-//             let buffer = [],
-//                 collector = function (data) {
-//                     data = data.toString();
-//                     buffer.push(data);
-//                 };
-
-//             minecraftServerProcess.stdout.removeListener('data', collector);
-//             minecraftServerProcess.stdout.on('data', collector);
-
-//             try {
-//                 minecraftServerProcess.stdin.write(command + '\n');
-//             }
-//             catch (e) {
-//                 debugger;
-//             }
-//             finally {
-//                 // Delay for a bit, then send a response with the latest server output
-//                 setTimeout(function () {
-//                     minecraftServerProcess.stdout.removeListener('data', collector);
-//                     // respond with the output of the Minecraft server
-//                     // TODO: Make this update a web element on the page
-//                     response.contentType('json');
-//                     response.json({
-//                         response: buffer.join('')
-//                     });
-//                 }, 250);
-//             }
-
-//         } else {
-//             response.contentType('json');
-//             response.json({
-//                 response: 'Minecraft server not running.'
-//             });
-//         }
-//     }
-// });
-
-// app.post('/api/acceptEula', function(request, response) {    
-//     acceptEula();
-    
-//     startMinecraft(() => {
-//         let rightNow = Date.now(),
-//             uptime = rightNow - startTime,
-//             mcuptime = minecraftStartTime? rightNow - minecraftStartTime : null;
-
-//         listMinecraftCommands(0);
-
-//         response.contentType('json');
-//         response.json({
-//             minecraftOnline: minecraftStarted,
-//             minecraftUptime: mcuptime,
-//             minecraftVersion: minecraftCurrentVersion,
-//             minecraftAcceptedEula: minecraftAcceptedEula,
-//             minecraftEulaUrl: minecraftEulaUrl,
-//             uptime: uptime
-//         });
-//     });
-// });
-
-// // Handle Minecraft Server Command requests
-// app.post('/api/command', function(request, response) {
-//     // TODO: Cancel processing if the message was not sent by an admin/allowed address
-//     // if (request.param('From') !==  ADMIN ){
-//     //     response.status(403).send('you are not an admin :(');
-//     //     return;
-//     // }
-//     let command = request.query,
-//         worldName, backupToo;
-
-//     if (command.command) {
-//         command = command.command;
-
-//         // TODO: Some commands should only be available to app admins, some only to ops, etc.etc.
-//         // TODO: This means we need a permissions model
-//         //     linked between this server and the webapp making these requests - oof.
-
-//         if (command === '/start') {
-//             if (!minecraftStarted) {
-//                 startMinecraft(() => {
-//                     response.contentType('json');
-//                     response.json({
-//                         minecraftOnline: true
-//                     });
-//                 });
-//             } else {
-//                 response.contentType('json');
-//                 response.json({
-//                     response: 'Server already running.'
-//                 });
-//             }
-//         } else if (command === '/stop') {
-//             stopMinecraft(() => {
-//                 response.contentType('json');
-//                 response.json({
-//                     minecraftOnline: false
-//                 });
-//             });
-//         } else if (command === '/backupWorld') {
-//             worldName = request.query.worldName || 'world';
-            
-//             backupWorld(worldName);
-//             response.contentType('json');
-//             response.json({
-//                 response: 'World backup complete.'
-//             });
-//         } else if (command === '/newWorld') {
-//             console.log('Gonna nuke the planet. Literally.');
-//             worldName = request.query.worldName || 'world';
-//             backupToo = request.query.backup || false;
-//             if (minecraftStarted) {
-//                 stopMinecraft(() => {
-//                     deleteWorld(worldName, backupToo);
-//                     startMinecraft(() => {
-//                         // Starting Minecraft will create a new world by default, so respond to the command accordingly
-//                         response.contentType('json');
-//                         response.json({
-//                             response: 'New world created.'
-//                         });
-//                     });
-//                 });
-//             } else {
-//                 deleteWorld(worldName, backupToo);
-
-//                 response.contentType('json');
-//                 response.json({
-//                     response: 'New world will be created at startup.'
-//                 });
-//             }
-//         } else if (command === '/restoreWorld') {
-//             console.log('Gonna restore a world now.');
-//             // worldName = request.query.worldName || 'world';
-//             // backupName = request.query.backupFile;
-//             // backupToo = request.query.backup || false;
-//             // if (minecraftStarted) {
-//             //     stopMinecraft(() => {
-//             //         deleteWorld(worldName, backupToo);
-//             //         restoreWorld(backupName); // TODO handle world renames too!
-//             //         startMinecraft(() => {
-//             //             response.contentType('json');
-//             //             response.json({
-//             //                 response: 'World restored.'
-//             //             });
-//             //         });
-//             //     });
-//             // } else {
-//             //     deleteWorld(worldName, backupToo);
-//             //     restoreWorld(backupName); // TODO handle world renames too!
-//             //     response.contentType('json');
-//             //     response.json({
-//             //         response: 'New world will be created at startup.'
-//             //     });
-//             // }
-//             response.contentType('json');
-//             response.json({
-//                 response: 'World restored.'
-//             });
-//         } else {
-//             if (minecraftStarted) {
-//                 // buffer output for a quarter of a second, then reply to HTTP request
-//                 let buffer = [],
-//                     collector = function (data) {
-//                         data = data.toString();
-//                         buffer.push(data);
-//                     };
-    
-//                 minecraftServerProcess.stdout.removeListener('data', collector);
-//                 minecraftServerProcess.stdout.on('data', collector);
-//                 minecraftServerProcess.stdin.write(command + '\n');
-    
-//                 // Delay for a bit, then send a response with the latest server output
-//                 setTimeout(function () {
-//                     minecraftServerProcess.stdout.removeListener('data', collector);
-//                     // respond with the output of the Minecraft server
-//                     // TODO: Make this update a web element on the page
-//                     response.contentType('json');
-//                     response.json({
-//                         response: buffer.join('')
-//                     });
-//                 }, 250);
-//             } else {
-//                 response.contentType('json');
-//                 response.json({
-//                     response: 'Minecraft server not running.'
-//                 });
-//             }
-//         }
-//     } else {
-//         console.log('Got command with nothing to do.');
-//         response.contentType('json');
-//         response.json({
-//             response: 'Invalid command'
-//         });
-//     }
-// });

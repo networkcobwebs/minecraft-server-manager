@@ -3,11 +3,13 @@ import PropTypes from 'prop-types';
 
 import axios from 'axios';
 
+import 'typeface-roboto';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
+import Typography from '@material-ui/core/Typography';
 
 import PlayerListItem from './PlayerListItem';
 
@@ -203,30 +205,38 @@ export default class Players extends React.Component {
     }
 
     render () {
-        let playerInfo;
-        if (this.props.playerInfo) {
-            playerInfo = this.props.playerInfo;
-        } else {
-            playerInfo = { summary: '', players: [] };
-        }
-        let summary = playerInfo.summary,
+        let minecraftProperties = this.props.minecraftProperties;
+        let playerInfo = minecraftProperties.playerInfo;
+        let players = [];
+        let summary = '';
+        if (playerInfo.players) {
+            summary = playerInfo.summary;
             players = playerInfo.players;
+        }
         
         return (
             <div style = { styles.container }>
+                <Typography variant="subtitle1">
+                    { summary ? summary : 'Waiting on Minecraft server...' }
+                </Typography>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>{ summary ? summary : 'Waiting on Minecraft server...' }</TableCell>
-                        </TableRow>
-                    </TableHead>
-                </Table>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Player</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Actions</TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Player
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Status
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Actions
+                                </Typography>
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -239,5 +249,5 @@ export default class Players extends React.Component {
 }
 
 Players.propTypes = {
-    playerInfo: PropTypes.object.isRequired
+    minecraftProperties: PropTypes.object.isRequired
 };
