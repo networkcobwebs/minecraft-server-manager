@@ -2,6 +2,7 @@
 const archiver = require('archiver');
 const exec = require('child_process').exec;
 const fs = require('fs-extra');
+const FS = fs.constants;
 const https = require('https');
 const os = require('os');
 const path = require('path');
@@ -255,7 +256,7 @@ class MinecraftServer {
         fs.ensureDirSync(backupDir);
 
         try {
-            fs.accessSync(backupDir, fs.F_OK | fs.R_OK | fs.W_OK);
+            fs.accessSync(backupDir, FS.F_OK | FS.R_OK | FS.W_OK);
 
             archive = archiver('zip', {
                 zlib: { level: 9 } // Sets the compression level.
@@ -309,7 +310,7 @@ class MinecraftServer {
             directoryFound = false;
 
         try {
-            fs.accessSync(pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
+            fs.accessSync(pathToMinecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK);
             directoryFound = true;
             console.log('Minecraft server directory exists.');
         } catch (e) {
@@ -560,7 +561,7 @@ class MinecraftServer {
         let properties = this.properties;
 
         try {
-            fs.accessSync(properties.pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
+            fs.accessSync(properties.pathToMinecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK);
             console.log('Found MinecraftServer directory.');
         } catch (e) {
             console.log('MinecraftServer directory does not exist.');
@@ -1300,7 +1301,7 @@ class MinecraftServer {
             this.backupWorld(() => {
                 try {
                     fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                        fs.F_OK | fs.R_OK | fs.W_OK);
+                        FS.F_OK | FS.R_OK | FS.W_OK);
 
                     console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
                     fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
@@ -1319,7 +1320,7 @@ class MinecraftServer {
         } else {
             try {
                 fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                    fs.F_OK | fs.R_OK | fs.W_OK);
+                    FS.F_OK | FS.R_OK | FS.W_OK);
 
                 console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
                 fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
@@ -1513,7 +1514,7 @@ class MinecraftServer {
                             clearTimeout(startedTimer);
                         }
                         try {
-                            fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
+                            fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, FS.F_OK | FS.R_OK | FS.W_OK);
                             // TODO: Make the Java + args configurable
                             serverProcess = properties.serverProcess = spawn(java, [
                                 '-Xmx1G',
