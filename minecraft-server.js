@@ -25,6 +25,7 @@ let defaultProperties = {
     installedVersions: [],
     ipAddress: '',
     javaHome: '',
+    javaPath: '',
     needsInstallation: true,
     ops: [],
     osType: os.type(),
@@ -511,41 +512,44 @@ class MinecraftServer {
             }
         });
     }
-
+    /**
+     * Grabs and stores the home directory of the java executable found in PATH
+     * @param  {Function=} callback Called once path has been successfully found
+     */
     detectJavaHome (callback) {
         if (debugMinecraftServer) {
-            console.log('Detecting Java...');
+            console.log('Detecting Java home path...');
         }
         let properties = this.properties;
-        let osType = properties.osType;
-
-        if (osType.indexOf('Windows') !== -1) {
-            // do Windows related things
-            // set javaHome from Windows? LOTS OF POTENTIAL PLACES
-        } else if (osType.indexOf('Linux') !== -1) {
-            // do Linux related things
-            // set javaHome from profile? bash_profile? bash_rc? TOO MANY PLACES
-        } else if (osType.indexOf('Darwin') !== -1) {
-            // do Mac related things
-            exec('/usr/libexec/java_home', (err, stdout, stderr) => {
-                if (err) {
-                    console.log('Could not set JAVA_HOME. Make sure Java is properly installed.');
-                    console.log(stderr);
-                    throw err;
-                } else {
-                    properties.javaHome = stdout.trim();
-                    if (debugMinecraftServer) {
-                        console.log('Using java from', properties.javaHome);
-                    }
-                }
-                if (typeof callback === 'function') {
-                    callback();
-                }
+        // Requst javas internal properties, that are printed to 'stderror'
+        exec('java -XshowSettings:properties -version', (error, stdout, stderr) => {
+            if (error) {
+                console.log('Could not find the java executable. Make sure Java is properly installed.');
+                console.log(stderr);
+                throw error;
+            } else {
+                // RegExp that matches the line 'java.home = [path_to_home]'
+                const javaHomeRegExp = /^\s*java.home/;
+                // Finds and normalizes the java home path
+                properties.javaHome = path.normalize(stderr
+                    // Loop through lines as an array
+                    .split(os.EOL)
+                    // Find the first line that matches our regexp
+                    .find(line => javaHomeRegExp.test(line))
+                    // Split the line in two and return the path
+                    .split(/\s*=\s*/)[1]);
+                properties.javaPath = path.join(properties.javaHome, 'bin', 'java');
                 if (debugMinecraftServer) {
-                    console.log('Done detecting Java.');
+                    console.log(`Using java from ${properties.javaPath}`);
                 }
-            });
-        }
+            }
+            if (debugMinecraftServer) {
+                console.log('Done detecting Java home path.');
+            }
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
     }
 
     detectMinecraftDir () {
@@ -1494,8 +1498,7 @@ class MinecraftServer {
                 console.info('Starting MinecraftServer...');
 
                 let properties = this.properties;
-                let javaHome = properties.javaHome;
-                let java = javaHome + '/bin/java';
+                let javaPath = properties.javaPath;
                 let pathToMinecraftDirectory = properties.pathToMinecraftDirectory;
                 let serverJar = properties.serverJar;
                 let serverOutput = properties.serverOutput;
@@ -1504,7 +1507,7 @@ class MinecraftServer {
                 let startedTimer = properties.startedTimer;
                 let starting = properties.starting;
 
-                if (javaHome) {
+                if (javaPath) {
                     if (!serverOutputCaptured && !starting) {
                         if (startedTimer) {
                             clearTimeout(startedTimer);
@@ -1512,7 +1515,7 @@ class MinecraftServer {
                         try {
                             fs.accessSync(path.join(pathToMinecraftDirectory, serverJar), FS.F_OK | FS.R_OK | FS.W_OK);
                             // TODO: Make the Java + args configurable
-                            serverProcess = properties.serverProcess = spawn(java, [
+                            serverProcess = properties.serverProcess = spawn(javaPath, [
                                 '-Xmx1G',
                                 '-Xms1G',
                                 '-jar',
