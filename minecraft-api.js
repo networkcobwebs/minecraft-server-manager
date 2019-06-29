@@ -8,6 +8,16 @@ const path = require('path');
 const MinecraftServer = require('./minecraft-server.js');
 
 const debugApi = false;
+/**
+ * If enabled prints out given messages
+ * @param  {string} message
+ */
+const debugMsg = (message) => {
+    const enabled = false;
+    if (enabled) {
+        console.log(`[DEBUG]: ${message}`);
+    }
+}
 
 let _defaultProperties = {
     app: {},
@@ -74,14 +84,14 @@ class MinecraftApi {
         }
 
         let app = this.properties.app;
-        
+
         if (!app.length) {
             if (!pathToWeb) {
                 pathToWeb = this.properties.pathToWeb;
             }
             app = express();
             app.use(bodyParser.urlencoded({ extended: false }));
-            
+
             // Serve React app @ root
             // TODO Make the path on disk make sense.
             app.use(express.static(path.join(__dirname, pathToWeb)));
@@ -100,10 +110,10 @@ class MinecraftApi {
             // app.get('/*', function (req, res) {
             //     res.sendFile(path.join(__dirname, pathToWeb));
             // });
-            
+
             this.properties.app = app;
         }
-        
+
         if (minecraftServer) {
             this.properties.minecraftServer = minecraftServer;
         } else {
@@ -195,7 +205,7 @@ class MinecraftApi {
                 serverProps.serverProcess = {};
                 serverProps.startedTimer = {};
                 serverProps.nodeInfo = properties.nodeInfo;
-                
+
                 response.contentType('json');
                 try {
                     JSON.stringify(serverProps);
@@ -354,7 +364,7 @@ class MinecraftApi {
                         console.log('Got Minecraft status:');
                         console.log(this.minecraftServer.properties);
                     }
-    
+
                     if (debugApi) {
                         console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
                     }
@@ -379,7 +389,7 @@ class MinecraftApi {
 
     start () {
         console.info('Starting MinecraftApi...');
-        
+
         let properties = this.properties,
             app = properties.app,
             minecraftServer = properties.minecraftServer;
@@ -390,7 +400,7 @@ class MinecraftApi {
             let url = 'http://' + this.address().address + ':' + this.address().port + '/';
             console.info('Web application running at ' + url);
         });
-        
+
         // TODO: These appear to be broken. Determine if need fixing (might for SSL-everywhere).
         // http.createServer(app).listen(8080, properties.ipAddress, function () {
         //     let url = 'http://' + this.address().address + ':' + this.address().port;
@@ -400,7 +410,7 @@ class MinecraftApi {
         //     let url = 'https://' + this.address().address + ':' + this.address().port;
         //     console.log('Web application running at ' + url);
         // });
-        
+
         // TODO: Make starting Minecraft Server a preference, and check EULA?
         // if (minecraftServer.properties.acceptedEula) {
         //     minecraftServer.start();
@@ -428,11 +438,11 @@ class MinecraftApi {
 
     stop () {
         console.log('Stopping MinecraftApi...');
-        
+
         let properties = this.properties,
             minecraftServer = properties.minecraftServer;
 
-            
+
         if (minecraftServer.properties.started) {
             minecraftServer.stop(() => {
                 console.log('MinecraftServer stopped.');
