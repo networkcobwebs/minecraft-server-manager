@@ -7,7 +7,6 @@ const path = require('path');
 
 const MinecraftServer = require('./minecraft-server.js');
 
-const debugApi = false;
 /**
  * If enabled prints out given messages
  * @param  {string} message
@@ -48,9 +47,8 @@ class MinecraftApi {
             }
         } catch (e) {
             console.log('Something was wrong with the properties passed.');
-            if (debugApi) {
-                console.log(e.stack);
-            }
+            // DEBUG
+            debugMsg(`${e}`);
         }
     }
 
@@ -212,9 +210,8 @@ class MinecraftApi {
                     response.json(serverProps);
                 } catch (e) {
                     console.log('Got error from Minecraft properties.');
-                    if (debugApi) {
-                        console.log(e.stack);
-                    }
+                    // DEBUG
+                    debugMsg(`${e}`);
                     response.json({response: 'An error occurred.'});
                 } finally {
                     serverProps = null;
@@ -360,14 +357,11 @@ class MinecraftApi {
             if (this.minecraftServer.properties.installed) {
                 pingTime = normalPingTime;
                 this.minecraftServer.updateStatus(() => {
-                    if (debugApi) {
-                        console.log('Got Minecraft status:');
-                        console.log(this.minecraftServer.properties);
-                    }
-
-                    if (debugApi) {
-                        console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
-                    }
+                    // DEBUG
+                    debugMsg(`Got Minecraft status:
+                        ${this.minecraftServer.properties}`);
+                    debugMsg(`Setting Minecraft status poller to run in '${pingTime / 1000}' seconds.`);
+                    
                     this.getMinecraftStatus(pingTime);
                 });
             } else {
