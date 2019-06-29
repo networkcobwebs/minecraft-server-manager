@@ -7,7 +7,6 @@ const os = require('os');
 const path = require('path');
 const spawn = require('child_process').spawn;
 
-const debugMinecraftServer = false;
 /**
  * If enabled prints out given messages
  * @param  {string} message
@@ -61,9 +60,9 @@ let defaultProperties = {
 
 // Convert name=value properties to JSON
 function convertPropertiesToObjects (props) {
-    if (debugMinecraftServer) {
-        console.log('Converting properties', props, 'to object.');
-    }
+    // DEBUG
+    debugMsg(`Converting properties to an object:
+        ${props}`);
 
     let properties = [],
         incomingProperties = props.split(/\n/),
@@ -83,11 +82,9 @@ function convertPropertiesToObjects (props) {
             }
         }
     }
-
-    if (debugMinecraftServer) {
-        console.log('Converted to:');
-        console.log(properties);
-    }
+    // DEBUG
+    debugMsg(`Done converting properties:
+        ${properties}`);
 
     return properties;
 }
@@ -179,9 +176,8 @@ class MinecraftServer {
     }
 
     acceptEula () {
-        if (debugMinecraftServer) {
-            console.log('Checking and accepting MinecraftServer EULA...');
-        }
+        // DEBUG
+        debugMsg(`Accepting Minecraft Server EULA...`);
 
         let properties = this.properties;
         let eula;
@@ -201,9 +197,9 @@ class MinecraftServer {
                     }
                 }
             } catch (e) {
-                if (debugMinecraftServer) {
-                    console.log('Failed to read eula.txt:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read Minecraft Server EULA:
+                    ${e}`);
             }
 
             // write the eula.txt file
@@ -215,12 +211,13 @@ class MinecraftServer {
                 properties.acceptedEula = true;
             });
         }
+        // DEBUG
+        debugMsg(`Done accepting Minecraft Server EULA...`);
     }
 
     backupWorld (worldName, callback) {
-        if (debugMinecraftServer) {
-            console.log('Backing up MinecraftServer world...');
-        }
+        // DEBUG
+        debugMsg(`Backing up world '${worldName}'...`);
 
         if (typeof worldName === 'function') {
             callback = worldName;
@@ -275,6 +272,8 @@ class MinecraftServer {
             fs.ensureDirSync(backupDir);
             output.close();
         }
+        // DEBUG
+        debugMsg(`Done backing up world '${worldName}'.`);
     }
 
     bufferMinecraftOutput (data) {
@@ -282,9 +281,8 @@ class MinecraftServer {
     }
 
     checkForMinecraftInstallation () {
-        if (debugMinecraftServer) {
-            console.log('Checking for MinecraftServer installation...');
-        }
+        // DEBUG
+        debugMsg(`Checking for Minecraft Server installation...`);
 
         let properties = this.properties,
             pathToMinecraftDirectory = properties.pathToMinecraftDirectory,
@@ -303,16 +301,13 @@ class MinecraftServer {
         if (directoryFound) {
             this.detectMinecraftJar();
         }
-
-        if (debugMinecraftServer) {
-            console.log('Done checking for MinecraftServer installation.');
-        }
+        // DEBUG
+        debugMsg(`Done checking for Minecraft Server installation.`);
     }
 
     checkForMinecraftToBeStarted (checkCount, callback) {
-        // if (debugMinecraftServer) {
-        //     console.log('Checking for MinecraftServer process to be started ('+ checkCount +')...');
-        // }
+        // DEBUG
+        //debugMsg(`Checking for Minecraft Server process to be started (${checkCount})...`);
 
         let properties = this.properties;
         let threshold = 1000;
@@ -404,9 +399,8 @@ class MinecraftServer {
     }
 
     checkForMinecraftToBeStopped (checkCount, callback) {
-        if (debugMinecraftServer) {
-            console.log('Checking for MinecraftServer process to be stopped('+ checkCount +')...');
-        }
+        // DEBUG
+        //debugMsg(`Checking for Minecraft Server process to be stopped (${checkCount})...`);
 
         let properties = this.properties;
         let threshold = 1000;
@@ -451,9 +445,8 @@ class MinecraftServer {
     }
 
     checkForMinecraftUpdate () {
-        if (debugMinecraftServer) {
-            console.log('Checking for Minecraft server update...');
-        }
+        // DEBUG
+        debugMsg(`Checking for Minecraft Server update...`);
 
         let detectedVersion = this.properties.detectedVersion;
         let release = {major: '', minor: '', release: '', full: ''};
@@ -485,17 +478,14 @@ class MinecraftServer {
                     }
                 }
             }
-
-            if (debugMinecraftServer) {
-                console.log('Done checking for Minecraft server update.');
-            }
+            // DEBUG
+            debugMsg(`Done checking for Minecraft Server update.`);
         });
     }
 
     detectJavaHome (callback) {
-        if (debugMinecraftServer) {
-            console.log('Detecting Java...');
-        }
+        // DEBUG
+        debugMsg(`Detecting path to the default Java executable...`);
         let properties = this.properties;
         let osType = properties.osType;
 
@@ -514,25 +504,21 @@ class MinecraftServer {
                     throw err;
                 } else {
                     properties.javaHome = stdout.trim();
-                    if (debugMinecraftServer) {
-                        console.log('Using java from', properties.javaHome);
-                    }
+                    // DEBUG
+                    debugMsg(`Using java from ${properties.javaHome}`);
                 }
                 if (typeof callback === 'function') {
                     callback();
                 }
-                if (debugMinecraftServer) {
-                    console.log('Done detecting Java.');
-                }
+                // DEBUG
+                debugMsg(`Done detecting path to the default Java executable.`);
             });
         }
     }
 
     detectMinecraftDir () {
-        // find the Minecraft server directory
-        if (debugMinecraftServer) {
-            console.log('Detecting MinecraftServer directory...');
-        }
+        // DEBUG
+        debugMsg(`Detecting Minecraft Server directory...`);
 
         let properties = this.properties;
 
@@ -541,22 +527,19 @@ class MinecraftServer {
             console.log('Found MinecraftServer directory.');
         } catch (e) {
             console.log('MinecraftServer directory does not exist.');
-            if (debugMinecraftServer) {
-                console.log('An error occurred reading the Minecraft server directory:', e.stack);
-            }
+            // DEBUG
+            debugMsg(`An error occurred accessing the Minecraft server directory:
+                ${e}`);
         }
-
-        if (debugMinecraftServer) {
-            console.log('Done detecting MinecraftServer directory.');
-        }
+        // DEBUG
+        debugMsg(`Done detecting Minecraft Server directory.`);
     }
 
     detectMinecraftJar () {
         // find the server.jar to run.
         // We download versions and name them {release}_minecraft_server.jar in the install function.
-        if (debugMinecraftServer) {
-            console.log('Detecting MinecraftServer jar...');
-        }
+        // DEBUG
+        debugMsg(`Detecting Minecraft Server jar...`);
 
         let properties = this.properties;
         let minecraftFiles = [];
@@ -580,9 +563,8 @@ class MinecraftServer {
         } catch (e) {
             console.log('MinecraftServer not installed.');
             properties.installed = false;
-            if (debugMinecraftServer) {
-                console.log(e.stack);
-            }
+            // DEBUG
+            debugMsg(`${e}`);
         }
 
         if (properties.installedVersions && !properties.installed) {
@@ -590,16 +572,13 @@ class MinecraftServer {
             properties.installed = false;
             properties.needsInstallation = true;
         }
-
-        if (debugMinecraftServer) {
-            console.log('Done detecting MinecraftServer jar.');
-        }
+        // DEBUG
+        debugMsg(`Done detecting Minecraft Server jar.`);
     }
 
     determineBanStatus (player) {
-        if (debugMinecraftServer) {
-            console.log('Determining ban status for player:', player.name);
-        }
+        // DEBUG
+        debugMsg(`Determine ban status for player: ${player.name}`);
 
         let properties = this.properties;
         let banned = false;
@@ -612,14 +591,15 @@ class MinecraftServer {
                 }
             }
         }
+        // DEBUG
+        debugMsg(`Player '${player.name}' is banned: ${banned}`);
 
         return banned;
     }
 
     determineOpStatus (player) {
-        if (debugMinecraftServer) {
-            console.log('Determining op status for player:', player.name);
-        }
+        // DEBUG
+        debugMsg(`Determine op status for player: ${player.name}`);
 
         let properties = this.properties;
         let op = false;
@@ -632,14 +612,15 @@ class MinecraftServer {
                 }
             }
         }
+        // DEBUG
+        debugMsg(`Player '${player.name}' is opped: ${op}`);
 
         return op;
     }
 
     determineWhitelistStatus (player) {
-        if (debugMinecraftServer) {
-            console.log('Determining whitelist status for player:', player.name);
-        }
+        // DEBUG
+        debugMsg(`Determine whitelist status for player: ${player.name}`);
 
         let properties = this.properties;
         let whitelisted = false;
@@ -652,11 +633,16 @@ class MinecraftServer {
                 }
             }
         }
+        // DEBUG
+        debugMsg(`Player '${player.name}' is whitelisted: ${whitelisted}`);
 
         return whitelisted;
     }
 
     downloadRelease (version, callback) {
+        // DEBUG
+        debugMsg(`Downloading version '${version}' of Minecraft Server...`);
+
         let minecraftVersionInfo = [],
             properties = this.properties,
             pathToMinecraftDirectory = properties.pathToMinecraftDirectory,
@@ -712,17 +698,16 @@ class MinecraftServer {
         let properties = this.properties;
 
         if (properties.eulaFound) {
-            if (debugMinecraftServer) {
-                console.log('Getting MinecraftServer banned IPs...');
-            }
+            // DEBUG
+            debugMsg(`Getting Minecraft Server banned IPs...`);
 
             try {
                 properties.bannedIps = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-ips.json', 'utf8'));
             } catch (e) {
                 properties.bannedIps = [];
-                if (debugMinecraftServer) {
-                    console.log('Failed to read banned-ips.json:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read banned-ips.json:
+                    ${e}`);
             }
         }
     }
@@ -731,17 +716,16 @@ class MinecraftServer {
         let properties = this.properties;
 
         if (properties.eulaFound) {
-            if (debugMinecraftServer) {
-                console.log('Getting MinecraftServer banned players...');
-            }
+            // DEBUG
+            debugMsg(`Getting Minecraft Server banned players...`);
 
             try {
                 properties.bannedPlayers = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-players.json', 'utf8'));
             } catch (e) {
                 properties.bannedPlayers = [];
-                if (debugMinecraftServer) {
-                    console.log('Failed to read banned-players.json:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read banned-players.json:
+                    ${e}`);
             }
         }
     }
@@ -785,19 +769,16 @@ class MinecraftServer {
     }
 
     getEula () {
-        if (debugMinecraftServer) {
-            console.log('Getting MinecraftServer EULA acceptance state...');
-        }
+        // DEBUG
+        debugMsg(`Getting MinecraftServer EULA acceptance state...`);
 
         let eula;
         let eulaUrlLine;
         let line;
         let lineNumber;
         let properties = this.properties;
-
-        if (debugMinecraftServer) {
-            console.log('Reading MinecraftServer eula.txt...');
-        }
+        // DEBUG
+        debugMsg(`Reading MinecraftServer eula.txt...`);
         try {
             eula = fs.readFileSync(this.properties.pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
 
@@ -806,16 +787,14 @@ class MinecraftServer {
                     eulaUrlLine = eula[lineNumber].split('https://');
                     if (eulaUrlLine.length == 2) {
                         properties.eulaUrl = 'https://' + eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
-                        if (debugMinecraftServer) {
-                            console.log('MinecraftServer EULA location: ' + properties.eulaUrl);
-                        }
+                        // DEBUG
+                        debugMsg(`Minecraft Server EULA location: ${properties.eulaUrl}`);
                     }
                     line = eula[lineNumber].split('=');
                     if (line.length == 2) {
                         properties.acceptedEula = !!JSON.parse(line[1]);
-                        if (debugMinecraftServer) {
-                            console.log('MinecraftServer EULA accepted?', properties.acceptedEula);
-                        }
+                        // DEBUG
+                        debugMsg(`Minecraft Server EULA has been accepted: ${properties.acceptedEula}`);
                     }
                 }
             }
@@ -823,9 +802,8 @@ class MinecraftServer {
             properties.installed = true;
         } catch (e) {
             console.log('Failed to read eula.txt.');
-            if (debugMinecraftServer) {
-                console.log(e.stack);
-            }
+            // DEBUG
+            debugMsg(`${e}`);
             console.log('Minecraft probably needs to be run once to stage new files.');
             console.log('Use the web interface to start the Minecraft server and accept the license agreement.');
             properties.eulaFound = false;
@@ -847,9 +825,8 @@ class MinecraftServer {
             res.on('end', () => {
                 try {
                     minecraftVersions = JSON.parse(minecraftVersionsArray.join(''));
-                    if (debugMinecraftServer) {
-                        console.log('Got Minecraft version list.');
-                    }
+                    // DEBUG
+                    debugMsg(`Got Minecraft version list.`);
                     minecraftVersions.versions.forEach(version => {
                         if (version.type === 'release') {
                             releaseVersions.push(version);
@@ -878,9 +855,8 @@ class MinecraftServer {
     }
 
     getOps () {
-        if (debugMinecraftServer) {
-            console.log('Getting MinecraftServer ops...');
-        }
+        // DEBUG
+        debugMsg(`Getting Minecraft Server ops...`);
 
         let properties = this.properties;
 
@@ -889,17 +865,16 @@ class MinecraftServer {
                 properties.ops = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/ops.json', 'utf8'));
             } catch (e) {
                 properties.ops = [];
-                if (debugMinecraftServer) {
-                    console.log('Failed to read ops.json:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read ops.json:
+                    ${e}`);
             }
         }
     }
 
     getServerProperties () {
-        if (debugMinecraftServer) {
-            console.log('Getting MinecraftServer properties...');
-        }
+        // DEBUG
+        debugMsg(`Getting Minecraft Server properties...`);
 
         let properties = this.properties;
 
@@ -909,17 +884,16 @@ class MinecraftServer {
                 properties.serverProperties = convertPropertiesToObjects(serverPropertiesFile);
             } catch (e) {
                 properties.serverProperties = [];
-                if (debugMinecraftServer) {
-                    console.log('Failed to read server.properties:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read server.properties:
+                    ${e}`);
             }
         }
     }
 
     getUserCache () {
-        if (debugMinecraftServer) {
-            console.log('Getting MinecraftServer user cache...');
-        }
+        // DEBUG
+        debugMsg(`Getting Minecraft Server user cache...`);
 
         let properties = this.properties;
 
@@ -928,17 +902,16 @@ class MinecraftServer {
                 properties.userCache = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/usercache.json', 'utf8'));
             } catch (e) {
                 properties.userCache = [];
-                if (debugMinecraftServer) {
-                    console.log('Failed to read usercache.json:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read usercache.json:
+                    ${e}`);
             }
         }
     }
 
     getWhitelist () {
-        if (debugMinecraftServer) {
-            console.log('Getting MinecraftServer whitelist...');
-        }
+        // DEBUG
+        debugMsg(`Getting Minecraft Server whitelist...`);
 
         let properties = this.properties;
 
@@ -947,14 +920,16 @@ class MinecraftServer {
                 properties.whitelist = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/whitelist.json', 'utf8'));
             } catch (e) {
                 properties.whitelist = [];
-                if (debugMinecraftServer) {
-                    console.log('Failed to read whitelist.json:', e.stack);
-                }
+                // DEBUG
+                debugMsg(`Failed to read whitelist.json:
+                    ${e}`);
             }
         }
     }
 
     install (version, callback) {
+        // DEBUG
+        debugMsg(`Installing Minecraft Server...`);
 
         let download = false,
             jar = '',
@@ -1024,9 +999,8 @@ class MinecraftServer {
                 properties.installed = true;
                 properties.needsInstallation = false;
 
-                if (debugMinecraftServer) {
-                    console.log('Done installing MinecraftServer.');
-                }
+                // DEBUG
+                debugMsg(`Done installing Minecraft Server.`);
 
                 // TODO: Only create new world on downgrade.
                 let majorminorrelease = properties.detectedVersion.major + '.' + properties.detectedVersion.minor + '.' + properties.detectedVersion.release;
@@ -1090,9 +1064,8 @@ class MinecraftServer {
     }
 
     listPlayers (callback) {
-        if (debugMinecraftServer) {
-            console.log('Listing Minecraft players.');
-        }
+        // DEBUG
+        debugMsg(`Listing Minecraft players...`);
 
         let properties = this.properties;
         let serverOutputCaptured = properties.serverOutputCaptured;
@@ -1226,9 +1199,8 @@ class MinecraftServer {
     }
 
     listWorldBackups () {
-        if (debugMinecraftServer) {
-            console.log('Getting list of MinecraftServer world backups...');
-        }
+        // DEBUG
+        debugMsg(`Getting list of Minecraft Server world backups...`);
 
         let properties = this.properties;
 
@@ -1259,12 +1231,13 @@ class MinecraftServer {
         } catch (e) {
             console.log(e.stack);
         }
+        // DEBUG
+        debugMsg(`Done getting list of Minecraft Server world backups..`);
     }
 
     newWorld (backupWorld, callback) {
-        if (debugMinecraftServer) {
-            console.log('Deleting MinecraftServer world...');
-        }
+        // DEBUG
+        debugMsg(`Deleting Minecraft Server world...`);
 
         let properties = this.properties;
         let worldName = '';
@@ -1390,9 +1363,8 @@ class MinecraftServer {
 
     runCommand (command, callback) {
         // TODO: make sure command passed is valid
-        if (debugMinecraftServer) {
-            console.log('Running Minecraft command.');
-        }
+        // DEBUG
+        debugMsg(`Running Minecraft command...`);
 
         let properties = this.properties;
         let serverOutputCaptured = properties.serverOutputCaptured;
@@ -1462,9 +1434,8 @@ class MinecraftServer {
                             });
                         } catch (e) {
                             console.log('MinecraftServer executable not found.');
-                            if (debugMinecraftServer) {
-                                console.error(e.stack);
-                            }
+                            // DEBUG
+                            debugMsg(`${e}`);
                             if (typeof callback === 'function') {
                                 callback();
                             }
