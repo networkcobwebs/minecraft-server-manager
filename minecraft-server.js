@@ -8,6 +8,16 @@ const path = require('path');
 const spawn = require('child_process').spawn;
 
 const debugMinecraftServer = false;
+/**
+ * If enabled prints out given messages
+ * @param  {string} message
+ */
+const debugMsg = (message) => {
+    const enabled = false;
+    if (enabled) {
+        console.log(`[DEBUG]: ${message}`);
+    }
+}
 
 let defaultProperties = {
     acceptedEula: false,
