@@ -253,7 +253,7 @@ class MinecraftServer {
         let backupDir = properties.pathToMinecraftDirectory + '/worldBackups',
             archive, output;
 
-        fs.ensureDirSync(backupDir);
+        fs.mkdirSync(backupDir, {recursive: true});
 
         try {
             fs.accessSync(backupDir, FS.F_OK | FS.R_OK | FS.W_OK);
@@ -291,7 +291,7 @@ class MinecraftServer {
             }
         } catch (e) {
             console.log('Backup directory does not exist, creating.');
-            fs.ensureDirSync(backupDir);
+            fs.mkdirSync(backupDir, {recursive: true});
             output.close();
         }
     }
