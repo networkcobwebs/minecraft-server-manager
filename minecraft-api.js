@@ -189,6 +189,13 @@ class MinecraftApi {
                     properties: minecraftProperties.serverProperties
                 });
             });
+            app.get('/api/refreshServerProperties', [function (request, response) {
+                minecraftServer.getServerProperties();
+                response.contentType('json');
+                response.json({
+                    properties: minecraftProperties.serverProperties
+                });
+            }.bind(this)]);
             app.get('/api/status', function (request, response) {
                 // Some things in the MinecraftServer.properties cannot be sent back to the browser, so clone
                 let serverProps = Object.assign({}, minecraftProperties);
@@ -301,6 +308,14 @@ class MinecraftApi {
                     });
                 });
             }.bind(this));
+            app.post('/api/saveMinecraftProperties', [function (request, response) {
+                minecraftServer.saveProperties(request.param('properties', () => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'saved'
+                    });
+                }));
+            }.bind(this)]);
             app.post('/api/start', function (request, response) {
                 this.startMinecraft(() => {
                     response.contentType('json');

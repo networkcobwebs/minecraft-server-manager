@@ -1419,6 +1419,10 @@ class MinecraftServer {
         }
     }
 
+    saveProperties (properties, callback) {
+
+    }
+
     start (callback) {
         // TODO: Fix the async-ness of detectJavaHome
         if (this.properties.installed) {
