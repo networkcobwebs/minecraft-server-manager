@@ -21,11 +21,11 @@ import ActionInProgressDialog from './ActionInProgressDialog.js';
 import ConfirmRestartDialog from './ConfirmRestartDialog.js';
 
 export default function ServerProperties (props) {
-    const currentMinecraftProperties = Object.assign({}, props.minecraftProperties);
+    let currentMinecraftProperties = Object.assign([], props.minecraftProperties.serverProperties);
     const [dirtyProps, setDirtyProps] = useState(false);
-    const [minecraftProperties, setMinecraftProperties] = useState(props.minecraftProperties);
     const [progressDialogOpen, setProgressDialogOpen] = useState(false);
     const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+    const [serverProperties, setServerProperties] = useState(props.minecraftProperties.serverProperties);
     
     const openProgressDialog = () => {
         setProgressDialogOpen(true);
@@ -48,8 +48,10 @@ export default function ServerProperties (props) {
         axios({
             method: 'get',
             url: `/api/refreshServerProperties`
-        }).then(() => {
-            setMinecraftProperties(props.minecraftProperties);
+        }).then(res => {
+            setServerProperties(res.data.properties);
+            currentMinecraftProperties = Object.assign({}, res.data.properties);
+            setDirtyProps(false);
             setProgressDialogOpen(false);
         }, err => {
             console.log('An error occurred contacting the Minecraft server.', err);
@@ -60,15 +62,15 @@ export default function ServerProperties (props) {
     const saveProperties = () => {
         closeRestartDialog();
         openProgressDialog();
+        let newProperties = JSON.stringify(serverProperties);
         axios({
             method: 'post',
             url: `/api/saveMinecraftProperties`,
             params: {
-                properties: minecraftProperties
+                newProperties: newProperties
             }
         }).then(() => {
             refreshProperties();
-            setDirtyProps(false);
         }, err => {
             console.log('An error occurred contacting the Minecraft server.', err);
             refreshProperties();
@@ -76,17 +78,16 @@ export default function ServerProperties (props) {
     };
 
     const undoPropertyEdits = () => {
-        setMinecraftProperties(currentMinecraftProperties);
+        setServerProperties(currentMinecraftProperties);
         setDirtyProps(false);
     };
 
     const updatePropertyType = (event) => {
-        let newMinecraftProps = Object.assign({}, minecraftProperties);
-        let newServerProps = newMinecraftProps.serverProperties;
+        let newMinecraftProps = Object.assign([], serverProperties);
         let changed = false;
         let property;
-        for (let p = 0; p < newServerProps.length; p++) {
-            property = newServerProps[p];
+        for (let p = 0; p < newMinecraftProps.length; p++) {
+            property = newMinecraftProps[p];
             if (property.name === event.target.id) {
                 if (property.value !== event.target.value) {
                     property.value = event.target.value;
@@ -96,7 +97,7 @@ export default function ServerProperties (props) {
             }
         }
         if (changed){
-            setMinecraftProperties(newMinecraftProps);
+            setServerProperties(newMinecraftProps);
             setDirtyProps(true);
         }
     };
@@ -154,7 +155,7 @@ export default function ServerProperties (props) {
                 <Table size="small">
                     <TableBody>
                         <TableRow><TableCell></TableCell></TableRow>
-                        { minecraftProperties && minecraftProperties.serverProperties && minecraftProperties.serverProperties.length ? minecraftProperties.serverProperties.map(property => {
+                        { serverProperties && serverProperties.length ? serverProperties.map(property => {
                             return (
                                 <TableRow key={ property.name }>
                                     <TableCell>

@@ -55,8 +55,7 @@ function convertObjectsToProperties (obj) {
         console.log('Converting object', obj, 'to properties.');
     }
 
-    let properties = "",
-        lines = "",
+    let lines = "",
         line, objNumber;
 
     for (objNumber = 0; objNumber < obj.length; objNumber++) {
@@ -184,6 +183,7 @@ class MinecraftServer {
         this.listCommands = this.listCommands.bind(this);
         this.listPlayers = this.listPlayers.bind(this);
         this.parseHelpOutput = this.parseHelpOutput.bind(this);
+        this.saveProperties = this.saveProperties.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.updateStatus = this.updateStatus.bind(this);
@@ -367,13 +367,13 @@ class MinecraftServer {
                     properties.serverOutput.length = 0;
                     properties.serverOutputCaptured = false;
                     shouldContinueStart = false;
-                    if (typeof callback === 'function') {
-                        this.stop(callback);
-                    }
                     console.log('The Minecraft EULA needs to be accepted. MinecraftServer start aborted.');
                     console.log('Use the web interface to view and accept the Minecraft license agreement, or accept it manually.');
-                    if (!properties.eulaFound) {
-                        this.getEula();
+                    // if (!properties.eulaFound) {
+                    //     this.getEula();
+                    // }
+                    if (typeof callback === 'function') {
+                        this.stop(callback);
                     }
                 } else if (line.toLowerCase().indexOf('failed') !== -1) {
                     // TODO: Get smarter here and show the error
@@ -440,6 +440,11 @@ class MinecraftServer {
             properties.serverOutputCaptured = false;
             properties.serverProcess.kill();
             properties.serverOutput.length = 0;
+            properties.started = false;
+            properties.startTime = null;
+            properties.stopping = false;
+            properties.stopped = true;
+            properties.allowedCommands = [];
             console.log('MinecraftServer was forced to stop.');
             if (typeof callback === 'function') {
                 callback();
@@ -1098,7 +1103,7 @@ class MinecraftServer {
             } else if (started) {
                 setTimeout(() => {
                     this.listCommands(++checkCount, callback);
-                }, 100);
+                }, 1000);
             } else {
                 console.log('Minecraft appears to not be running. Cannot fetch commands.');
                 if (typeof callback === 'function') {
@@ -1106,6 +1111,7 @@ class MinecraftServer {
                 }
             }
         } else {
+            console.log('Cannot fetch commands.');
             if (typeof callback === 'function') {
                 callback();
             }
@@ -1142,13 +1148,6 @@ class MinecraftServer {
                 // followed by player names, comma+space separated.
                 let output = serverOutput.join('');
                 let player, players, playersSummary;
-                // Versions later than 1.13 send newline...
-                // if (output.indexOf('\n') !== -1) {
-                //     players = output.split(/\n/);
-                //     playersSummary = players.shift();
-                //     playersSummary = playersSummary.split(']: ')[1];
-                //     playersSummary = playersSummary.slice(0, -1);
-                // } else {
                 players = output.split(minecraftLogTimeRegex).filter(function (value) {
                     return value !== "";
                 });
@@ -1167,7 +1166,6 @@ class MinecraftServer {
                     players = [];
                     playersSummary = '';
                 }
-                // }
                 
                 playersList.summary = playersSummary.trim().slice(0, -1);
                 
@@ -1231,6 +1229,7 @@ class MinecraftServer {
                 }
                 
                 serverOutputCaptured = false;
+                serverOutput.length = 0;
                 properties.playerInfo = playersList;
 
                 if (typeof callback === 'function') {
@@ -1411,6 +1410,11 @@ class MinecraftServer {
         }
     }
 
+    /**
+     * Executes a Minecraft command against the Minecraft server.
+     * @param {string} command A Minecraft command to execute.
+     * @param {function} callback An optional function to call when complete.
+     */
     runCommand (command, callback) {
         // TODO: make sure command passed is valid
         if (debugMinecraftServer) {
@@ -1444,44 +1448,53 @@ class MinecraftServer {
                     return output;
                 }
             }.bind(this), 250);
+        } else {
+            setTimeout(() => {
+                this.runCommand(command, callback);
+            }, 1000);
         }
     }
 
-    saveProperties (properties, callback) {
-        let contents = this.convertObjectsToProperties(properties);
+    /**
+     * Saves server properties to disk for use on Minecraft server start.
+     * @param {object} newProperties Contains the new properties to save to disk,
+     * @param {*} callback An optional function to call when complete.
+     */
+    saveProperties (newProperties, callback) {
+        let contents = convertObjectsToProperties(newProperties);
         let properties = this.properties;
         let propertiesFile = path.join(properties.pathToMinecraftDirectory, 'server.properties');
         let backupPropertiesFile = path.join(properties.pathToMinecraftDirectory, createDateTimestamp() + '-server.properties');
         try {
-            // backup properties
+            // Backup current properties file
             fs.copyFileSync(propertiesFile, backupPropertiesFile);
-            // stop
             this.stop(() => {
                 try {
-                    // write properties
                     fs.writeFileSync(propertiesFile, contents);
-                    // start
-                    this.start(callback => {
-                        if (typeof callback === 'function') {
-                            callback();
-                        }
+                    // For some reason, `this.start(callback);` introduces inconsistent timing issues.
+                    this.start(() => {
+                        callback(contents);
                     });
+                    // this.start(callback);
                 } catch (e) {
                     console.log('An error occurred saving the new properties file.', e);
                     if (typeof callback === 'function') {
-                        callback();
+                        callback(contents);
                     }
                 }
             });
         } catch (e) {
-            // might fail backing up the properties file, or writing new file.
-            console.log('An error occurred backuping up the current properties file.', e);
+            console.log('An error occurred backing up the current properties file.', e);
             if (typeof callback === 'function') {
-                callback();
+                callback(contents);
             }
         }
     }
 
+    /**
+     * Starts the Minecraft server process.
+     * @param {function} callback An optional function to call when complete.
+     */
     start (callback) {
         // TODO: Fix the async-ness of detectJavaHome
         if (this.properties.installed) {
@@ -1501,6 +1514,9 @@ class MinecraftServer {
 
                 if (javaHome) {
                     if (!serverOutputCaptured && !starting) {
+                        if (startedTimer) {
+                            clearTimeout(startedTimer);
+                        }
                         try {
                             fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
                             // TODO: Make the Java + args configurable
@@ -1529,13 +1545,9 @@ class MinecraftServer {
                         }
                         
                         starting = true;
-                        serverOutputCaptured = true;
                         serverOutput.length = 0;
                         serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-                
-                        if (startedTimer) {
-                            clearTimeout(startedTimer);
-                        }
+                        serverOutputCaptured = true;
                     
                         startedTimer = setTimeout(() => {
                             this.checkForMinecraftToBeStarted(0, callback);
@@ -1546,11 +1558,14 @@ class MinecraftServer {
                         startedTimer = setTimeout(() => {
                             this.checkForMinecraftToBeStarted(0, callback);
                         }, 100);
-                    } else {
-                        // Something already attached to serverOutput. Wait and try again.
+                    } else if (serverOutputCaptured) {
+                        // Something is already attached to serverOutput. Wait and try again.
                         setTimeout(() => {
                             this.start(callback);
                         }, 1000);
+                    } else {
+                        // TODO: Not sure yet what to do here.
+                        debugger;
                     }
                 } else {
                     console.log('JAVA_HOME not set.');
@@ -1559,9 +1574,17 @@ class MinecraftServer {
                     }
                 }
             });
+        } else {
+            if (typeof callback === 'function') {
+                callback();
+            }
         }
     }
 
+    /**
+     * Stops the Minecraft server process.
+     * @param {function} callback An optional function to call when complete.
+     */
     stop (callback) {
         console.log('Stopping MinecraftServer...');
 
@@ -1575,23 +1598,24 @@ class MinecraftServer {
 
         if (started) {
             if (!serverOutputCaptured && !stopping) {
-                stopping = true;
                 serverOutputCaptured = true;
-                serverOutput.length = 0;
+                stopping = true;
+                properties.stopped = false;
                 if (stoppedTimer) {
                     clearTimeout(stoppedTimer);
                     properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
                 }
+                serverOutput.length = 0;
                 serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
                 serverProcess.stdin.write('/stop\n');
                 stoppedTimer = setTimeout(() => {
                     this.checkForMinecraftToBeStopped(0, callback);
                 }, 1000);
-            } else if (stopping && serverOutputCaptured) {
-                clearTimeout(stoppedTimer);
-                stoppedTimer = setTimeout(() => {
-                    this.checkForMinecraftToBeStopped(0, callback);
-                }, 1000);
+            // } else if (stopping && serverOutputCaptured) {
+            //     clearTimeout(stoppedTimer);
+            //     stoppedTimer = setTimeout(() => {
+            //         this.checkForMinecraftToBeStopped(0, callback);
+            //     }, 1000);
             } else {
                 // Someone is using the output stream, wait a bit.
                 setTimeout(() => {
@@ -1622,12 +1646,18 @@ class MinecraftServer {
             this.getBannedPlayers();
             this.getWhitelist();
             this.checkForMinecraftUpdate();
-            if (this.properties.started) {
+            // if (this.properties.started) {
+            if (this.properties.serverProcess.pid) {
                 this.listPlayers(callback);
             } else {
                 if (typeof callback === 'function') {
                     callback();
                 }
+            }
+        } else {
+            this.checkForMinecraftUpdate();
+            if (typeof callback === 'function') {
+                callback();
             }
         }
     }
