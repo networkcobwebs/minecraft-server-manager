@@ -16,7 +16,7 @@ export default function ConfirmRestartDialog (props) {
             <DialogTitle>Confirm Minecraft Restart</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    Saving new properties will restart the Minecraft server. Continue?
+                    Saving new properties will restart the Minecraft server.
                 </DialogContentText>
                 <DialogContentText>
                     Continue?

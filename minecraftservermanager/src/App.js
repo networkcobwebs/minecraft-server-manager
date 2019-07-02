@@ -36,7 +36,6 @@ export default class App extends React.Component {
         this.handleAcceptEula = this.handleAcceptEula.bind(this);
         this.handleDeclineEula = this.handleDeclineEula.bind(this);
         this.getIpInfo = this.getIpInfo.bind(this);
-        this.getMinecraftPlayers = this.getMinecraftPlayers.bind(this);
         this.getMinecraftServerProperties = this.getMinecraftServerProperties.bind(this);
         this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
         this.startMinecraftStatus = this.startMinecraftStatus.bind(this);
@@ -158,70 +157,6 @@ export default class App extends React.Component {
             console.log('An error occurred getting the server properties:', e);
         });
     }
-
-    getMinecraftPlayers (pingWait) {
-        let normalPingTime = 5 * 1000,
-            appendTime = 5 * 1000,
-            maxTime = 120 * 1000,
-            pingTime;
-        let minecraftProperties = this.state.minecraftProperties;
-
-        // normally ping every 5 seconds
-        // if a fast ping was requested (from constructor/DidMount), honor it
-        // once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds
-        // once re/successful, reset to 10 seconds
-        if (!pingWait) {
-            pingTime = normalPingTime;
-        } else if (pingWait < 1000) {
-            pingTime = pingWait;
-        } else if (pingWait > maxTime) {
-            pingTime = normalPingTime;
-        } else {
-            pingTime = pingWait;
-        }
-
-        if (this.playersTimerId) {
-            clearTimeout(this.playersTimerId);
-        }
-
-        this.playersTimerId = setTimeout(() => {
-            if (minecraftProperties.started) {
-                axios({
-                    url: '/api/playerInfo'
-                }).then(res => {
-                    let playerInfo = res.data;
-                    this.setState({ playerInfo });
-                    if (this.state.debug) {
-                        console.log('Players info:', this.state.playerInfo);
-                        console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
-                    }
-
-                    this.getMinecraftPlayers();
-                },
-                err => {
-                    let playerInfo = {
-                        summary: '',
-                        players: []
-                    };
-
-                    this.setState({ playerInfo });
-
-                    pingTime = pingTime + appendTime;
-
-                    if (this.state.debug) {
-                        console.log('An error occurred getting current players:', err);
-                        console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
-                    }
-                    this.getMinecraftPlayers(pingTime);
-                });
-            } else {
-                if (this.state.debug) {
-                    console.log('Setting Minecraft player poller to run in', pingTime/1000, 'seconds.');
-                }
-                this.getMinecraftPlayers();
-            }
-        }, pingTime);
-    }
   
     handleAcceptEula () {
         axios({
@@ -267,9 +202,6 @@ export default class App extends React.Component {
         if (debug) {
             console.log('Stopping Minecraft server poller.');
         }
-        
-        // let minecraftProperties = {};
-        // this.setState({ minecraftProperties });
 
         if (this.statusTimerId) {
             clearTimeout(this.statusTimerId);
