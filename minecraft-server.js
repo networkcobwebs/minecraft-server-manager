@@ -49,6 +49,34 @@ let defaultProperties = {
     whitelist: []
 };
 
+// Convert name: value objects to ini-properties
+function convertObjectsToProperties (obj) {
+    if (debugMinecraftServer) {
+        console.log('Converting object', obj, 'to properties.');
+    }
+
+    let properties = "",
+        lines = "",
+        line, objNumber;
+
+    for (objNumber = 0; objNumber < obj.length; objNumber++) {
+        if (obj[objNumber]) {
+            line = obj[objNumber].name;
+            line = line + '=';
+            line = line + obj[objNumber].value;
+            line = line + os.EOL;
+            lines = lines + line;
+        }
+    }
+
+    if (debugMinecraftServer) {
+        console.log('Converted to:');
+        console.log(lines);
+    }
+
+    return lines;
+}
+
 // Convert name=value properties to JSON
 function convertPropertiesToObjects (props) {
     if (debugMinecraftServer) {
@@ -1420,7 +1448,38 @@ class MinecraftServer {
     }
 
     saveProperties (properties, callback) {
-
+        let contents = this.convertObjectsToProperties(properties);
+        let properties = this.properties;
+        let propertiesFile = path.join(properties.pathToMinecraftDirectory, 'server.properties');
+        let backupPropertiesFile = path.join(properties.pathToMinecraftDirectory, createDateTimestamp() + '-server.properties');
+        try {
+            // backup properties
+            fs.copyFileSync(propertiesFile, backupPropertiesFile);
+            // stop
+            this.stop(() => {
+                try {
+                    // write properties
+                    fs.writeFileSync(propertiesFile, contents);
+                    // start
+                    this.start(callback => {
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    });
+                } catch (e) {
+                    console.log('An error occurred saving the new properties file.', e);
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }
+            });
+        } catch (e) {
+            // might fail backing up the properties file, or writing new file.
+            console.log('An error occurred backuping up the current properties file.', e);
+            if (typeof callback === 'function') {
+                callback();
+            }
+        }
     }
 
     start (callback) {
