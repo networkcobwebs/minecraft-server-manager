@@ -18,12 +18,14 @@ import TableCell from '@material-ui/core/TableCell';
 import Typography from '@material-ui/core/Typography';
 
 import ActionInProgressDialog from './ActionInProgressDialog.js';
+import ConfirmRestartDialog from './ConfirmRestartDialog.js';
 
 export default function ServerProperties (props) {
     const currentMinecraftProperties = Object.assign({}, props.minecraftProperties);
     const [dirtyProps, setDirtyProps] = useState(false);
     const [minecraftProperties, setMinecraftProperties] = useState(props.minecraftProperties);
     const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+    const [restartDialogOpen, setRestartDialogOpen] = useState(false);
     
     const openProgressDialog = () => {
         setProgressDialogOpen(true);
@@ -31,6 +33,14 @@ export default function ServerProperties (props) {
     
     const closeProgressDialog = () => {
         setProgressDialogOpen(false);
+    };
+    
+    const openRestartDialog = () => {
+        setRestartDialogOpen(true);
+    };
+    
+    const closeRestartDialog = () => {
+        setRestartDialogOpen(false);
     };
 
     const refreshProperties = () => {
@@ -48,6 +58,7 @@ export default function ServerProperties (props) {
     };
 
     const saveProperties = () => {
+        closeRestartDialog();
         openProgressDialog();
         axios({
             method: 'post',
@@ -96,6 +107,11 @@ export default function ServerProperties (props) {
                 open = { progressDialogOpen }
                 onClose = { closeProgressDialog }
             />
+            <ConfirmRestartDialog
+                open = { restartDialogOpen }
+                onNo = { closeRestartDialog }
+                onYes = { saveProperties }
+            />
             <Typography variant="subtitle1">
                 Server Properties
             </Typography>
@@ -122,7 +138,7 @@ export default function ServerProperties (props) {
                 disabled = { !dirtyProps }
                 variant="contained"
                 color="primary"
-                onClick = { saveProperties }>
+                onClick = { openRestartDialog }>
                 <Save />
                 Save
             </Button>
