@@ -9,6 +9,13 @@ yarn-error.log*
 # Test coverage directory
 coverage
 
+#VSCode workspace settings
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/settings.json.default
+!.vscode/launch.json.default
+
 # Build directory
 # build
 
