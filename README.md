@@ -8,6 +8,8 @@ Includes:
 * a Node.js script to control your Minecraft server instance
 * a set of web pages for management created using React
 
+See the [release notes](release-notes.txt) for additional information.
+
 Dashboard
 ![Dashboard](doc/screenshots/dashboard.png "Dashboard")
 
@@ -98,6 +100,8 @@ work on that feature continues.
 - The Server Properties section of the Server Controls is not editable.
 
 There are more, but these are the most annoying ones discovered to date.
+
+See the [release notes](release-notes.txt) for additional information.
 
 ## Helpful Hints
 

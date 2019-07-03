@@ -189,8 +189,15 @@ class MinecraftApi {
                     properties: minecraftProperties.serverProperties
                 });
             });
+            app.get('/api/refreshServerProperties', [function (request, response) {
+                minecraftServer.getServerProperties();
+                response.contentType('json');
+                response.json({
+                    properties: minecraftProperties.serverProperties
+                });
+            }.bind(this)]);
             app.get('/api/status', function (request, response) {
-                // Some things in the MinecraftServer.properties cannot be sent back to the browser, so clone
+                // Some things in the MinecraftServer.properties cannot be sent back to the browser, so clone and prune.
                 let serverProps = Object.assign({}, minecraftProperties);
                 serverProps.serverProcess = {};
                 serverProps.startedTimer = {};
@@ -301,6 +308,15 @@ class MinecraftApi {
                     });
                 });
             }.bind(this));
+            app.post('/api/saveMinecraftProperties', [function (request, response) {
+                let newProperties = JSON.parse(request.param('newProperties'));
+                minecraftServer.saveProperties(newProperties, () => {
+                    response.contentType('json');
+                    response.json({
+                        response: 'saved'
+                    });
+                });
+            }.bind(this)]);
             app.post('/api/start', function (request, response) {
                 this.startMinecraft(() => {
                     response.contentType('json');
@@ -324,13 +340,13 @@ class MinecraftApi {
 
     getMinecraftStatus (pingWait) {
         let normalPingTime = 10 * 1000,
-            appendTime = 5 * 1000,
-            maxTime = 120 * 1000,
+            appendTime = 1 * 1000,
+            maxTime = 300 * 1000,
             pingTime;
 
         // Normally ping every 10 seconds.
         // If a fast ping was requested (from constructor/DidMount), honor it.
-        // Once trouble hits, add 5 seconds until 2 minutes is reached, then reset to 10 seconds.
+        // Once trouble hits, add 1 second until 5 minutes is reached, then reset to 10 seconds.
         // Once trouble fixed/successful, reset to 10 seconds.
         if (!pingWait) {
             pingTime = normalPingTime;
