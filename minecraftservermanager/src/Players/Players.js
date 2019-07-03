@@ -209,7 +209,7 @@ export default class Players extends React.Component {
         let playerInfo = minecraftProperties.playerInfo;
         let players = [];
         let summary = '';
-        if (playerInfo.players) {
+        if (playerInfo && playerInfo.players) {
             summary = playerInfo.summary;
             players = playerInfo.players;
         }

@@ -15,7 +15,7 @@ class About extends React.Component {
     render () {
         let minecraftProperties = this.props.minecraftProperties;
         const GB = 1024 ** 3;
-        let mem = minecraftProperties.nodeInfo.mem / GB;
+        let mem = minecraftProperties.nodeInfo ? minecraftProperties.nodeInfo.mem / GB : 'Unknown';
 
         return (
             <div>
@@ -45,12 +45,24 @@ class About extends React.Component {
                         <TableRow>
                             <TableCell>
                                 <Typography variant="subtitle2">
-                                    Author
+                                    Project Owner
                                 </Typography>
                             </TableCell>
                             <TableCell>
                                 <Typography>
                                     nickrnet
+                                </Typography>
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>
+                                <Typography variant="subtitle2">
+                                    Authors
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography>
+                                    nickrnet, DevBonBon
                                 </Typography>
                             </TableCell>
                         </TableRow>
@@ -85,7 +97,7 @@ class About extends React.Component {
                             </TableCell>
                             <TableCell>
                                 <Typography>
-                                    { minecraftProperties.nodeInfo.cpus[0].model + ', ' + minecraftProperties.nodeInfo.cpus.length + ' cores' }
+                                    { minecraftProperties.nodeInfo ? minecraftProperties.nodeInfo.cpus[0].model + ', ' + minecraftProperties.nodeInfo.cpus.length + ' cores' : 'Unknown' }
                                 </Typography>
                             </TableCell>
                             <TableCell>
@@ -115,7 +127,7 @@ class About extends React.Component {
                             </TableCell>
                             <TableCell>
                                 <Typography>
-                                    { minecraftProperties.nodeInfo.version }
+                                    { minecraftProperties.nodeInfo ? minecraftProperties.nodeInfo.version : 'Unknown' }
                                 </Typography>
                             </TableCell>
                             <TableCell> </TableCell>
