@@ -31,7 +31,7 @@
     "cookie-parser": "^1.4.4",
     "express": "^4.17.1",
     "express-session": "^1.16.2",
-    "fs-extra": "^8.0.1",
+    "fs-extra": "^8.1.0",
     "passport": "^0.4.0",
     "permission": "^1.1.0",
     "prop-types": "^15.7.2",
