@@ -49,28 +49,23 @@ let defaultProperties = {
     whitelist: []
 };
 
-// Convert name: value objects to ini-properties
-function convertObjectsToProperties (obj) {
+/**
+ * Converts properties object into a 'server.properties' file compatible string
+ * @param  {Array} properties Objects with names and values of properties
+ * @return {string} A newline sepperated string of properties
+ */
+function convertObjectsToProperties (properties) {
     if (debugMinecraftServer) {
-        console.log('Converting object', obj, 'to properties.');
+        console.log(`Converting objects to properties:\n${JSON.stringify(properties)}`);
     }
 
-    let lines = "",
-        line, objNumber;
-
-    for (objNumber = 0; objNumber < obj.length; objNumber++) {
-        if (obj[objNumber]) {
-            line = obj[objNumber].name;
-            line = line + '=';
-            line = line + obj[objNumber].value;
-            line = line + os.EOL;
-            lines = lines + line;
-        }
+    let lines = "";
+    for (const property of properties) {
+        lines += `${property.name}=${property.value}${os.EOL}`;
     }
 
     if (debugMinecraftServer) {
-        console.log('Converted to:');
-        console.log(lines);
+        console.log(`Done converting objects:\n${lines}`);
     }
 
     return lines;
