@@ -76,34 +76,35 @@ function convertObjectsToProperties (obj) {
     return lines;
 }
 
-// Convert name=value properties to JSON
-function convertPropertiesToObjects (props) {
+/**
+ * Converts data from the properties file into objects with the names and values
+ * @param  {string} lines Data from 'server.properties' file as a single string
+ * @return {Array} The names and values of properties as '{name: '', value: ''}'
+ */
+function convertPropertiesToObjects (lines) {
     if (debugMinecraftServer) {
-        console.log('Converting properties', props, 'to object.');
+        console.log(`Converting properties to an object:\n${lines}`);
     }
 
-    let properties = [],
-        incomingProperties = props.split(/\n/),
-        line, lineNumber, property;
-
-    for (lineNumber = 0; lineNumber < incomingProperties.length; lineNumber++) {
-        // Skip blank lines
-        if (incomingProperties[lineNumber]) {
-            line = incomingProperties[lineNumber].split('=');
-            if (line.length == 2) {
-                // Got name=value pair
-                // TODO: Ignore commented out values: '//', '#', etc.?
-                property = {};
-                property.name = line[0];
-                property.value = line[1];
-                properties.push(property);
+    let properties = [];
+    // Split at newlines and loop through the results
+    for (const line of lines.split(new RegExp(os.EOL))) {
+        // Skip empty and commented out lines
+        if (line && !line.match(/^#/)) {
+            let pair = line.split('=');
+            // A basic check to see if line is a 'name=value' pairs
+            if (pair.length === 2) {
+                properties.push({ name: pair[0], value: pair[1] });
+            } else {
+                if (debugMinecraftServer) {
+                    console.log(`Invalid line in properties:\n${line}`);
+                }
             }
         }
     }
 
     if (debugMinecraftServer) {
-        console.log('Converted to:');
-        console.log(properties);
+        console.log(`Done converting properties:\n${JSON.stringify(properties)}`);
     }
 
     return properties;
@@ -1161,7 +1162,7 @@ class MinecraftServer {
                     players = [];
                     playersSummary = '';
                 }
-                
+
                 playersList.summary = playersSummary.trim().slice(0, -1);
 
                 if (players && players.length) {
@@ -1546,7 +1547,7 @@ class MinecraftServer {
                         if (startedTimer) {
                             clearTimeout(startedTimer);
                         }
-                    
+
                         startedTimer = setTimeout(() => {
                             this.checkForMinecraftToBeStarted(0, callback);
                         }, 100);
