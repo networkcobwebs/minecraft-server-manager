@@ -49,64 +49,60 @@ let defaultProperties = {
     whitelist: []
 };
 
-// Convert name: value objects to ini-properties
-function convertObjectsToProperties (obj) {
+/**
+ * Converts data from the properties file into objects with the names and values
+ * @param  {string} lines Data from 'server.properties' file as a single string
+ * @return {Array} The names and values of properties as '{name: '', value: ''}'
+ */
+function convertPropertiesToObjects (lines) {
     if (debugMinecraftServer) {
-        console.log('Converting object', obj, 'to properties.');
+        console.log(`Converting properties to an object:\n${lines}`);
     }
 
-    let lines = "",
-        line, objNumber;
-
-    for (objNumber = 0; objNumber < obj.length; objNumber++) {
-        if (obj[objNumber]) {
-            line = obj[objNumber].name;
-            line = line + '=';
-            line = line + obj[objNumber].value;
-            line = line + os.EOL;
-            lines = lines + line;
-        }
-    }
-
-    if (debugMinecraftServer) {
-        console.log('Converted to:');
-        console.log(lines);
-    }
-
-    return lines;
-}
-
-// Convert name=value properties to JSON
-function convertPropertiesToObjects (props) {
-    if (debugMinecraftServer) {
-        console.log('Converting properties', props, 'to object.');
-    }
-
-    let properties = [],
-        incomingProperties = props.split(/\n/),
-        line, lineNumber, property;
-
-    for (lineNumber = 0; lineNumber < incomingProperties.length; lineNumber++) {
-        // Skip blank lines
-        if (incomingProperties[lineNumber]) {
-            line = incomingProperties[lineNumber].split('=');
-            if (line.length == 2) {
-                // Got name=value pair
-                // TODO: Ignore commented out values: '//', '#', etc.?
-                property = {};
-                property.name = line[0];
-                property.value = line[1];
-                properties.push(property);
+    let properties = [];
+    // Split at newlines and loop through the results
+    for (const line of lines.split(new RegExp(os.EOL))) {
+        // Skip empty and commented out lines
+        if (line && !line.match(/^#/)) {
+            let pair = line.split('=');
+            // A basic check to see if line is a 'name=value' pairs
+            if (pair.length === 2) {
+                properties.push({ name: pair[0], value: pair[1] });
+            } else {
+                if (debugMinecraftServer) {
+                    console.log(`Invalid line in properties:\n${line}`);
+                }
             }
         }
     }
 
     if (debugMinecraftServer) {
-        console.log('Converted to:');
-        console.log(properties);
+        console.log(`Done converting properties:\n${JSON.stringify(properties)}`);
     }
 
     return properties;
+}
+
+/**
+ * Converts properties object into a 'server.properties' file compatible string
+ * @param  {Array} properties Objects with names and values of properties
+ * @return {string} A newline sepperated string of properties
+ */
+function convertObjectsToProperties (properties) {
+    if (debugMinecraftServer) {
+        console.log(`Converting objects to properties:\n${JSON.stringify(properties)}`);
+    }
+
+    let lines = "";
+    for (const property of properties) {
+        lines += `${property.name}=${property.value}${os.EOL}`;
+    }
+
+    if (debugMinecraftServer) {
+        console.log(`Done converting objects:\n${lines}`);
+    }
+
+    return lines;
 }
 
 /**
@@ -1161,7 +1157,7 @@ class MinecraftServer {
                     players = [];
                     playersSummary = '';
                 }
-                
+
                 playersList.summary = playersSummary.trim().slice(0, -1);
 
                 if (players && players.length) {
@@ -1546,7 +1542,7 @@ class MinecraftServer {
                         if (startedTimer) {
                             clearTimeout(startedTimer);
                         }
-                    
+
                         startedTimer = setTimeout(() => {
                             this.checkForMinecraftToBeStarted(0, callback);
                         }, 100);
