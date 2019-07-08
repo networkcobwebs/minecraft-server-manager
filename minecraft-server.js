@@ -2,6 +2,7 @@
 const archiver = require('archiver');
 const exec = require('child_process').exec;
 const fs = require('fs-extra');
+const FS = fs.constants;
 const https = require('https');
 const os = require('os');
 const path = require('path');
@@ -27,7 +28,7 @@ let defaultProperties = {
     needsInstallation: true,
     ops: [],
     osType: os.type(),
-    pathToMinecraftDirectory: 'minecraft_server',
+    pathToMinecraftDirectory: path.resolve('minecraft_server'),
     playerInfo: {players: [], summary: ''},
     serverJar: 'server.jar',
     serverLog: 'minecraft_server.log',
@@ -205,7 +206,7 @@ class MinecraftServer {
         if (properties.acceptedEula === 'false' || !properties.acceptedEula) {
             console.log('Accepting EULA...');
             try {
-                eula = fs.readFileSync(properties.pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
+                eula = fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'eula.txt'), 'utf8').split(/\n/);
                 for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
                     if (eula[lineNumber]) {
                         line = eula[lineNumber].split('=');
@@ -221,7 +222,7 @@ class MinecraftServer {
             }
 
             // write the eula.txt file
-            fs.writeFile(properties.pathToMinecraftDirectory + '/eula.txt', eula.join('\n'), (err) => {
+            fs.writeFile(path.join(properties.pathToMinecraftDirectory, 'eula.txt'), eula.join('\n'), (err) => {
                 if (err) {
                     console.log('Failed to write eula.txt:', err);
                     throw err;
@@ -245,18 +246,18 @@ class MinecraftServer {
         worldName = worldName || 'world';
 
         // TODO Allow backup path to be set
-        let backupDir = properties.pathToMinecraftDirectory + '/worldBackups',
+        let backupDir = path.join(properties.pathToMinecraftDirectory, 'worldBackups'),
             archive, output;
 
-        fs.ensureDirSync(backupDir);
+        fs.mkdirSync(backupDir, {recursive: true});
 
         try {
-            fs.accessSync(backupDir, fs.F_OK | fs.R_OK | fs.W_OK);
+            fs.accessSync(backupDir, FS.F_OK | FS.R_OK | FS.W_OK);
 
             archive = archiver('zip', {
                 zlib: { level: 9 } // Sets the compression level.
             });
-            output = fs.createWriteStream(backupDir + '/' + worldName + '_' + getDateTime() + '.zip');
+            output = fs.createWriteStream(path.join(backupDir, worldName + '_' + getDateTime() + '.zip'));
 
             archive.on('error', function(err) {
                 throw err;
@@ -274,19 +275,19 @@ class MinecraftServer {
                 this.stop(() => {
                     // zip world dir
                     archive.pipe(output);
-                    archive.directory(properties.pathToMinecraftDirectory + '/' + worldName, false);
+                    archive.directory(path.join(properties.pathToMinecraftDirectory, worldName), false);
                     archive.finalize();
                 });
             } else {
                 // zip world dir
                 archive.pipe(output);
-                archive.directory(properties.pathToMinecraftDirectory + '/' + worldName, false);
+                archive.directory(path.join(properties.pathToMinecraftDirectory, worldName), false);
                 archive.finalize();
                 console.log('MinecraftServer World backed up.');
             }
         } catch (e) {
             console.log('Backup directory does not exist, creating.');
-            fs.ensureDirSync(backupDir);
+            fs.mkdirSync(backupDir, {recursive: true});
             output.close();
         }
     }
@@ -305,7 +306,7 @@ class MinecraftServer {
             directoryFound = false;
 
         try {
-            fs.accessSync(pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
+            fs.accessSync(pathToMinecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK);
             directoryFound = true;
             console.log('Minecraft server directory exists.');
         } catch (e) {
@@ -556,7 +557,7 @@ class MinecraftServer {
         let properties = this.properties;
 
         try {
-            fs.accessSync(properties.pathToMinecraftDirectory, fs.F_OK | fs.R_OK | fs.W_OK);
+            fs.accessSync(properties.pathToMinecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK);
             console.log('Found MinecraftServer directory.');
         } catch (e) {
             console.log('MinecraftServer directory does not exist.');
@@ -700,7 +701,7 @@ class MinecraftServer {
                     if (minecraftVersionInfo.downloads && minecraftVersionInfo.downloads.server && minecraftVersionInfo.downloads.server.url) {
                         console.log('Downloading Minecraft server...');
                         let jar = release.id + '_minecraft_server.jar';
-                        let fileStream = fs.createWriteStream(pathToMinecraftDirectory + '/' + jar);
+                        let fileStream = fs.createWriteStream(path.join(pathToMinecraftDirectory, jar));
                         https.get(minecraftVersionInfo.downloads.server.url, (aJar) => {
                             aJar.pipe(fileStream);
                             fileStream.on('finish', ()  => {
@@ -736,7 +737,7 @@ class MinecraftServer {
             }
 
             try {
-                properties.bannedIps = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-ips.json', 'utf8'));
+                properties.bannedIps = JSON.parse(fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'banned-ips.json'), 'utf8'));
             } catch (e) {
                 properties.bannedIps = [];
                 if (debugMinecraftServer) {
@@ -755,7 +756,7 @@ class MinecraftServer {
             }
 
             try {
-                properties.bannedPlayers = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/banned-players.json', 'utf8'));
+                properties.bannedPlayers = JSON.parse(fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'banned-players.json'), 'utf8'));
             } catch (e) {
                 properties.bannedPlayers = [];
                 if (debugMinecraftServer) {
@@ -818,7 +819,7 @@ class MinecraftServer {
             console.log('Reading MinecraftServer eula.txt...');
         }
         try {
-            eula = fs.readFileSync(this.properties.pathToMinecraftDirectory + '/eula.txt', 'utf8').split(/\n/);
+            eula = fs.readFileSync(path.join(this.properties.pathToMinecraftDirectory, 'eula.txt'), 'utf8').split(/\n/);
 
             for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
                 if (eula[lineNumber]) {
@@ -905,7 +906,7 @@ class MinecraftServer {
 
         if (this.properties.eulaFound) {
             try {
-                properties.ops = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/ops.json', 'utf8'));
+                properties.ops = JSON.parse(fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'ops.json'), 'utf8'));
             } catch (e) {
                 properties.ops = [];
                 if (debugMinecraftServer) {
@@ -924,7 +925,7 @@ class MinecraftServer {
 
         if (this.properties.eulaFound) {
             try {
-                let serverPropertiesFile = fs.readFileSync(properties.pathToMinecraftDirectory + '/server.properties', 'utf8');
+                let serverPropertiesFile = fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'server.properties'), 'utf8');
                 properties.serverProperties = convertPropertiesToObjects(serverPropertiesFile);
             } catch (e) {
                 properties.serverProperties = [];
@@ -944,7 +945,7 @@ class MinecraftServer {
 
         if (this.properties.eulaFound) {
             try {
-                properties.userCache = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/usercache.json', 'utf8'));
+                properties.userCache = JSON.parse(fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'usercache.json'), 'utf8'));
             } catch (e) {
                 properties.userCache = [];
                 if (debugMinecraftServer) {
@@ -963,7 +964,7 @@ class MinecraftServer {
 
         if (properties.eulaFound) {
             try {
-                properties.whitelist = JSON.parse(fs.readFileSync(properties.pathToMinecraftDirectory + '/whitelist.json', 'utf8'));
+                properties.whitelist = JSON.parse(fs.readFileSync(path.join(properties.pathToMinecraftDirectory, 'whitelist.json'), 'utf8'));
             } catch (e) {
                 properties.whitelist = [];
                 if (debugMinecraftServer) {
@@ -1016,8 +1017,8 @@ class MinecraftServer {
 
         let copyCallback = function () {
             this.stop(() => {
-                let jarPath = path.resolve(path.normalize(path.join(pathToMinecraftDirectory, jar), path.join(pathToMinecraftDirectory, serverJar)));
-                let serverJarPath = path.resolve(path.normalize(path.join(pathToMinecraftDirectory, serverJar)));
+                let jarPath = path.join(pathToMinecraftDirectory, jar);
+                let serverJarPath = path.join(pathToMinecraftDirectory, serverJar);
 
                 console.log("Deleting Minecraft server version:", properties.detectedVersion.full, "...");
                 try {
@@ -1246,7 +1247,7 @@ class MinecraftServer {
         let properties = this.properties;
 
         // TODO Allow backup path to be set
-        let backupDir = properties.pathToMinecraftDirectory + '/worldBackups';
+        let backupDir = path.join(properties.pathToMinecraftDirectory, 'worldBackups');
         let backupList = [];
         let files = [];
 
@@ -1292,14 +1293,15 @@ class MinecraftServer {
 
         backupWorld = backupWorld || false;
 
+        let worldPath = path.join(properties.pathToMinecraftDirectory, worldName);
+
         if (backupWorld) {
             this.backupWorld(() => {
                 try {
-                    fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                        fs.F_OK | fs.R_OK | fs.W_OK);
+                    fs.accessSync(worldPath, FS.F_OK | FS.R_OK | FS.W_OK);
 
-                    console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
-                    fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
+                    console.log('World to be deleted: ' + worldPath);
+                    fs.removeSync(worldPath);
                     console.log('World deleted after backup.');
                     if (typeof callback === 'function') {
                         callback();
@@ -1314,11 +1316,10 @@ class MinecraftServer {
             });
         } else {
             try {
-                fs.accessSync(__dirname + '/' + properties.pathToMinecraftDirectory + '/' + worldName,
-                    fs.F_OK | fs.R_OK | fs.W_OK);
+                fs.accessSync(worldPath, FS.F_OK | FS.R_OK | FS.W_OK);
 
-                console.log('World to be deleted: ' + properties.pathToMinecraftDirectory + '/' + worldName);
-                fs.removeSync(properties.pathToMinecraftDirectory + '/' + worldName);
+                console.log('World to be deleted: ' + worldPath);
+                fs.removeSync(worldPath);
                 console.log('World deleted.');
                 if (typeof callback === 'function') {
                     callback();
@@ -1509,7 +1510,7 @@ class MinecraftServer {
                             clearTimeout(startedTimer);
                         }
                         try {
-                            fs.accessSync(pathToMinecraftDirectory + '/' + serverJar, fs.F_OK | fs.R_OK | fs.W_OK);
+                            fs.accessSync(path.join(pathToMinecraftDirectory, serverJar), FS.F_OK | FS.R_OK | FS.W_OK);
                             // TODO: Make the Java + args configurable
                             serverProcess = properties.serverProcess = spawn(java, [
                                 '-Xmx1G',
