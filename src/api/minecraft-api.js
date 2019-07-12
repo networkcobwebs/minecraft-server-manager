@@ -5,7 +5,7 @@ const express = require('express');
 const os = require('os');
 const path = require('path');
 
-const MinecraftServer = require('./minecraft-server.js');
+const MinecraftServer = require(path.resolve('minecraft-server.js'));
 
 const debugApi = false;
 
@@ -31,7 +31,7 @@ class MinecraftApi {
 
     set properties (props) {
         try {
-            let incoming = JSON.stringify(props);
+            let incoming = JSON.parse(JSON.stringify(props));
             if (incoming.ipAddress) {
                 // TODO: Validate props. For now, assume valid props.
                 this._properties = props;
@@ -79,12 +79,13 @@ class MinecraftApi {
             if (!pathToWeb) {
                 pathToWeb = this.properties.pathToWeb;
             }
+            console.log(`pathToWeb: ${path.resolve(pathToWeb)}`);
             app = express();
             app.use(bodyParser.urlencoded({ extended: false }));
             
             // Serve React app @ root
             // TODO Make the path on disk make sense.
-            app.use(express.static(path.join(__dirname, pathToWeb)));
+            app.use(express.static(path.resolve(pathToWeb)));
             // Allow browsers to make requests for us.
             // TODO: Tighten up the Allow-Origin. Preference in the web app?
             app.use(function(request, response, next) {
@@ -110,12 +111,14 @@ class MinecraftApi {
             this.properties.minecraftServer = new MinecraftServer();
         }
 
-        this.connectMinecraftApi = this.connectMinecraftApi.bind(this);
-        this.getMinecraftStatus = this.getMinecraftStatus.bind(this);
-        this.restartMinecraft = this.restartMinecraft.bind(this);
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
+        this.startPollers = this.startPollers.bind(this);
         this.stopPollers = this.stopPollers.bind(this);
+        this.connectMinecraftApi = this.connectMinecraftApi.bind(this);
+        this.startMinecraft = this.startMinecraft.bind(this);
+        this.stopMinecraft = this.stopMinecraft.bind(this);
+        this.restartMinecraft = this.restartMinecraft.bind(this);
     }
 
     connectMinecraftApi () {
@@ -338,7 +341,7 @@ class MinecraftApi {
         }
     }
 
-    getMinecraftStatus (pingWait) {
+    startPollers (pingWait) {
         let normalPingTime = 10 * 1000,
             appendTime = 1 * 1000,
             maxTime = 300 * 1000,
@@ -374,23 +377,13 @@ class MinecraftApi {
                     if (debugApi) {
                         console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
                     }
-                    this.getMinecraftStatus(pingTime);
+                    this.startPollers(pingTime);
                 });
             } else {
                 pingTime = pingTime + appendTime;
-                this.getMinecraftStatus(pingTime);
+                this.startPollers(pingTime);
             }
         }, pingTime);
-    }
-
-    restartMinecraft (callback) {
-        this.stopMinecraft(() => {
-            this.startMinecraft(() => {
-                if (typeof callback === 'function') {
-                    callback();
-                }
-            });
-        });
     }
 
     start () {
@@ -430,18 +423,6 @@ class MinecraftApi {
         console.info('MinecraftApi started.');
     }
 
-    startMinecraft (callback) {
-        let properties = this.properties,
-            minecraftServer = properties.minecraftServer;
-
-        minecraftServer.start(() => {
-            this.getMinecraftStatus(100);
-            if (typeof callback === 'function') {
-                callback();
-            }
-        });
-    }
-
     stop () {
         console.log('Stopping MinecraftApi...');
         
@@ -458,6 +439,26 @@ class MinecraftApi {
         console.log('MinecraftApi stopped.');
     }
 
+    stopPollers () {
+        let properties = this.properties;
+
+        if (properties.pollers.minecraftStatusTimerId) {
+            clearTimeout(properties.pollers.minecraftStatusTimerId);
+        }
+    }
+
+    startMinecraft (callback) {
+        let properties = this.properties,
+            minecraftServer = properties.minecraftServer;
+
+        minecraftServer.start(() => {
+            this.startPollers(100);
+            if (typeof callback === 'function') {
+                callback();
+            }
+        });
+    }
+
     stopMinecraft (callback) {
         let properties = this.properties,
             minecraftServer = properties.minecraftServer;
@@ -470,12 +471,14 @@ class MinecraftApi {
         });
     }
 
-    stopPollers () {
-        let properties = this.properties;
-
-        if (properties.pollers.minecraftStatusTimerId) {
-            clearTimeout(properties.pollers.minecraftStatusTimerId);
-        }
+    restartMinecraft (callback) {
+        this.stopMinecraft(() => {
+            this.startMinecraft(() => {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+        });
     }
 }
 
