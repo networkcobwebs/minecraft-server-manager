@@ -21,9 +21,9 @@
     "url": "https://github.com/nickrnet/"
   },
   "dependencies": {
-    "acorn": "^6.1.1",
-    "ajv": "^6.10.0",
-    "ajv-keywords": "^3.4.0",
+    "acorn": "^6.2.0",
+    "ajv": "^6.10.1",
+    "ajv-keywords": "^3.4.1",
     "archiver": "^3.0.0",
     "axios": "^0.19.0",
     "body-parser": "^1.19.0",
@@ -39,5 +39,8 @@
   },
   "devDependencies": {
     "eslint": "^5.16.0"
+  },
+  "engines": {
+    "node": ">=10.16.0"
   }
 }
