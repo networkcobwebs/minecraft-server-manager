@@ -8,6 +8,8 @@ const os = require('os');
 const path = require('path');
 const spawn = require('child_process').spawn;
 
+const Map = require(path.resolve(path.join('manager', 'Map.js')));
+
 const debugMinecraftServer = false;
 
 let defaultProperties = {
@@ -190,9 +192,47 @@ class MinecraftServer {
             .value()
             .address;
 
+        /**
+        * Start asynchronous tasks
+        */
+        if (global.debugMinecraftServer) {
+            console.log('Starting asynchronous tasks...');
+        }
+        Promise.all([this.readMapList()])
+        .then(results => {
+            this.maps = results[0];
+        });
+
         this.checkForMinecraftInstallation();
         this.getMinecraftVersions();
     }
+    /**
+     * Reads an array of map objects from 'Map.paths.mapList' and returns them
+     * @return {Promise} Resolves to an array of Map instances
+     */
+    async readMapList () {
+        try {
+            return (await fs.readJson(Map.paths.mapList)).map(map => new Map(map));
+        } catch (error) {
+            console.log(`Failed to read map list! \n${error}`);
+            return [];
+        }
+    }
+    /**
+     * Writes an array of map objects to 'Map.paths.mapList'
+     * @return {Promise} Resolves to true or false depending on whether successful or not
+     */
+    async writeMapList () {
+        try {
+            await fs.writeJson(Map.paths.mapList, this.maps.map(map => map.export()) || []);
+            return true;
+        } catch (error) {
+            console.log(`Failed to write map list! \n${error}`);
+            return false;
+        }
+    }
+
+    async backup
 
     acceptEula () {
         if (debugMinecraftServer) {
