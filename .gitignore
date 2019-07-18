@@ -20,3 +20,6 @@ yarn-debug.log*
 yarn-error.log*
 
 minecraft_server/**/*
+**/*.properties
+**/*.log
+src/test/results
