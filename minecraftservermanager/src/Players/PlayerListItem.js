@@ -14,98 +14,94 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import WhitelistIcon from '@material-ui/icons/PlaylistAdd';
 
-export default class PlayerListItem extends React.Component {
+export default function PlayerListItem (props) {
 
-    banPlayer () {
-        this.props.banPlayer(this.props.player.name);
-    }
-    pardonPlayer () {
-        this.props.pardonPlayer(this.props.player.name);
-    }
-    kickPlayer () {
-        this.props.kickPlayer(this.props.player.name);
-    }
-    opPlayer () {
-        this.props.opPlayer(this.props.player.name);
-    }
-    deopPlayer () {
-        this.props.deopPlayer(this.props.player.name);
-    }
-    whitelistPlayer () {
-        this.props.whitelistPlayer(this.props.player.name);
-    }
+    const banPlayer = () => {
+        props.banPlayer(props.player.name);
+    };
+    const pardonPlayer = () => {
+        props.pardonPlayer(props.player.name);
+    };
+    const kickPlayer = () => {
+        props.kickPlayer(props.player.name);
+    };
+    const opPlayer = () => {
+        props.opPlayer(props.player.name);
+    };
+    const deopPlayer = () => {
+        props.deopPlayer(props.player.name);
+    };
+    const whitelistPlayer = () => {
+        props.whitelistPlayer(props.player.name);
+    };
 
-    render () {
-        let player = this.props.player;
-
-        return (
-            <TableRow>
-                <TableCell>
-                    <Typography>
-                        { player.name }
-                    </Typography>
-                </TableCell>
-                <TableCell>{ player.online ? 
-                    <Tooltip title="Online">
-                        <NetworkOnline />
-                    </Tooltip> : 
-                    <Tooltip title="Offline">
-                        <NetworkOffline />
-                    </Tooltip>
-                }{ player.opped ?
-                    <Tooltip title="Opped">
-                        <OpStatus />
-                    </Tooltip> : <span></span>
-                }{ player.banned ?
-                    <Tooltip title="Banned">
-                        <Ban />
-                    </Tooltip> : <span></span>
-                }{ player.whitelisted ?
-                    <Tooltip title="Whitelisted">
-                        <WhitelistIcon />
-                    </Tooltip> : <span></span>
-                }</TableCell>
-                <TableCell>
-                    { player.banned ?
-                        <IconButton onClick = { this.pardonPlayer }>
-                            <Tooltip title="Pardon">
-                                <Ban />
-                            </Tooltip>
-                        </IconButton> : 
-                        <IconButton onClick = { this.banPlayer }>
-                            <Tooltip title="Ban">
-                                <Ban />
-                            </Tooltip>
-                        </IconButton>
-                    }
-                    <IconButton onClick = { this.kickPlayer }>
-                        <Tooltip title="Kick">
-                            <Kick />
+    return (
+        <TableRow>
+            <TableCell>
+                <Typography>
+                    { props.player.name }
+                </Typography>
+            </TableCell>
+            <TableCell>{ props.player.online ? 
+                <Tooltip title="Online">
+                    <NetworkOnline />
+                </Tooltip> : 
+                <Tooltip title="Offline">
+                    <NetworkOffline />
+                </Tooltip>
+            }{ props.player.opped ?
+                <Tooltip title="Opped">
+                    <OpStatus />
+                </Tooltip> : <span></span>
+            }{ props.player.banned ?
+                <Tooltip title="Banned">
+                    <Ban />
+                </Tooltip> : <span></span>
+            }{ props.player.whitelisted ?
+                <Tooltip title="Whitelisted">
+                    <WhitelistIcon />
+                </Tooltip> : <span></span>
+            }</TableCell>
+            <TableCell>
+                { props.player.banned ?
+                    <IconButton onClick = { pardonPlayer }>
+                        <Tooltip title="Pardon">
+                            <Ban />
+                        </Tooltip>
+                    </IconButton> : 
+                    <IconButton onClick = { banPlayer }>
+                        <Tooltip title="Ban">
+                            <Ban />
                         </Tooltip>
                     </IconButton>
-                    { player.opped ?
-                        <IconButton onClick = { this.deopPlayer }>
-                            <Tooltip title="De Op">
-                                <OpStatus />
-                            </Tooltip>
-                        </IconButton> : 
-                        <IconButton onClick = { this.opPlayer }>
-                            <Tooltip title="Op">
-                                <OpStatus />
-                            </Tooltip>
-                        </IconButton>
-                    }
-                    { !player.whitelisted ?
-                        <IconButton onClick = { this.whitelistPlayer }>
-                            <Tooltip title="Whitelist">
-                                <WhitelistIcon />
-                            </Tooltip>
-                        </IconButton> : <div></div>
-                    }
-                </TableCell>
-            </TableRow>
-        );
-    }
+                }
+                <IconButton onClick = { kickPlayer }>
+                    <Tooltip title="Kick">
+                        <Kick />
+                    </Tooltip>
+                </IconButton>
+                { props.player.opped ?
+                    <IconButton onClick = { deopPlayer }>
+                        <Tooltip title="De Op">
+                            <OpStatus />
+                        </Tooltip>
+                    </IconButton> : 
+                    <IconButton onClick = { opPlayer }>
+                        <Tooltip title="Op">
+                            <OpStatus />
+                        </Tooltip>
+                    </IconButton>
+                }
+                { !props.player.whitelisted ?
+                    <IconButton onClick = { whitelistPlayer }>
+                        <Tooltip title="Whitelist">
+                            <WhitelistIcon />
+                        </Tooltip>
+                    </IconButton> : <div></div>
+                }
+            </TableCell>
+        </TableRow>
+    );
 }
 
 PlayerListItem.propTypes = {

@@ -35,7 +35,7 @@ export default class Players extends React.Component {
 
     banPlayer (player) {
         let found = false,
-            players = this.state.players;
+            players = this.props.minecraftProperties.playerInfo.players;
 
         players.forEach(p => {
             if (p.name === player) {
@@ -61,7 +61,7 @@ export default class Players extends React.Component {
 
     pardonPlayer (player) {
         let found = false,
-            players = this.state.players;
+            players = this.props.minecraftProperties.playerInfo.players;
 
         players.forEach(p => {
             if (p.name === player) {
@@ -87,7 +87,7 @@ export default class Players extends React.Component {
 
     kickPlayer (player) {
         let found = false,
-            players = this.state.players;
+            players = this.props.minecraftProperties.playerInfo.players;
 
         players.forEach(p => {
             if (p.name === player) {
@@ -113,7 +113,7 @@ export default class Players extends React.Component {
 
     opPlayer (player) {
         let found = false,
-            players = this.state.players;
+            players = this.props.minecraftProperties.playerInfo.players;
 
         players.forEach(p => {
             if (p.name === player) {
@@ -139,7 +139,7 @@ export default class Players extends React.Component {
 
     deopPlayer (player) {
         let found = false,
-            players = this.state.players;
+            players = this.props.minecraftProperties.playerInfo.players;
 
         players.forEach(p => {
             if (p.name === player) {
@@ -165,7 +165,7 @@ export default class Players extends React.Component {
 
     whitelistPlayer (player) {
         let found = false,
-            players = this.state.players;
+            players = this.props.minecraftProperties.playerInfo.players;
 
         players.forEach(p => {
             if (p.name === player) {
@@ -209,6 +209,7 @@ export default class Players extends React.Component {
         let playerInfo = minecraftProperties.playerInfo;
         let players = [];
         let summary = '';
+        
         if (playerInfo && playerInfo.players) {
             summary = playerInfo.summary;
             players = playerInfo.players;

@@ -70,8 +70,10 @@ class ServerControls extends React.Component {
     }
     
     checkVersionToInstall () {
-        if (this.state.versionToInstall.full !== this.props.minecraftProperties.detectedVersion.full) {
+        if (this.props.minecraftProperties.detectedVersion.full && this.state.versionToInstall.full !== this.props.minecraftProperties.detectedVersion.full) {
             this.setState({ versionDialogOpen: true });
+        } else {
+            this.installMinecraft();
         }
     }
 
@@ -83,6 +85,15 @@ class ServerControls extends React.Component {
                 { version.id }
             </MenuItem>
         );
+    }
+    
+    handleAcceptEula () {
+        axios({
+            method: 'post',
+            url: '/api/acceptEula'
+        }).catch(error => {
+            console.log('An error occurred accepting the EULA:', error);
+        });
     }
 
     handleVersionConfirmation (value) {
@@ -133,7 +144,7 @@ class ServerControls extends React.Component {
             versionToInstall = '';
 
         if (minecraftProperties.versions) {
-            releaseVersions = minecraftProperties.versions.releaseVersions;
+            releaseVersions = minecraftProperties.versions.release;
         }
         
         if (releaseVersions && releaseVersions.length) {
@@ -236,11 +247,20 @@ class ServerControls extends React.Component {
                                 <Select
                                     value={ this.state.versionToInstall.full }
                                     onChange={ this.selectVersionToInstall }>
-                                    <MenuItem value="latest">
+                                    <MenuItem key="latest" value="latest">
                                         <em>latest</em>
                                     </MenuItem>
-                                    { minecraftProperties.versions && minecraftProperties.versions.releaseVersions ? minecraftProperties.versions.releaseVersions.map(this.displayReleaseVersions) : <div></div> }
+                                    { minecraftProperties.versions && minecraftProperties.versions.release ? minecraftProperties.versions.release.map(this.displayReleaseVersions) : <div></div> }
                                 </Select>
+                            </TableCell>
+                            <TableCell>
+                                <Button
+                                    onClick = { this.handleAcceptEula }
+                                    disabled = { !minecraftProperties.installed || minecraftProperties.acceptedEula }
+                                    variant="contained"
+                                    color="primary">
+                                    Accept EULA
+                                </Button>
                             </TableCell>
                             <TableCell>
                                 { minecraftProperties.updateAvailable ?
