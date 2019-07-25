@@ -8,7 +8,7 @@
     "start": "node index.js",
     "start-dev": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts start && popd",
     "build": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts build && popd",
-    "testBackend": "./node_modules/mocha/bin/_mocha -u bdd --colors --reporter mochawesome --reporter-options reportDir=./src/tests/results src/test",
+    "test-backend": "./node_modules/mocha/bin/_mocha -u bdd --colors --reporter mochawesome --reporter-options reportDir=./src/tests/results src/test",
     "testWeb": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts test --env=jsdom && popd",
     "eject": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts eject && popd"
   },
