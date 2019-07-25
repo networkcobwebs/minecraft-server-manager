@@ -7,10 +7,10 @@ let minecraftApi = new MinecraftApi(minecraftServer);
 
 process.on('exit', () => {
     minecraftApi.stop();
+    minecraftApi.properties.webServer.close();
 });
 
 (async function () {
     await minecraftApi.init();
-    await minecraftServer.init();
     await minecraftApi.start();
 })();
