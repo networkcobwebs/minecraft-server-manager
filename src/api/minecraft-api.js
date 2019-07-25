@@ -35,7 +35,8 @@ let apiProperties = {
     },
     pathToWeb: 'minecraftservermanager/build',
     pollers: {},
-    settingsFileName: 'api.properties'
+    settingsFileName: 'api.properties',
+    webServer: {}
 };
 
 /**
@@ -45,25 +46,13 @@ let apiProperties = {
  */
 class MinecraftApi {
     constructor (minecraftServer) {
-        if (!this.properties) {
-            this.properties = Object.assign({}, apiProperties);
-        }
+        this.properties = Object.assign({}, apiProperties);
         
         if (minecraftServer) {
             this.properties.minecraftServer = minecraftServer;
         } else {
             this.properties.minecraftServer = new MinecraftServer();
         }
-
-        this.init = this.init.bind(this);
-        this.start = this.start.bind(this);
-        this.stop = this.stop.bind(this);
-        this.pollMinecraft = this.pollMinecraft.bind(this);
-        this.stopMinecraftPoller = this.stopMinecraftPoller.bind(this);
-        this.connectMinecraftApi = this.connectMinecraftApi.bind(this);
-        this.startMinecraft = this.startMinecraft.bind(this);
-        this.stopMinecraft = this.stopMinecraft.bind(this);
-        this.restartMinecraft = this.restartMinecraft.bind(this);
     }
 
     /**
@@ -71,39 +60,50 @@ class MinecraftApi {
      * @param {string} pathToWeb An optional path to the Minecraft Server Manager web pages.
      */
     async init (pathToWeb) {
-        this.properties.settings = await Util.readSettings(this.properties.settingsFileName, this.properties.settings);
-
+        let properties = this.properties;
         let app = this.properties.app;
-        
-        if (!app.length) {
-            if (!pathToWeb) {
-                pathToWeb = this.properties.pathToWeb;
-            }
-            app = express();
-            app.use(bodyParser.urlencoded({ extended: false }));
-            
-            // Serve React app @ root
-            // TODO Make the path on disk make sense.
-            app.use(express.static(path.resolve(pathToWeb)));
-            // Allow browsers to make requests for us.
-            // TODO: Tighten up the Allow-Origin. Preference in the web app?
-            app.use(function(request, response, next) {
-                response.setHeader('Access-Control-Allow-Origin', '*');
-                response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-                response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-                response.setHeader('Access-Control-Allow-Credentials', true);
-                next();
-            });
+        let minecraftServer = properties.minecraftServer;
 
-            // TODO: Trap bad URLs and redirect to '/'.
-            // This seems broken when combined with the `express.static` up above.
-            // app.get('/*', function (req, res) {
-            //     res.sendFile(path.join(__dirname, pathToWeb));
-            // });
+        try {
+            properties.settings = await Util.readSettings(properties.settingsFileName, properties.settings);
             
-            this.properties.app = app;
-        } else {
-            console.warn(`MinecraftApi already initialized.`);
+            if (!app.length) {
+                if (!pathToWeb) {
+                    pathToWeb = properties.pathToWeb;
+                }
+                app = express();
+                app.use(bodyParser.urlencoded({ extended: false }));
+                
+                // Serve React app @ root
+                // TODO Make the path on disk make sense.
+                app.use(express.static(path.resolve(pathToWeb)));
+                // Allow browsers to make requests for us.
+                // TODO: Tighten up the Allow-Origin. Preference in the web app?
+                app.use(function(request, response, next) {
+                    response.setHeader('Access-Control-Allow-Origin', '*');
+                    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+                    response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+                    response.setHeader('Access-Control-Allow-Credentials', true);
+                    next();
+                });
+    
+                // TODO: Trap bad URLs and redirect to '/'.
+                // This seems broken when combined with the `express.static` up above.
+                // app.get('/*', function (req, res) {
+                //     res.sendFile(path.join(__dirname, pathToWeb));
+                // });
+                
+                properties.app = app;
+    
+                if (!minecraftServer) {
+                    minecraftServer = new MinecraftServer();
+                }
+                await minecraftServer.init();
+            } else {
+                console.warn(`MinecraftApi already initialized.`);
+            }
+        } catch (err) {
+            throw(err);
         }
     }
 
@@ -227,81 +227,145 @@ class MinecraftApi {
                 });
             });
             app.post('/api/acceptEula', async function (request, response) {
-                await minecraftServer.acceptEula();
                 response.contentType('json');
-                response.json({
-                    response: 'accepted'
-                });
-            });
+                try {
+                    await minecraftServer.acceptEula();
+                    await this.startMinecraft();
+                    response.json({
+                        response: 'eula accepted'
+                    });
+                } catch (err) {
+                    console.log('An error occurred accepting the Minecraft EULA.');
+                    console.log(JSON.stringify(err));
+                    response.json({
+                        error: err,
+                        response: 'unable to accept eula'
+                    });
+                }
+            }.bind(this));
             app.post('/api/backupWorld', async function (request, response) {
-                await minecraftServer.backupWorld();
                 response.contentType('json');
-                response.json({
-                    response: 'Backup complete.'
-                });
+                try {
+                    await minecraftServer.backupWorld();
+                    response.json({
+                        response: 'world backup complete'
+                    });
+                } catch (err) {
+                    response.json({
+                        error: err
+                    });
+                }
             });
             app.post('/api/command', async function (request, response) {
                 let command = request.query.command;
 
-                if (minecraftProperties.started) {
-                    let output = await minecraftServer.runCommand(command);
-                    response.json({
-                        output: output
-                    });
-                } else {
-                    response.json({
-                        output: ""
-                    });
+                response.contentType('json');
+                try {
+                    if (minecraftProperties.started) {
+                        let output = await minecraftServer.runCommand(command);
+                        response.json({
+                            output: output
+                        });
+                    } else {
+                        response.json({
+                            output: ""
+                        });
+                    }
+                } catch (err) {
+                    // TODO???
                 }
             });
             app.post('/api/install', async function (request, response, next) {
-                await minecraftServer.install(request.param('version'));
-                await this.startMinecraft();
                 response.contentType('json');
-                response.json({
-                    response: 'installed'
-                });
+                try {
+                    await minecraftServer.install(request.query.version);
+                    await this.startMinecraft();
+                    response.json({
+                        response: 'installed'
+                    });
+                } catch (err) {
+                    response.json({
+                        response: 'installation failed'
+                    });
+                }
             }.bind(this));
             app.post('/api/newWorld', async function (request, response) {
-                await minecraftServer.newWorld(request.param('backup'));
                 response.contentType('json');
-                response.json({
-                    response: 'New world created.'
-                });
+                try {
+                    await minecraftServer.newWorld(JSON.parse(request.query.backup));
+                    response.json({
+                        response: 'New world created.'
+                    });
+                } catch (err) {
+                    response.json({
+                        error: err
+                    });
+                }
             });
             app.post('/api/restart', async function (request, response) {
-                await this.restartMinecraft();
                 response.contentType('json');
-                response.json({
-                    response: 'restarted'
-                });
+
+                try {
+                    await this.restartMinecraft();
+                    response.json({
+                        response: 'restarted'
+                    });
+                } catch (err) {
+                    response.json({
+                        error: err
+                    });
+                }
             }.bind(this));
             app.post('/api/saveMinecraftProperties', async function (request, response) {
                 let newProperties = JSON.parse(request.param('newProperties'));
-                await minecraftServer.saveProperties(newProperties);
+                
                 response.contentType('json');
-                response.json({
-                    response: 'saved'
-                });
-            }.bind(this));
+
+                try {
+                    await minecraftServer.saveProperties(newProperties);
+                    response.json({
+                        response: 'saved'
+                    });
+                } catch (err) {
+                    response.json({
+                        error: err
+                    });
+                }
+            });
             app.post('/api/start', async function (request, response) {
-                await this.startMinecraft();
                 response.contentType('json');
-                response.json({
-                    response: 'started'
-                });
+
+                try {
+                    await this.startMinecraft();
+                    response.json({
+                        response: 'started'
+                    });
+                } catch (err) {
+                    response.json({
+                        error: err
+                    });
+                }
             }.bind(this));
             app.post('/api/stop', async function (request, response) {
-                await this.stopMinecraft();
                 response.contentType('json');
-                response.json({
-                    response: 'stopped'
-                });
+
+                try {
+                    await this.stopMinecraft();
+                    response.json({
+                        response: 'stopped'
+                    });
+                } catch (err) {
+                    response.json({
+                        error: err
+                    });
+                }
             }.bind(this));
             app.post('/api/saveApiPreferences', async function (request, response) {
                 let settings = JSON.parse(request.param('settings'));
                 this.properties.settings = Object.assign(this.properties.settings, settings);
+                
                 response.contentType('json');
+
                 try {
                     await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
                     response.json({
@@ -314,59 +378,57 @@ class MinecraftApi {
                 }
             }.bind(this));
         } else {
-            console.err('MinecraftServer is not installed... ignoring MinecraftServer API requests.');
+            console.error('MinecraftServer is not installed... ignoring MinecraftServer API requests.');
         }
     }
 
     /** Starts the MinecraftApi ExpressJS instance and MinecraftServer if configured. */
     async start () {
-        console.info('Starting MinecraftApi...');
+        console.log('Starting MinecraftApi...');
 
         let properties = this.properties;
         let app = properties.app;
-        let autoStartMinecraft = properties.settings.autoStartMinecraft;
+        let autoStartMinecraft = properties.settings.autoStartMinecraft || apiProperties.settings;
 
-        await this.connectMinecraftApi();
-
-        app.listen(properties.settings.ipPort, properties.settings.ipAddress, function () {
-            let url = 'http://' + this.address().address + ':' + this.address().port + '/';
-            console.info('Web application running at ' + url);
-        });
-        
-        // TODO: These appear to be broken. Determine if need fixing (might for SSL-everywhere).
-        // http.createServer(app).listen(8080, properties.settings.ipAddress, function () {
-        //     let url = 'http://' + this.address().address + ':' + this.address().port;
-        //     console.log('Web application running at ' + url);
-        // });
-        // https.createServer(app).listen(8443, properties.settings.ipAddress, function () {
-        //     let url = 'https://' + this.address().address + ':' + this.address().port;
-        //     console.log('Web application running at ' + url);
-        // });
-
-        if (autoStartMinecraft) {
-            this.startMinecraft();
+        try {
+            if (autoStartMinecraft) {
+                await this.startMinecraft();
+            }
+    
+            await this.connectMinecraftApi();
+    
+            properties.webServer = app.listen(properties.settings.ipPort, properties.settings.ipAddress, function () {
+                let url = `http://${this.address().address}:${this.address().port}/`;
+                console.log(`Web application running at ${url})`);
+                console.log('MinecraftApi started.');
+            });
+            
+            // TODO: These appear to be broken. Determine if need fixing (might for SSL-everywhere).
+            // http.createServer(app).listen(8080, properties.settings.ipAddress, function () {
+            //     let url = 'http://' + this.address().address + ':' + this.address().port;
+            //     console.log('Web application running at ' + url);
+            // });
+            // https.createServer(app).listen(8443, properties.settings.ipAddress, function () {
+            //     let url = 'https://' + this.address().address + ':' + this.address().port;
+            //     console.log('Web application running at ' + url);
+            // });
+        } catch (err) {
+            // TODO ???
         }
-
-        console.info('MinecraftApi started.');
     }
 
     /**
      * Stops the MinecraftApi instance and the associated MinecraftServer if running.
      */
     async stop () {
-        console.log('Stopping MinecraftApi...');
-        
-        let properties = this.properties,
-            minecraftServer = properties.minecraftServer;
-            
-        this.stopMinecraftPoller();
-        if (minecraftServer.properties.started) {
-            await minecraftServer.stop();
-            console.log('MinecraftServer stopped.');
-            properties.app.close();
+        try {
+            console.log('Stopping MinecraftApi...');
+            await this.stopMinecraft();
+            await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
+            console.log('MinecraftApi stopped.');
+        } catch (err) {
+            // TODO ???
         }
-        await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
-        console.log('MinecraftApi stopped.');
     }
 
     /**
@@ -375,14 +437,14 @@ class MinecraftApi {
      * @param {number} pingWait An optional number of milliseconds to wait before polling the MinecraftServer.
      * By default, pingWait is 10 seconds.
      */
-    pollMinecraft (pingWait) {
+    async pollMinecraft (pingWait) {
         let normalPingTime = 10 * 1000,
             appendTime = 1 * 1000,
             maxTime = 300 * 1000,
             pingTime;
 
         // Normally ping every 10 seconds.
-        // If a fast ping was requested (from constructor/DidMount), honor it.
+        // If a fast ping was requested (from constructor or startMinecraft, etc.), honor it.
         // Once trouble hits, add 1 second until 5 minutes is reached, then reset to 10 seconds.
         // Once trouble fixed/successful, reset to 10 seconds.
         if (!pingWait) {
@@ -399,23 +461,22 @@ class MinecraftApi {
             clearTimeout(this.properties.pollers.minecraftStatusTimerId);
         }
 
-        this.properties.pollers.minecraftStatusTimerId = setTimeout(() => {
-            if (this.properties.minecraftServer.properties.installed) {
+        this.properties.pollers.minecraftStatusTimerId = setTimeout(async () => {
+            if (this.properties.minecraftServer.properties.installed && this.properties.minecraftServer.properties.started) {
                 pingTime = normalPingTime;
-                this.properties.minecraftServer.updateStatus(() => {
-                    if (debugApi) {
-                        console.log('Got Minecraft status:');
-                        console.log(this.properties.minecraftServer.properties);
-                    }
-    
-                    if (debugApi) {
-                        console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
-                    }
-                    this.pollMinecraft(pingTime);
-                });
+                await this.properties.minecraftServer.updateStatus();
+                if (debugApi) {
+                    console.log('Got Minecraft status:');
+                    console.log(this.properties.minecraftServer.properties);
+                }
+
+                if (debugApi) {
+                    console.log(`Setting Minecraft status poller to run in ${pingTime/1000} seconds.`);
+                }
+                await this.pollMinecraft(pingTime);
             } else {
                 pingTime = pingTime + appendTime;
-                this.pollMinecraft(pingTime);
+                await this.pollMinecraft(pingTime);
             }
         }, pingTime);
     }
@@ -435,13 +496,19 @@ class MinecraftApi {
      * Starts the MinecraftServer instance.
      */
     async startMinecraft () {
-        let properties = this.properties,
-            minecraftServer = properties.minecraftServer;
-
-        console.log(`Starting MinecraftServer...`);
-        await minecraftServer.start();
-        console.log(`MinecraftServer started.`);
-        this.pollMinecraft(100);
+        try {
+            let properties = this.properties;
+            let minecraftServer = properties.minecraftServer;
+            if (minecraftServer.properties.installed) {
+                console.log(`Starting MinecraftServer...`);
+                await minecraftServer.start();
+                console.log(`MinecraftServer started.`);
+                await this.pollMinecraft();
+            }
+        } catch (err) {
+            console.log("Unable to start MinecraftServer.");
+            console.log(err.message);
+        }
     }
 
     /**
@@ -452,17 +519,24 @@ class MinecraftApi {
         let minecraftServer = properties.minecraftServer;
 
         this.stopMinecraftPoller();
-        await minecraftServer.stop();
-        return Promise.resolve();
+
+        try {
+            await minecraftServer.stop();
+        } catch (err) {
+            console.log(err.message);
+        }
     }
 
     /**
      * Stops and starts the MinecraftServer instance.
      */
     async restartMinecraft () {
-        await this.stopMinecraft();
-        await this.startMinecraft();
-        return Promise.resolve();
+        try {
+            await this.stopMinecraft();
+            await this.startMinecraft();
+        } catch (err) {
+            console.log(err.message);
+        }
     }
 
     /**
@@ -472,9 +546,8 @@ class MinecraftApi {
     async log (data) {
         try {
             await Util.log(data, 'minecraft-api.log');
-            return Promise.resolve();
         } catch (err) {
-            return Promise.reject(err);
+            throw(err);
         }
     }
 
@@ -484,9 +557,8 @@ class MinecraftApi {
     async clearLog () {
         try {
             await Util.clearLog('minecraft-api.log');
-            return Promise.resolve();
         } catch (err) {
-            return Promise.reject(err);
+            throw(err);
         }
     }
 }
