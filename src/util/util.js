@@ -81,10 +81,9 @@ async function log (data = "", file = "") {
     }
     try {
         let logFilePath = path.resolve(file);
-        await fs.appendFile(logFilePath, `${util.format(data)} ${os.EOL}`);
-        return Promise.resolve(logFilePath);
+        await fs.appendFile(logFilePath, `${util.format(data)}${os.EOL}`);
+        return logFilePath;
     } catch (err) {
-        debugger;
         return Promise.reject(err);
     }
 }
@@ -95,14 +94,14 @@ async function log (data = "", file = "") {
  */
 async function clearLog (file = "") {
     if (!file) {
-        return Promise.reject("Invalid filename specified.");
+        return Promise.reject(new Error("Invalid filename specified."));
     }
     try {
         let logFilePath = path.resolve(file);
         let logFile = await fs.createWriteStream(logFilePath);
         logFile.write("");
         logFile.close();
-        return Promise.resolve(logFilePath);
+        return logFilePath;
     } catch (err) {
         return Promise.reject(err);
     }
@@ -120,14 +119,13 @@ async function readSettings (filename = "", defaults = {}) {
     
     try {
         settings = JSON.parse(await fs.readFile(settingsFile));
-        return Promise.resolve(settings);
+        return settings;
     } catch (err) {
         if (!defaults) {
-            return Promise.reject("No default settings given.");
+            return Promise.reject(new Error("No default settings given."));
         }
         // Overwrite with sane defaults.
-        await saveSettings(filename, defaults);
-        return Promise.resolve(defaults);
+        return await saveSettings(filename, defaults);
     }
 }
 
@@ -140,7 +138,6 @@ async function saveSettings (filename, settings) {
     let settingsFile = path.resolve(filename);
     try {
         await fs.writeFile(settingsFile, JSON.stringify(settings, null, 4));
-        return Promise.resolve();
     } catch (err) {
         return Promise.reject(err);
     }
