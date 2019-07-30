@@ -11,6 +11,12 @@ process.on('exit', () => {
 });
 
 (async function () {
-    await minecraftApi.init();
-    await minecraftApi.start();
+    try {
+        await minecraftApi.init();
+        await minecraftApi.start();
+    } catch (err) {
+        console.log(`Unable to start MinecraftApi.`);
+        console.log(err);
+        process.emit('exit');
+    }
 })();

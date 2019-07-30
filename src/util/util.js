@@ -138,6 +138,7 @@ async function saveSettings (filename, settings) {
     let settingsFile = path.resolve(filename);
     try {
         await fs.writeFile(settingsFile, JSON.stringify(settings, null, 4));
+        return settings;
     } catch (err) {
         return Promise.reject(err);
     }

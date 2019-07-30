@@ -388,7 +388,7 @@ class MinecraftApi {
 
         let properties = this.properties;
         let app = properties.app;
-        let autoStartMinecraft = properties.settings.autoStartMinecraft || apiProperties.settings;
+        let autoStartMinecraft = properties.settings.autoStartMinecraft || apiProperties.settings.autoStartMinecraft;
 
         try {
             if (autoStartMinecraft) {
@@ -399,7 +399,7 @@ class MinecraftApi {
     
             properties.webServer = app.listen(properties.settings.ipPort, properties.settings.ipAddress, function () {
                 let url = `http://${this.address().address}:${this.address().port}/`;
-                console.log(`Web application running at ${url})`);
+                console.log(`Web application running at ${url}`);
                 console.log('MinecraftApi started.');
             });
             

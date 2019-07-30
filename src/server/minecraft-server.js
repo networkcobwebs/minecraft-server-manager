@@ -347,7 +347,6 @@ class MinecraftServer {
                 await this.log('No update available.');
             }
             await this.log('Done checking for Minecraft server update.');
-            resolve();
         } catch (err) {
             return Promise.reject(err);
         }
