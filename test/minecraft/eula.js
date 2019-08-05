@@ -1,6 +1,7 @@
 const { describe, it, beforeEach, before, after } = require('mocha');
 const assert = require('assert').strict;
 const mock = require('mock-fs');
+const stat = require('fs-extra').stat;
 const path = require('path');
 const Eula = require(path.resolve('minecraft', 'Eula'));
 
@@ -76,6 +77,22 @@ describe('EULA', function () {
       });
       it('should reject with an Error if path is invalid', async function () {
         await assert.rejects(this.eula.check('notapath'), { code: 'ENOENT' });
+      });
+    });
+    describe('accept()', function () {
+      it('should accept an unaccepted EULA', async function () {
+        await this.eula.accept(path.resolve());
+        // NOTE: We depend on Eula.check() working properly
+        assert.equal(await this.eula.check(path.resolve()), true);
+      });
+      it('should not modify an already accepted EULA file', async function () {
+        this.eula.file = testFile;
+        await this.eula.accept(path.resolve());
+        const stats = await stat(path.resolve(testFile));
+        assert.equal(stats.birthtime.getMilliseconds(), stats.mtime.getMilliseconds());
+      });
+      it('should reject with an Error if path is invalid', async function () {
+        await assert.rejects(this.eula.accept('notapath'), { code: 'ENOENT' });
       });
     });
     after(mock.restore);
