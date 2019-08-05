@@ -45,10 +45,20 @@ class Eula {
       .match(Eula.regexp.url)[0];
     return this.url;
   }
+  /**
+   * Reads and returns EULA acceptance state from file
+   * @return {Promise} Resolves to state Boolean or rejects with an Error object
+   */
+  async check (serverPath) {
+    return JSON.parse((await fs.readFile(path.join(serverPath, this.file), 'utf8'))
+      .match(Eula.regexp.state)[0]);
+  }
 }
 // Expose regular expressions used in methods to be changed if needed
 Eula.regexp = {
   url: /(https?|ftp):\/\/[^\s][\w./]+/,
+  // This might be unnecessarily complex, but it only returns 'true'/'false'
+  state: /(?<=eula=)(?:false|true)/
 };
 // Default URL and filename strings, so as not to store copies in every instance
 Eula.url = 'https://account.mojang.com/documents/minecraft_eula';
