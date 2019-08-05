@@ -1,3 +1,5 @@
+const fs = require('fs-extra');
+const path = require('path');
 /**
  * Used to accept and read data from the Minecraft End User License Agreement file
  */
@@ -33,7 +35,21 @@ class Eula {
   set file (file) {
     this.customFile = file !== this.file ? file : this.customFile;
   }
+  /**
+   * Reads EULA URL from file and stores it
+   * @param  {String} serverPath Path to Minecraft Server executables folder
+   * @return {Promise} Resolves to URL string or rejects with an Error object
+   */
+  async getUrl (serverPath) {
+    this.url = (await fs.readFile(path.join(serverPath, this.file), 'utf8'))
+      .match(Eula.regexp.url)[0];
+    return this.url;
+  }
 }
+// Expose regular expressions used in methods to be changed if needed
+Eula.regexp = {
+  url: /(https?|ftp):\/\/[^\s][\w./]+/,
+};
 // Default URL and filename strings, so as not to store copies in every instance
 Eula.url = 'https://account.mojang.com/documents/minecraft_eula';
 Eula.file = 'eula.txt';
