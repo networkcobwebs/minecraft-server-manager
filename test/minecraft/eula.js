@@ -51,6 +51,7 @@ describe('EULA', function () {
     before(function () {
       mock({
         [Eula.file]: eulaContents,
+        [testFile]: eulaContents.replace('false', 'true')
       });
     });
     beforeEach(function () {
@@ -63,6 +64,18 @@ describe('EULA', function () {
       });
       it('should reject with an Error if path is invalid', async function () {
         await assert.rejects(this.eula.getUrl('notapath'), { code: 'ENOENT' });
+      });
+    });
+    describe('check()', function () {
+      it('should be able to parse EULA as unaccepted', async function () {
+        assert.equal(await this.eula.check(path.resolve()), false);
+      });
+      it('should be able to parse EULA as accepted', async function () {
+        this.eula.file = testFile;
+        assert.equal(await this.eula.check(path.resolve()), true);
+      });
+      it('should reject with an Error if path is invalid', async function () {
+        await assert.rejects(this.eula.check('notapath'), { code: 'ENOENT' });
       });
     });
     after(mock.restore);
