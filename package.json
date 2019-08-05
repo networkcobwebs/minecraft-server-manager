@@ -5,7 +5,8 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node .",
+    "tests": "nyc mocha --recursive",
     "start-dev": "cd minecraftservermanager && react-scripts start",
     "build": "cd minecraftservermanager && react-scripts build",
     "test": "cd minecraftservermanager && react-scripts test --env=jsdom",
@@ -38,6 +39,8 @@
     "underscore": "^1.9.1"
   },
   "devDependencies": {
-    "eslint": "^5.16.0"
+    "eslint": "^5.16.0",
+    "mocha": "^6.2.0",
+    "nyc": "^14.1.1"
   }
 }
