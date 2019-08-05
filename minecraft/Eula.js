@@ -53,6 +53,17 @@ class Eula {
     return JSON.parse((await fs.readFile(path.join(serverPath, this.file), 'utf8'))
       .match(Eula.regexp.state)[0]);
   }
+  /**
+  * Accepts the EULA, if not already accepted
+  * @return {Promise} Resolves, or rejects with an Error object
+  */
+  async accept (serverPath) {
+    const filePath = path.join(serverPath, this.file);
+    let lines = (await fs.readFile(filePath, 'utf8'));
+    if (!JSON.parse(lines.match(Eula.regexp.state)[0])) {
+      await fs.writeFile(filePath, lines.replace(Eula.regexp.state, 'true'));
+    }
+  }
 }
 // Expose regular expressions used in methods to be changed if needed
 Eula.regexp = {
