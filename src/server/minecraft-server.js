@@ -9,8 +9,10 @@ const path = require('path');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
+
 // minecraft-server-manager Imports
 const Util = require(path.resolve('src', 'util', 'util'));
+const Eula = require(path.resolve('minecraft', 'Eula.js'));
 
 let minecraftProperties = {
     settings: {
@@ -70,6 +72,7 @@ let minecraftProperties = {
 class MinecraftServer {
     constructor () {
         this.properties = Object.assign({}, minecraftProperties);
+        this.eula = new Eula();
         this.bufferMinecraftOutput = this.bufferMinecraftOutput.bind(this);
         this.properties.ipAddress = require('underscore')
             .chain(require('os').networkInterfaces())
@@ -99,37 +102,17 @@ class MinecraftServer {
     async acceptEula () {
         let properties = this.properties;
         let minecraftDirectory = properties.settings.minecraftDirectory;
-        let eula;
-        let line;
-        let lineNumber;
         
         try {
             await this.log('Checking and accepting MinecraftServer EULA...');
             if (properties.installed && (properties.acceptedEula === 'false' || !properties.acceptedEula)) {
                 await this.log('Accepting EULA...');
-                eula = await fs.readFile(path.join(minecraftDirectory, 'eula.txt'), 'utf8');
-                eula = eula.split(os.EOL);
-                for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
-                    if (eula[lineNumber]) {
-                        line = eula[lineNumber].split('=');
-                        if (line.length == 2) {
-                            eula[lineNumber] = 'eula=true';
-                        }
-                    }
-                }
-                await fs.writeFile(path.join(minecraftDirectory, 'eula.txt'), eula.join(os.EOL));
-                await this.log('Accepted Minecraft EULA.');
+                await this.eula.accept(minecraftDirectory);
                 properties.acceptedEula = true;
             }
         } catch (err) {
-            if (err.stack.indexOf('TypeError') !== -1) {
-                // Run once to generate the file and directory structure.
-                await this.start(); // will fail to start as the eula is not accepted, but will generate the required file.
-                await this.acceptEula();
-            } else {
-                await this.log('An error occurred accepting the Minecraft EULA.');
-                await this.log(err);
-            }
+            await this.log(`An error occurred accepting the Minecraft EULA. ${err}`);
+            await this.log(err);
         }
     }
 
@@ -180,7 +163,10 @@ class MinecraftServer {
         try {
             await this.log('Checking for Minecraft installation.');
             await fs.access(minecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK)
-            await this.detectMinecraftJar();
+            await Promise.all([
+                this.detectMinecraftJar(),
+                this.getEula()
+            ]);
         } catch (err) {
             if (err.code === 'ENOENT') {
                 await this.log(`Creating directory at ${minecraftDirectory}...`);
@@ -189,7 +175,6 @@ class MinecraftServer {
                     properties.installed = false;
                 } catch (er) {
                     await this.log('An error occurred creating the Minecraft server directory.');
-                    await this.log(er);
                     await this.log(er);
                 }
             } else {
@@ -597,40 +582,40 @@ class MinecraftServer {
     }
 
     async getEula () {
-        let eula;
-        let eulaUrlLine;
-        let line;
-        let lineNumber;
+        // let eula;
+        // let eulaUrlLine;
+        // let line;
+        // let lineNumber;
         let properties = this.properties;
         let minecraftDirectory = properties.settings.minecraftDirectory;
         try {
             await this.log('Getting MinecraftServer EULA acceptance state...');
             await this.log('Reading MinecraftServer eula.txt...');
-            eula = await fs.readFile(path.join(minecraftDirectory, 'eula.txt'), 'utf8');
-            eula = eula.split(os.EOL);
-            for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
-                if (eula[lineNumber]) {
-                    eulaUrlLine = eula[lineNumber].split('https://');
-                    if (eulaUrlLine.length == 2) {
-                        properties.eulaUrl = 'https://' + eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
-                        await this.log('MinecraftServer EULA location: ' + properties.eulaUrl);
-                    }
-                    line = eula[lineNumber].split('=');
-                    if (line.length == 2) {
-                        properties.acceptedEula = !!JSON.parse(line[1]);
-                        await this.log(`MinecraftServer EULA accepted? ${properties.acceptedEula}`);
-                    }
-                }
-            }
-            properties.eulaFound = true;
-            properties.installed = true;
+            // eula = await fs.readFile(path.join(minecraftDirectory, 'eula.txt'), 'utf8');
+            // eula = eula.split(os.EOL);
+            // for (lineNumber = 0; lineNumber < eula.length; lineNumber++) {
+            //     if (eula[lineNumber]) {
+            //         eulaUrlLine = eula[lineNumber].split('https://');
+            //         if (eulaUrlLine.length == 2) {
+            //             properties.eulaUrl = 'https://' + eulaUrlLine[1].substr(0, eulaUrlLine[1].indexOf(')'));
+            //             await this.log('MinecraftServer EULA location: ' + properties.eulaUrl);
+            //         }
+            //         line = eula[lineNumber].split('=');
+            //         if (line.length == 2) {
+            //             properties.acceptedEula = !!JSON.parse(line[1]);
+            //             await this.log(`MinecraftServer EULA accepted? ${properties.acceptedEula}`);
+            //         }
+            //     }
+            // }
+            this.properties.eulaUrl = await this.eula.getUrl(minecraftDirectory);
+            this.properties.acceptedEula = await this.eula.check(minecraftDirectory);
+            this.properties.eulaFound = true;
         } catch (err) {
-            await this.log('Failed to read eula.txt.');
-            await this.log(err.stack);
+            await this.log(`Failed to read eula.txt. ${err}`);
+            await this.log(err);
             await this.log('Minecraft probably needs to be run once to stage new files.');
             await this.log('Use the web interface to start the Minecraft server and accept the license agreement.');
             properties.eulaFound = false;
-            properties.installed = false;
         }
     }
 
