@@ -1,9 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
 
 import 'typeface-roboto';
-import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -35,22 +33,6 @@ function formatTime (seconds) {
 }
 
 class ServerSummary extends React.Component {
-    handleAcceptEula = () => {
-        axios({
-            method: 'post',
-            url: '/api/acceptEula'
-        }).catch(error => {
-            console.log('An error occurred accepting the EULA:', error);
-        });
-    };
-
-    minecraftAcceptEulaButton () {
-        return (
-            <Button onClick = { this.handleAcceptEula } color="primary" autoFocus>
-                Accept
-            </Button>
-        );
-    }
     minecraftEulaAcceptedStatus () {
         let minecraftProperties = this.props.minecraftProperties;
         
@@ -178,7 +160,7 @@ class ServerSummary extends React.Component {
                             <TableCell>
                                 { this.minecraftEulaAcceptedStatus() }
                             </TableCell>
-                            <TableCell>{ this.props.minecraftProperties.acceptedEula ? <div></div> : this.minecraftAcceptEulaButton() }</TableCell>
+                            <TableCell></TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>

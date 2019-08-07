@@ -6,10 +6,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "start-dev": "cd minecraftservermanager && react-scripts start",
-    "build": "cd minecraftservermanager && react-scripts build",
-    "test": "cd minecraftservermanager && react-scripts test --env=jsdom",
-    "eject": "cd minecraftservermanager && react-scripts eject"
+    "start-dev": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts start && popd",
+    "build": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts build && popd",
+    "test-backend": "./node_modules/mocha/bin/_mocha -u bdd --colors --reporter mochawesome --reporter-options reportDir=./src/tests/results src/test",
+    "testWeb": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts test --env=jsdom && popd",
+    "eject": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts eject && popd"
   },
   "proxy": "http://localhost:3001",
   "repository": {
@@ -21,9 +22,9 @@
     "url": "https://github.com/nickrnet/"
   },
   "dependencies": {
-    "acorn": "^6.1.1",
-    "ajv": "^6.10.0",
-    "ajv-keywords": "^3.4.0",
+    "acorn": "^6.2.0",
+    "ajv": "^6.10.2",
+    "ajv-keywords": "^3.4.1",
     "archiver": "^3.0.0",
     "axios": "^0.19.0",
     "body-parser": "^1.19.0",
@@ -38,6 +39,13 @@
     "underscore": "^1.9.1"
   },
   "devDependencies": {
-    "eslint": "^5.16.0"
+    "eslint": "^5.16.0",
+    "expect": "^24.8.0",
+    "jsdoc": "^3.6.3",
+    "mocha": "^6.2.0",
+    "mochawesome": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=10.16.0"
   }
 }

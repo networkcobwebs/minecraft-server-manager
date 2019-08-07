@@ -24,6 +24,7 @@ export default class App extends React.Component {
         this.state = {
             debug: debug,
             ipInfo: {},
+            apiSettings: {},
             minecraftStatus: {},
             eulaOpen: false,
             minecraftProperties: {},
@@ -114,7 +115,9 @@ export default class App extends React.Component {
 
         this.statusTimerId = setTimeout(() => {
             axios(`/api/status`).then(res => {
-                let minecraftProperties = res.data;
+                let apiSettings = res.data.apiSettings;
+                let minecraftProperties = res.data.minecraftProperties;
+                this.setState({ apiSettings });
                 this.setState({ minecraftProperties });
 
                 if (debug) {
@@ -247,7 +250,9 @@ export default class App extends React.Component {
                     startMinecraftStatus = { this.startMinecraftStatus }
                     stopMinecraftStatus = { this.stopMinecraftStatus }
                 /> }
-                { this.state.value === 4 && <Preferences /> }
+                { this.state.value === 4 && <Preferences 
+                    apiSettings = { this.state.apiSettings }
+                /> }
                 { this.state.value === 5 && <About
                     minecraftProperties = { minecraftProperties }
                 /> }
