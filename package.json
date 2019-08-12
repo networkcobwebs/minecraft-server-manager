@@ -7,9 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "start-dev": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts start && popd",
-    "build": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts build && popd",
+    "build-web": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts build && popd",
     "test-backend": "./node_modules/mocha/bin/_mocha -u bdd --colors --reporter mochawesome --reporter-options reportDir=./src/tests/results src/test",
-    "testWeb": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts test --env=jsdom && popd",
+    "test-web": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts test --env=jsdom && popd",
     "eject": "pushd minecraftservermanager && ./node_modules/.bin/react-scripts eject && popd"
   },
   "proxy": "http://localhost:3001",
@@ -43,7 +43,9 @@
     "expect": "^24.8.0",
     "jsdoc": "^3.6.3",
     "mocha": "^6.2.0",
-    "mochawesome": "^4.0.1"
+    "mochawesome": "^4.0.1",
+    "mock-fs": "^4.10.1",
+    "nyc": "^14.1.1"
   },
   "engines": {
     "node": ">=10.16.0"
