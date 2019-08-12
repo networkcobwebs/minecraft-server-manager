@@ -3,7 +3,7 @@ const assert = require('assert').strict;
 const mock = require('mock-fs');
 const stat = require('fs-extra').stat;
 const path = require('path');
-const Eula = require(path.resolve('minecraft', 'Eula'));
+const Eula = require(path.resolve('src', 'server', 'Eula'));
 
 const testUrl = 'http://foo.bar/eula/file';
 const testFile = 'aule.txt';

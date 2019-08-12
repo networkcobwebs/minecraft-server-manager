@@ -8,7 +8,7 @@ const express = require('express');
 
 // minecraft-server-manager Imports
 const Util = require(path.resolve('src', 'util', 'util'));
-const MinecraftServer = require(path.resolve('src', 'server', 'minecraft-server'));
+const MinecraftServer = require(path.resolve('src', 'server', 'MinecraftServer'));
 
 const debugApi = false;
 
@@ -33,7 +33,7 @@ let apiProperties = {
         mem: os.totalmem(),
         version: process.version,
     },
-    pathToWeb: 'minecraftservermanager/build',
+    pathToWeb: 'src/web/build',
     pollers: {},
     settingsFileName: 'api.properties',
     webServer: {}
