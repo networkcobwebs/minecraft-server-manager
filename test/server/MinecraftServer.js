@@ -2,7 +2,7 @@ const expect = require('expect');
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
-const MinecraftServer = require(path.resolve('src', 'server', 'minecraft-server'));
+const MinecraftServer = require(path.resolve('src', 'server', 'MinecraftServer'));
 
 describe('minecraft-server tests', () => {
     let minecraftServer;
