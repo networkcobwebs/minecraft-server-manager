@@ -23,4 +23,4 @@ yarn-error.log*
 minecraft_server/**/*
 **/*.properties
 **/*.log
-test/results
+test-results

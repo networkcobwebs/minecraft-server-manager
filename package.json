@@ -6,11 +6,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "start-dev": "pushd src/web && ./node_modules/.bin/react-scripts start && popd",
-    "build-web": "pushd src/web && ./node_modules/.bin/react-scripts build && popd",
-    "test-backend": "./node_modules/mocha/bin/_mocha -u bdd --colors --reporter mochawesome --reporter-options reportDir=./test/results src/test",
-    "test-web": "pushd src/web && ./node_modules/.bin/react-scripts test --env=jsdom && popd",
-    "eject": "pushd src/web && ./node_modules/.bin/react-scripts eject && popd"
+    "start-dev": "pushd src/web && react-scripts start && popd",
+    "build-web": "pushd src/web && react-scripts build && popd",
+    "test-backend": "mocha --recursive --reporter mochawesome --reporter-options reportDir=./test-results test",
+    "test-web": "pushd src/web && react-scripts test --env=jsdom && popd",
+    "eject": "pushd src/web && react-scripts eject && popd"
   },
   "proxy": "http://localhost:3001",
   "repository": {
