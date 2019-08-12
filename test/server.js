@@ -89,12 +89,14 @@ describe('minecraft-server tests', () => {
             }
             expect(found1112).toBe(true);
         });
-        it('should download the latest minecraft server jar', async () => {
+        it('should download the latest minecraft server jar', async function () {
+            this.timeout(5000);
             await minecraftServer.clearLog();
             await minecraftServer.downloadRelease('latest');
             expect(minecraftServer.properties.versions.installed.length).toBeGreaterThan(0);
         });
-        it('should start minecraft', async () => {
+        it('should start minecraft', async function () {
+            this.timeout(30000);
             expect(minecraftServer.properties.started).toBe(false);
             await minecraftServer.clearLog();
             await minecraftServer.init();
@@ -105,21 +107,24 @@ describe('minecraft-server tests', () => {
             expect(minecraftServer.properties.eulaFound).toBe(true);
             expect(minecraftServer.properties.fullHelp.length).toBeGreaterThan(0);
         });
-        it('should list players', async () => {
+        it('should list players', async function () {
+            this.timeout(5000);
             expect(minecraftServer.properties.started).toBe(true);
             await minecraftServer.clearLog();
             await minecraftServer.listPlayers();
             expect(minecraftServer.properties.playerInfo.summary).not.toBe(null);
             expect(minecraftServer.properties.playerInfo.summary).not.toBe("");
         });
-        it('should run a minecraft command and return its output', async () => {
+        it('should run a minecraft command and return its output', async function () {
+            this.timeout(5000);
             expect(minecraftServer.properties.started).toBe(true);
             await minecraftServer.clearLog();
             let output = await minecraftServer.runCommand(`/gamerule keepInventory true`);
             expect(output.length).toBeGreaterThan(0);
             expect(output).toBe("Game rule keepInventory has been updated to true");
         });
-        it('should stop minecraft', async () => {
+        it('should stop minecraft', async function () {
+            this.timeout(15000);
             expect(minecraftServer.properties.started).toBe(true);
             await minecraftServer.stop();
             expect(minecraftServer.properties.started).toBe(false);
