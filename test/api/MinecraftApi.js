@@ -2,7 +2,7 @@ const expect = require('expect');
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
-const MinecraftApi = require(path.resolve('src', 'api', 'minecraft-api'));
+const MinecraftApi = require(path.resolve('src', 'api', 'MinecraftApi'));
 
 describe('minecraft-api tests', () => {
     let minecraftApi;
@@ -31,6 +31,7 @@ describe('minecraft-api tests', () => {
     });
     describe('minecraft-api methods', () => {
         it('should start and stop', async () => {
+            minecraftApi.properties.settings.autoStartMinecraft = false;
             await minecraftApi.start();
             expect(minecraftApi.app).not.toBe(null);
             await minecraftApi.stop();
