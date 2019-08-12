@@ -642,6 +642,7 @@ class MinecraftServer {
                 snapshot: snapshotVersions
             };
             await this.log('Got releases from Minecraft.');
+            return this.properties.versions;
         } catch (err) {
             await this.log(`An error occurred getting release information from Minecraft.`);
             await this.log(err.stack);

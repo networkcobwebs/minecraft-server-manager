@@ -117,7 +117,7 @@ describe('minecraft-server tests', () => {
             await minecraftServer.clearLog();
             let output = await minecraftServer.runCommand(`/gamerule keepInventory true`);
             expect(output.length).toBeGreaterThan(0);
-            expect(output).toBe("Gamerule keepInventory is now set to: true");
+            expect(output).toBe("Game rule keepInventory has been updated to true");
         });
         it('should stop minecraft', async () => {
             expect(minecraftServer.properties.started).toBe(true);
