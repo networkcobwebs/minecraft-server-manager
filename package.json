@@ -22,10 +22,10 @@
     "url": "https://github.com/nickrnet/"
   },
   "dependencies": {
-    "acorn": "^6.2.0",
+    "acorn": "^6.3.0",
     "ajv": "^6.10.2",
     "ajv-keywords": "^3.4.1",
-    "archiver": "^3.0.0",
+    "archiver": "^3.1.1",
     "axios": "^0.19.0",
     "body-parser": "^1.19.0",
     "connect-flash": "^0.1.1",
@@ -43,7 +43,7 @@
     "expect": "^24.8.0",
     "jsdoc": "^3.6.3",
     "mocha": "^6.2.0",
-    "mochawesome": "^4.0.1",
+    "mochawesome": "^4.1.0",
     "mock-fs": "^4.10.1",
     "nyc": "^14.1.1"
   },
