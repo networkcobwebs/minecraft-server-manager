@@ -12,7 +12,7 @@ const exec = util.promisify(require('child_process').exec);
 
 // minecraft-server-manager Imports
 const Util = require(path.resolve('src', 'util', 'util'));
-const Eula = require(path.resolve('minecraft', 'Eula.js'));
+const Eula = require(path.resolve('src', 'server', 'Eula.js'));
 
 let minecraftProperties = {
     settings: {
