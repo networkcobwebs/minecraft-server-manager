@@ -33,7 +33,7 @@ let apiProperties = {
         mem: os.totalmem(),
         version: process.version,
     },
-    pathToWeb: 'minecraftservermanager/build',
+    pathToWeb: 'src/web/build',
     pollers: {},
     settingsFileName: 'api.properties',
     webServer: {}

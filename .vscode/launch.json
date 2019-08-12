@@ -36,17 +36,17 @@
             "name": "Minecraft Server + API",
             "program": "${workspaceFolder}/index.js",
             "env": {"JAVA_HOME": "/opt/java"},
-            "runtimeVersion": "10.16.0",
+            "runtimeVersion": "10.16.2",
             "args": []
         },
         {  
             "type":"node",
             "request": "launch",
             "name": "React",
-            "program": "${workspaceRoot}/minecraftservermanager/node_modules/react-scripts/bin/react-scripts.js",
+            "program": "${workspaceRoot}/src/web/node_modules/react-scripts/bin/react-scripts.js",
             "args": ["start"],
-            "runtimeVersion": "10.16.0",
-            "cwd": "${workspaceFolder}/minecraftservermanager",
+            "runtimeVersion": "10.16.2",
+            "cwd": "${workspaceFolder}/src/web",
             "env": {
                 "BROWSER": "none"
             },
