@@ -7,8 +7,8 @@ const path = require('path');
 const express = require('express');
 
 // minecraft-server-manager Imports
-const Util = require(path.resolve('src', 'util', 'util'));
-const MinecraftServer = require(path.resolve('src', 'server', 'MinecraftServer'));
+const Util = require('../util/util');
+const MinecraftServer = require('../server/MinecraftServer');
 
 const debugApi = false;
 
@@ -275,7 +275,7 @@ class MinecraftApi {
                     // TODO???
                 }
             });
-            app.post('/api/install', async function (request, response, next) {
+            app.post('/api/install', async function (request, response) {
                 response.contentType('json');
                 try {
                     await minecraftServer.install(request.query.version);

@@ -2,7 +2,7 @@ const expect = require('expect');
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
-const MinecraftApi = require(path.resolve('src', 'api', 'MinecraftApi'));
+const MinecraftApi = require('../../src/api/MinecraftApi');
 
 describe('minecraft-api tests', () => {
     let minecraftApi;
