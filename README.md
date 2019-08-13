@@ -5,10 +5,13 @@ A browser-based management interface for Minecraft Server.
 
 Includes:
 
-* a Node.js script to control your Minecraft server instance
+* a set of Node.js scripts to control your Minecraft server instance
 * a set of web pages for management created using React
 
 See the [release notes](release-notes.txt) for additional information.
+
+Use of this application or its pieces require acceptance of the [Minecraft
+end user license agreement](https://account.mojang.com/documents/minecraft_eula)
 
 Dashboard
 ![Dashboard](doc/screenshots/dashboard.png "Dashboard")
@@ -32,13 +35,41 @@ Node.js 10.x or greater LTS release.
 ```
     git clone https://github.com/nickrnet/minecraft-server-manager.git
     pushd minecraft-server-manager && npm install
-    pushd minecraftservermanager && npm install
+    pushd src/web && npm install
     popd && popd
 ```
 
-2. If desired, edit the IP address and port properties at the top of the
-`minecraft-api.js`
-script. By default, the web server will run on `localhost` on port 3001.
+## Configuration
+
+1. During the first run, an `api.properties` file will be created that contains
+
+```
+{
+    "ipAddress": "0.0.0.0",
+    "ipPort": 3001,
+    "autoStartMinecraft": false,
+    "pollMinecraft": {
+        "time": 10,
+        "units": "s"
+    }
+}
+```
+
+The `ipAddress` property is the address the web server runs on. By default
+the web server listens on all network interfaces. Change this value to the address
+desired if you would like to limit the addresses the server listens on.
+
+The `ipPort` property is the port the web server runs on. By default, the port is 3001.
+Change this value to the port you would like the web server to listen on if desired.
+**Note** If this value is less than 1025, then the "Running Minecraft Server Manager"
+steps must be completed as a root/Administrator user.
+
+The `autoStartMinecraft` property tries to start the Minecraft server when the web
+server starts. There is also a preference in the web user interface that relates to this
+property.
+
+The `pollMinecraft` property relates to how frequently the web server polls the Minecraft
+server instance. Generally, this value should not be lowered.
 
 ## Running Minecraft Server Manager
 
@@ -75,7 +106,7 @@ Current OS testing has been with:
 * Ubuntu 16.04, 18.04
 * CentOS 7
 * OS X Sierra (10.12) and higher
-* Node.js 10.16.0
+* Node.js 10.16.2
 
 That is not to say that it will not run on Windows - it should, but it has
 not been tested.
@@ -88,16 +119,19 @@ Feel free to check the
 page and log an issue if it doesn't exist as issues are discovered. Realize that
 there is no schedule for this project, so a bug fix or enhancement will be
 completed as time allows, regardless of severity, crash, or payment, at the
-developer's discretion. For that matter if you are able, fork the project and
-PR a bug fix back. We'll add you to the About page if the PR is merged.
+developers' discretion. For that matter if you are able, fork the project and
+PR a bug fix back (you may want to check the [minecraft-server-manager development docs](doc/development))
+to see if you're comfortable doing that. We'll add you to the About page if the PR is
+merged.
+
+When creating a new issue, please include the `minecraft-server.log` file. It will
+help prevent frequent emails about the state of your Minecraft Server Manager
+installation. ;)
 
 ### Known Issues
 
-- Accepting the Minecraft end user license agreement (EULA) requires the
-Minecraft server to have been run once.
 - The Restore Backup button of the World Controls is permanently disabled while
 work on that feature continues.
-- The Server Properties section of the Server Controls is not editable.
 
 There are more, but these are the most annoying ones discovered to date.
 
