@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs-extra');
 const util = require('util');
 
+const homeDir = path.join(os.homedir(), 'minecraft-server-manager');
+
 /**
  * Converts data from the properties file into objects with the names and values
  * @param  {string} lines Data from a file as a single string as 'name=value'
@@ -80,7 +82,11 @@ async function log (data = "", file = "") {
         return Promise.reject("Invalid filename specified.");
     }
     try {
-        let logFilePath = path.resolve(file);
+        let logFilePath = path.join(homeDir, file);
+        let logFilePathExists = await fs.pathExists(logFilePath);
+        if (!logFilePathExists) {
+            await fs.ensureDir(path.dirname(logFilePath));
+        }
         await fs.appendFile(logFilePath, `${util.format(data)}${os.EOL}`);
         return logFilePath;
     } catch (err) {
@@ -97,7 +103,11 @@ async function clearLog (file = "") {
         return Promise.reject(new Error("Invalid filename specified."));
     }
     try {
-        let logFilePath = path.resolve(file);
+        let logFilePath = path.join(homeDir, file);
+        let logFilePathExists = await fs.pathExists(logFilePath);
+        if (!logFilePathExists) {
+            await fs.ensureDir(path.dirname(logFilePath));
+        }
         let logFile = await fs.createWriteStream(logFilePath);
         logFile.write("");
         logFile.close();
@@ -115,7 +125,7 @@ async function clearLog (file = "") {
  */
 async function readSettings (filename = "", defaults = {}) {
     let settings = "";
-    let settingsFile = path.resolve(filename);
+    let settingsFile = path.join(homeDir, filename);
     
     try {
         settings = JSON.parse(await fs.readFile(settingsFile));
@@ -135,8 +145,12 @@ async function readSettings (filename = "", defaults = {}) {
  * @param {object} settings The values to save to the file.
  */
 async function saveSettings (filename, settings) {
-    let settingsFile = path.resolve(filename);
+    let settingsFile = path.join(homeDir, filename);
     try {
+        let settingsFileExists = await fs.pathExists(settingsFile);
+        if (!settingsFileExists) {
+            await fs.ensureDir(path.dirname(settingsFile));
+        }
         await fs.writeFile(settingsFile, JSON.stringify(settings, null, 4));
         return settings;
     } catch (err) {
