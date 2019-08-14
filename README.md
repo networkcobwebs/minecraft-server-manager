@@ -69,8 +69,6 @@ server instance. Generally, this value should not be lowered.
 
 ## Running Minecraft Server Manager
 
-1. Execute
-
 If you installed with `npm install -g @networkcobwebs/minecraft-server-manager` you can
 simply execute
 
