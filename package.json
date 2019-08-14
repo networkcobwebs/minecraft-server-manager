@@ -17,16 +17,27 @@
     "type": "git",
     "url": "git@github.com:nickrnet/minecraft-server-manager.git"
   },
+  "bugs": {
+    "url": "https://github.com/nickrnet/minecraft-server-manager/issues"
+  },
   "keywords": [
     "nodejs",
     "reactjs",
     "express",
-    "minecraft"
+    "minecraft",
+    "server"
   ],
   "author": {
     "name": "nickrnet",
     "url": "https://github.com/nickrnet/"
   },
+  "contributors": [
+    {
+      "name": "DevBonBon",
+      "url": "https://github.com/DevBonBon/"
+    }
+  ],
+  "license": "MIT",
   "dependencies": {
     "acorn": "^6.3.0",
     "ajv": "^6.10.2",
