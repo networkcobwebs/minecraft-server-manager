@@ -13,6 +13,16 @@ See the [release notes](release-notes.txt) for additional information.
 Use of this application or its pieces require acceptance of the [Minecraft
 end user license agreement](https://account.mojang.com/documents/minecraft_eula)
 
+## Requirements
+
+Node.js 10.x or greater LTS release.
+
+## Installation
+
+```
+npm install -g @networkcobwebs/minecraft-server-mangager
+```
+
 Dashboard
 ![Dashboard](doc/screenshots/dashboard.png "Dashboard")
 
@@ -24,20 +34,6 @@ World Controls
 
 Server Controls
 ![Server Controls](doc/screenshots/server.png "Server Controls")
-
-## Requirements
-
-Node.js 10.x or greater LTS release.
-
-## Installation
-
-1. In a Terminal or Command Prompt, execute
-```
-    git clone https://github.com/nickrnet/minecraft-server-manager.git
-    pushd minecraft-server-manager && npm install
-    pushd src/web && npm install
-    popd && popd
-```
 
 ## Configuration
 
@@ -75,18 +71,32 @@ server instance. Generally, this value should not be lowered.
 
 1. Execute
 
+If you installed with `npm install -g @networkcobwebs/minecraft-server-manager` you can
+simply execute
+
 ```
-    pushd minecraft-server-manager && npm run start
+    minecraft-server-manager
 ```
+
+in a Terminal or Command Prompt.
+
+If you installed Minecraft Server manager without `-g` then you need to execute something
+along the lines of
+
+```
+pushd <installation path>
+./node_modules/.bin/minecraft-server-manager
+```
+
+Use `Ctrl-C` to shutdown the Minecraft Server Manager process.
 
 If a Minecraft server executable is not discovered, one can be installed from the
 Server Controls tab.
 
 2. Navigate to your web server's URL: http://localhost:3001
-3. Start the Minecraft server and/or accept the Minecraft end user license
-agreement if needed.
-4. Play multiplayer Minecraft on your server. *(usually requires paid
-Minecraft account)*
+3. Start the Minecraft server and/or accept the Minecraft end user license agreement if
+needed.
+4. Play multiplayer Minecraft on your server. *(usually requires paid Minecraft account)*
 5. Manage things on the Minecraft server via the web interface.
 
 ## Notes
