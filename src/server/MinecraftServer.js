@@ -18,7 +18,7 @@ let minecraftProperties = {
     settings: {
         javaHome: "",
         javaPath: "",
-        minecraftDirectory: path.resolve('minecraft_server'),
+        minecraftDirectory: path.join(Util.homeDir, 'minecraft_server'),
         serverJar: 'server.jar',
         memory: {
             minimum: 1,
@@ -26,7 +26,7 @@ let minecraftProperties = {
             units: "G"
         },
         backups: {
-            path: path.resolve('minecraft_server', 'backups', 'worlds'),
+            path: path.join(Util.homeDir, 'minecraft_server', 'backups', 'worlds'),
             numToKeep: 5
         }
     },
@@ -489,7 +489,7 @@ class MinecraftServer {
             let versionInfo = response.data;
             if (versionInfo.downloads && versionInfo.downloads.server && versionInfo.downloads.server.url) {
                 let jar = `${release.id}_minecraft_server.jar`;
-                let url = versionInfo.downloads.server.url
+                let url = versionInfo.downloads.server.url;
                 fileStream = await fs.createWriteStream(path.join(minecraftDirectory, jar));
                 response = await axios({
                     url,

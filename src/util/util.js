@@ -172,6 +172,7 @@ module.exports = Util = {
     convertPropertiesToObjects,
     convertObjectsToProperties,
     getDateTime,
+    homeDir,
     log,
     clearLog,
     readSettings,
