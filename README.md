@@ -20,7 +20,7 @@ Node.js 10.x or greater LTS release.
 ## Installation
 
 ```
-npm install -g @networkcobwebs/minecraft-server-mangager
+npm install -g @networkcobwebs/minecraft-server-manager
 ```
 
 Dashboard
