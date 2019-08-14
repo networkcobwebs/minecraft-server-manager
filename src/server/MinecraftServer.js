@@ -133,7 +133,7 @@ class MinecraftServer {
                 await this.stop();
             }
     
-            await fs.mkdir(backupDir, {recursive: true});
+            await fs.ensureDir(backupDir, {recursive: true});
             output = await fs.createWriteStream(path.join(backupDir, `${worldName}_${Util.getDateTime()}.zip`));
     
             archive = archiver('zip', {
@@ -171,7 +171,7 @@ class MinecraftServer {
             if (err.code === 'ENOENT') {
                 await this.log(`Creating directory at ${minecraftDirectory}...`);
                 try {
-                    await fs.mkdir(minecraftDirectory);
+                    await fs.ensureDir(minecraftDirectory);
                     properties.installed = false;
                 } catch (er) {
                     await this.log('An error occurred creating the Minecraft server directory.');
