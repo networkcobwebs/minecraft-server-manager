@@ -10,7 +10,9 @@
     "build-web": "pushd src/web && react-scripts build && popd",
     "test-backend": "mocha --recursive --reporter mochawesome --reporter-options reportDir=./test-results test",
     "test-web": "pushd src/web && react-scripts test --env=jsdom && popd",
-    "eject": "pushd src/web && react-scripts eject && popd"
+    "eject": "pushd src/web && react-scripts eject && popd",
+    "lint": "semistandard",
+    "lint-fix": "semistandard --fix"
   },
   "proxy": "http://localhost:3001",
   "repository": {
@@ -62,7 +64,8 @@
     "mocha": "^6.2.0",
     "mochawesome": "^4.1.0",
     "mock-fs": "^4.10.1",
-    "nyc": "^14.1.1"
+    "nyc": "^14.1.1",
+    "semistandard": "^14.0.1"
   },
   "engines": {
     "node": ">=10.16.0"
