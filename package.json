@@ -8,7 +8,7 @@
     "start": "node index.js",
     "start-dev": "pushd src/web && react-scripts start && popd",
     "build-web": "pushd src/web && react-scripts build && popd",
-    "test-backend": "mocha --recursive --reporter mochawesome --reporter-options reportDir=./test-results test",
+    "test-backend": "npm run lint && nyc mocha --recursive --reporter mochawesome --reporter-options reportDir=./test-results",
     "test-web": "pushd src/web && react-scripts test --env=jsdom && popd",
     "eject": "pushd src/web && react-scripts eject && popd",
     "lint": "semistandard",
