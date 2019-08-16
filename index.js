@@ -1,6 +1,6 @@
-const path = require('path');
-const MinecraftApi = require(path.resolve(path.join('src', 'api', 'MinecraftApi')));
-const MinecraftServer = require(path.resolve('src', 'server', 'MinecraftServer'));
+#!/usr/bin/env node
+const MinecraftApi = require('./src/api/MinecraftApi');
+const MinecraftServer = require('./src/server/MinecraftServer');
 
 let minecraftServer = new MinecraftServer();
 let minecraftApi = new MinecraftApi(minecraftServer);

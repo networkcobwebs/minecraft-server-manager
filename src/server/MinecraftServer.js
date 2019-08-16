@@ -11,14 +11,14 @@ const exec = util.promisify(require('child_process').exec);
 
 
 // minecraft-server-manager Imports
-const Util = require(path.resolve('src', 'util', 'util'));
-const Eula = require(path.resolve('src', 'server', 'Eula.js'));
+const Util = require('../util/util');
+const Eula = require('./Eula');
 
 let minecraftProperties = {
     settings: {
         javaHome: "",
         javaPath: "",
-        minecraftDirectory: path.resolve('minecraft_server'),
+        minecraftDirectory: path.join(Util.homeDir, 'minecraft_server'),
         serverJar: 'server.jar',
         memory: {
             minimum: 1,
@@ -26,7 +26,7 @@ let minecraftProperties = {
             units: "G"
         },
         backups: {
-            path: path.resolve('minecraft_server', 'backups', 'worlds'),
+            path: path.join(Util.homeDir, 'minecraft_server', 'backups', 'worlds'),
             numToKeep: 5
         }
     },
@@ -133,7 +133,7 @@ class MinecraftServer {
                 await this.stop();
             }
     
-            await fs.mkdir(backupDir, {recursive: true});
+            await fs.ensureDir(backupDir, {recursive: true});
             output = await fs.createWriteStream(path.join(backupDir, `${worldName}_${Util.getDateTime()}.zip`));
     
             archive = archiver('zip', {
@@ -171,7 +171,7 @@ class MinecraftServer {
             if (err.code === 'ENOENT') {
                 await this.log(`Creating directory at ${minecraftDirectory}...`);
                 try {
-                    await fs.mkdir(minecraftDirectory);
+                    await fs.ensureDir(minecraftDirectory);
                     properties.installed = false;
                 } catch (er) {
                     await this.log('An error occurred creating the Minecraft server directory.');
@@ -489,7 +489,7 @@ class MinecraftServer {
             let versionInfo = response.data;
             if (versionInfo.downloads && versionInfo.downloads.server && versionInfo.downloads.server.url) {
                 let jar = `${release.id}_minecraft_server.jar`;
-                let url = versionInfo.downloads.server.url
+                let url = versionInfo.downloads.server.url;
                 fileStream = await fs.createWriteStream(path.join(minecraftDirectory, jar));
                 response = await axios({
                     url,

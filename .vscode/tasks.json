@@ -10,7 +10,7 @@
         },
         {
             "type": "npm",
-            "script": "build",
+            "script": "build-web",
             "problemMatcher": []
         },
         {

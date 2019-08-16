@@ -7,8 +7,8 @@ const path = require('path');
 const express = require('express');
 
 // minecraft-server-manager Imports
-const Util = require(path.resolve('src', 'util', 'util'));
-const MinecraftServer = require(path.resolve('src', 'server', 'MinecraftServer'));
+const Util = require('../util/util');
+const MinecraftServer = require('../server/MinecraftServer');
 
 const debugApi = false;
 
@@ -33,7 +33,7 @@ let apiProperties = {
         mem: os.totalmem(),
         version: process.version,
     },
-    pathToWeb: 'src/web/build',
+    pathToWeb: '',
     pollers: {},
     settingsFileName: 'api.properties',
     webServer: {}
@@ -68,9 +68,11 @@ class MinecraftApi {
             properties.settings = await Util.readSettings(properties.settingsFileName, properties.settings);
             
             if (!app.length) {
-                if (!pathToWeb) {
-                    pathToWeb = properties.pathToWeb;
-                }
+                let moduleMain = require.main;
+                let moduleFile = moduleMain.filename;
+                let moduleParent = path.dirname(path.resolve(moduleFile));
+                pathToWeb = path.join(moduleParent, 'src', 'web', 'build');
+                properties.pathToWeb = pathToWeb;
                 app = express();
                 app.use(bodyParser.urlencoded({ extended: false }));
                 
@@ -275,7 +277,7 @@ class MinecraftApi {
                     // TODO???
                 }
             });
-            app.post('/api/install', async function (request, response, next) {
+            app.post('/api/install', async function (request, response) {
                 response.contentType('json');
                 try {
                     await minecraftServer.install(request.query.version);
