@@ -1,7 +1,5 @@
+const { describe, it, before } = require('mocha');
 const expect = require('expect');
-const os = require('os');
-const path = require('path');
-const fs = require('fs-extra');
 const MinecraftApi = require('../../src/api/MinecraftApi');
 
 describe('minecraft-api tests', () => {
@@ -12,7 +10,7 @@ describe('minecraft-api tests', () => {
     });
     it('should init', async () => {
         await minecraftApi.init();
-    })
+    });
     describe('minecraft-api properties', () => {
         it('should have properties', () => {
             let minecraftApi = new MinecraftApi();
