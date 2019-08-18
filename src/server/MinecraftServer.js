@@ -95,7 +95,7 @@ class MinecraftServer {
                 this.getMinecraftVersions()
             ]);
         } catch (err) {
-            debugger;
+            return err;
         }
     }
 
@@ -162,7 +162,7 @@ class MinecraftServer {
         let minecraftDirectory = path.resolve(properties.settings.minecraftDirectory);
         try {
             await this.log('Checking for Minecraft installation.');
-            await fs.access(minecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK)
+            await fs.access(minecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK);
             await Promise.all([
                 this.detectMinecraftJar(),
                 this.getEula()
@@ -661,7 +661,7 @@ class MinecraftServer {
             }
         } catch (err) {
             properties.ops = [];
-            await this.log('Failed to read ops.json:')
+            await this.log('Failed to read ops.json:');
             await this.log(err.stack);
         }
     }
@@ -779,21 +779,11 @@ class MinecraftServer {
             if (this.properties.installed) {
                 await this.stop();
                 await this.log(`Deleting Minecraft server version: ${properties.detectedVersion.full}...`);
-                try {
-                    await fs.remove(serverJarPath);
-                } catch (err) {
-                    if (err.code !== 'ENOENT') {
-                        reject(err);
-                    }
-                }
+                await fs.remove(serverJarPath);
             }
 
             await this.log(`Installing MinecraftServer version ${version}...`);
-            try {
-                await fs.copyFile(releaseJarPath, serverJarPath);
-            } catch (err) {
-                reject(err);
-            }
+            await fs.copyFile(releaseJarPath, serverJarPath);
             await this.log(`Done installing Minecraft server version ${version}.`);
 
             // TODO: Only create new world on downgrade and use `newWorld` argument.
@@ -981,7 +971,7 @@ class MinecraftServer {
         try {
             await this.log('Getting list of MinecraftServer world backups...');
             properties.backupList = [];
-            files = await fs.readdir(backupDir)
+            files = await fs.readdir(backupDir);
             files.forEach(file => {
                 let fileInfo,
                     fileItem = {},
@@ -1292,9 +1282,10 @@ class MinecraftServer {
                 let properties = this.properties;
                 let serverProcess = properties.serverProcess;
                 let started = properties.started;
+                let starting = properties.starting;
                 let stopping = properties.stopping;
     
-                if (properties.starting) {
+                if (starting) {
                     force = true;
                 }
         
@@ -1310,6 +1301,7 @@ class MinecraftServer {
                         await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
                         stopping = false;
                         started = false;
+                        starting = false;
                         properties.stopped = true;
                     } else {
                         reject(new Error('Minecraft is already shutting down.'));
@@ -1366,34 +1358,26 @@ class MinecraftServer {
         // TODO: Figure out a blocking+retry mechanism... for example listPlayers and runCommand could race here.
         // potentially a `return attached` that the caller can wait for. still might have a race condition though...
         // and that may break methods that call here twice (checkForMinecraftToBeStarted is one).
-        try {
-            let properties = this.properties;
-            if (properties.serverProcess && properties.serverProcess.pid && !properties.serverOutputCaptured) {
-                await this.log('Attaching to Minecraft output.');
-                properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
-                properties.serverOutput.length = 0;
-                properties.serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-                properties.serverOutputCaptured = true;
-            } else {
-                return Promise.reject(new Error('Already attached to Minecraft.'));
-            }
-        } catch (err) {
-            throw(err);
+        let properties = this.properties;
+        if (properties.serverProcess && properties.serverProcess.pid && !properties.serverOutputCaptured) {
+            await this.log('Attaching to Minecraft output.');
+            properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+            properties.serverOutput.length = 0;
+            properties.serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+            properties.serverOutputCaptured = true;
+        } else {
+            return Promise.reject(new Error('Already attached to Minecraft.'));
         }
     }
     
     async detachFromMinecraft () {
-        try {
-            let properties = this.properties;
-            await this.log('Detaching from Minecraft output.');
-            if (properties.serverProcess && properties.serverProcess.pid) {
-                properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
-            }
-            properties.serverOutput.length = 0;
-            properties.serverOutputCaptured = false;
-        } catch (err) {
-            throw(err);
+        let properties = this.properties;
+        await this.log('Detaching from Minecraft output.');
+        if (properties.serverProcess && properties.serverProcess.pid) {
+            properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
         }
+        properties.serverOutput.length = 0;
+        properties.serverOutputCaptured = false;
     }
 
     bufferMinecraftOutput (data) {
@@ -1432,22 +1416,14 @@ class MinecraftServer {
      * @param {string} data The data to log.
      */
     async log (data) {
-        try {
-            await Util.log(data, 'minecraft-server.log');
-        } catch (err) {
-            throw(err);
-        }
+        await Util.log(data, 'minecraft-server.log');
     }
 
     /**
      * Clears the log file.
      */
     async clearLog () {
-        try {
-            await Util.clearLog('minecraft-server.log');
-        } catch (err) {
-            throw(err);
-        }
+        await Util.clearLog('minecraft-server.log');
     }
 }
 
