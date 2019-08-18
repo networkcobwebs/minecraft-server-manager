@@ -7,7 +7,8 @@ const path = require('path');
 const express = require('express');
 
 // minecraft-server-manager Imports
-const Util = require('../util/util');
+const MSMUtil = new require('../util/util');
+const Util = new MSMUtil();
 const MinecraftServer = require('../server/MinecraftServer');
 
 const debugApi = false;
@@ -63,49 +64,45 @@ class MinecraftApi {
         let properties = this.properties;
         let app = this.properties.app;
         let minecraftServer = properties.minecraftServer;
-
-        try {
-            properties.settings = await Util.readSettings(properties.settingsFileName, properties.settings);
+        
+        properties.settings = await Util.readSettings(properties.settingsFileName, properties.settings);
             
-            if (!app.length) {
-                let moduleMain = require.main;
-                let moduleFile = moduleMain.filename;
-                let moduleParent = path.dirname(path.resolve(moduleFile));
-                pathToWeb = path.join(moduleParent, 'src', 'web', 'build');
-                properties.pathToWeb = pathToWeb;
-                app = express();
-                app.use(bodyParser.urlencoded({ extended: false }));
-                
-                // Serve React app @ root
-                // TODO Make the path on disk make sense.
-                app.use(express.static(path.resolve(pathToWeb)));
-                // Allow browsers to make requests for us.
-                // TODO: Tighten up the Allow-Origin. Preference in the web app?
-                app.use(function(request, response, next) {
-                    response.setHeader('Access-Control-Allow-Origin', '*');
-                    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-                    response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-                    response.setHeader('Access-Control-Allow-Credentials', true);
-                    next();
-                });
-    
-                // TODO: Trap bad URLs and redirect to '/'.
-                // This seems broken when combined with the `express.static` up above.
-                // app.get('/*', function (req, res) {
-                //     res.sendFile(path.join(__dirname, pathToWeb));
-                // });
-                
-                properties.app = app;
-    
-                if (!minecraftServer) {
-                    minecraftServer = new MinecraftServer();
-                }
-                await minecraftServer.init();
-            } else {
-                console.warn(`MinecraftApi already initialized.`);
+        if (!app.length) {
+            let moduleMain = require.main;
+            let moduleFile = moduleMain.filename;
+            let moduleParent = path.dirname(path.resolve(moduleFile));
+            pathToWeb = path.join(moduleParent, 'src', 'web', 'build');
+            properties.pathToWeb = pathToWeb;
+            app = express();
+            app.use(bodyParser.urlencoded({ extended: false }));
+            
+            // Serve React app @ root
+            // TODO Make the path on disk make sense.
+            app.use(express.static(path.resolve(pathToWeb)));
+            // Allow browsers to make requests for us.
+            // TODO: Tighten up the Allow-Origin. Preference in the web app?
+            app.use(function(request, response, next) {
+                response.setHeader('Access-Control-Allow-Origin', '*');
+                response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+                response.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+                response.setHeader('Access-Control-Allow-Credentials', true);
+                next();
+            });
+
+            // TODO: Trap bad URLs and redirect to '/'.
+            // This seems broken when combined with the `express.static` up above.
+            // app.get('/*', function (req, res) {
+            //     res.sendFile(path.join(__dirname, pathToWeb));
+            // });
+            
+            properties.app = app;
+
+            if (!minecraftServer) {
+                minecraftServer = new MinecraftServer();
             }
-        } catch (err) {
-            throw(err);
+            await minecraftServer.init();
+        } else {
+            console.warn(`MinecraftApi already initialized.`);
         }
     }
 
@@ -546,22 +543,14 @@ class MinecraftApi {
      * @param {string} data The data to log.
      */
     async log (data) {
-        try {
-            await Util.log(data, 'minecraft-api.log');
-        } catch (err) {
-            throw(err);
-        }
+        await Util.log(data, 'minecraft-api.log');
     }
 
     /**
      * Clears the log file.
      */
     async clearLog () {
-        try {
-            await Util.clearLog('minecraft-api.log');
-        } catch (err) {
-            throw(err);
-        }
+        await Util.clearLog('minecraft-api.log');
     }
 }
 
