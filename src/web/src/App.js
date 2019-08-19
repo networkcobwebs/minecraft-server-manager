@@ -26,6 +26,7 @@ export default class App extends React.Component {
             ipInfo: {},
             apiSettings: {},
             minecraftStatus: {},
+            minecraftStatusMessage: '',
             eulaOpen: false,
             minecraftProperties: {},
             playerInfo: {},
@@ -90,7 +91,8 @@ export default class App extends React.Component {
     }
 
     getMinecraftStatus (pingWait) {
-        let normalPingTime = 5 * 1000,
+        let minecraftStatusMessage = "",
+            normalPingTime = 5 * 1000,
             appendTime = 5 * 1000,
             maxTime = 120 * 1000,
             pingTime;
@@ -119,6 +121,14 @@ export default class App extends React.Component {
                 let minecraftProperties = res.data.minecraftProperties;
                 this.setState({ apiSettings });
                 this.setState({ minecraftProperties });
+                if (!minecraftProperties.settings.javaHome || !minecraftProperties.settings.javaPath) {
+                    minecraftStatusMessage = `Java is not properly installed.`;
+                } else if (!minecraftProperties.started) {
+                    minecraftStatusMessage = `Minecraft is not running.`;
+                } else if (!minecraftProperties.acceptedEula) {
+                    minecraftStatusMessage = `The Minecraft EULA needs to be accepted.`;
+                }
+                this.setState({ minecraftStatusMessage });
 
                 if (debug) {
                     console.log('Setting Minecraft status poller to run in', pingTime/1000, 'seconds.');
@@ -264,7 +274,7 @@ export default class App extends React.Component {
                         }
                     }
                     open = { !minecraftProperties.started }
-                    message = { <span id="message-id">Minecraft is currently stopped.</span> }
+                    message = { this.state.minecraftStatusMessage }
                 />
             </MuiThemeProvider>
         );
