@@ -11,7 +11,8 @@ const exec = util.promisify(require('child_process').exec);
 
 
 // minecraft-server-manager Imports
-const Util = require('../util/util');
+const MSMUtil = require('../util/util');
+const Util = new MSMUtil();
 const Eula = require('./Eula');
 
 let minecraftProperties = {
@@ -95,7 +96,7 @@ class MinecraftServer {
                 this.getMinecraftVersions()
             ]);
         } catch (err) {
-            debugger;
+            return err;
         }
     }
 
@@ -117,44 +118,38 @@ class MinecraftServer {
     }
 
     async backupWorld (worldName) {
-        return new Promise(async (resolve, reject) => {
-            await this.log('Backing up MinecraftServer world...');
+        await this.log('Backing up MinecraftServer world...');
     
-            let properties = this.properties;
-            let minecraftDirectory = properties.settings.minecraftDirectory;
-            let minecraftWasRunning = false;
-            let backupDir = path.resolve(properties.settings.backups.path);
-            let archive;
-            let output;
+        let properties = this.properties;
+        let minecraftDirectory = properties.settings.minecraftDirectory;
+        let minecraftWasRunning = false;
+        let backupDir = path.resolve(properties.settings.backups.path);
+        let archive;
+        let output;
     
-            worldName = worldName || 'world';
-            if (properties.started) {
-                minecraftWasRunning = true;
-                await this.stop();
-            }
+        worldName = worldName || 'world';
+        if (properties.started) {
+            minecraftWasRunning = true;
+            await this.stop();
+        }
     
-            await fs.ensureDir(backupDir, {recursive: true});
-            output = await fs.createWriteStream(path.join(backupDir, `${worldName}_${Util.getDateTime()}.zip`));
-    
-            archive = archiver('zip', {
-                zlib: { level: 9 }
-            });
-            archive
-                .directory(path.join(minecraftDirectory, worldName), false)
-                .on('error', err => reject(err))
-                .pipe(output);
-            
-            output.on('close', async () => {
-                await this.log(`Backup size: ${archive.pointer()} total bytes.`);
-                await this.log('MinecraftServer World backed up.');
-                await this.listWorldBackups();
-                if (minecraftWasRunning) {
-                    await this.start();
-                }
-                resolve();
-            });
-            archive.finalize();
+        await fs.ensureDir(backupDir, {recursive: true});
+        output = await fs.createWriteStream(path.join(backupDir, `${worldName}_${Util.getDateTime()}.zip`));
+        archive = archiver('zip', {
+            zlib: { level: 9 }
         });
+        archive.pipe(output);
+
+        await archive.directory(path.join(minecraftDirectory, worldName), false);
+        await archive.finalize();
+        
+        await this.log(`Backup size: ${archive.pointer()} total bytes.`);
+        await this.log('MinecraftServer World backed up.');
+        await this.listWorldBackups();
+        if (minecraftWasRunning) {
+            await this.start();
+        }
+        return this.properties.backupList;
     }
 
     async checkForMinecraftInstallation () {
@@ -162,7 +157,7 @@ class MinecraftServer {
         let minecraftDirectory = path.resolve(properties.settings.minecraftDirectory);
         try {
             await this.log('Checking for Minecraft installation.');
-            await fs.access(minecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK)
+            await fs.access(minecraftDirectory, FS.F_OK | FS.R_OK | FS.W_OK);
             await Promise.all([
                 this.detectMinecraftJar(),
                 this.getEula()
@@ -661,7 +656,7 @@ class MinecraftServer {
             }
         } catch (err) {
             properties.ops = [];
-            await this.log('Failed to read ops.json:')
+            await this.log('Failed to read ops.json:');
             await this.log(err.stack);
         }
     }
@@ -779,21 +774,11 @@ class MinecraftServer {
             if (this.properties.installed) {
                 await this.stop();
                 await this.log(`Deleting Minecraft server version: ${properties.detectedVersion.full}...`);
-                try {
-                    await fs.remove(serverJarPath);
-                } catch (err) {
-                    if (err.code !== 'ENOENT') {
-                        reject(err);
-                    }
-                }
+                await fs.remove(serverJarPath);
             }
 
             await this.log(`Installing MinecraftServer version ${version}...`);
-            try {
-                await fs.copyFile(releaseJarPath, serverJarPath);
-            } catch (err) {
-                reject(err);
-            }
+            await fs.copyFile(releaseJarPath, serverJarPath);
             await this.log(`Done installing Minecraft server version ${version}.`);
 
             // TODO: Only create new world on downgrade and use `newWorld` argument.
@@ -981,7 +966,7 @@ class MinecraftServer {
         try {
             await this.log('Getting list of MinecraftServer world backups...');
             properties.backupList = [];
-            files = await fs.readdir(backupDir)
+            files = await fs.readdir(backupDir);
             files.forEach(file => {
                 let fileInfo,
                     fileItem = {},
@@ -1068,68 +1053,66 @@ class MinecraftServer {
     }
 
     async parseHelpOutput () {
-        return new Promise(async (resolve, reject) => {
-            await this.log('Parsing help output.');
-            let properties = this.properties;
-            let minecraftFullHelp = properties.fullHelp;
-            let minecraftOutput = properties.serverOutput;
-            let line;
-    
-            while ( (line = minecraftOutput.shift()) !== undefined ) {
-                let command = {};
-                let commandLine = line.split(' [Server thread/INFO]: ');
-    
-                if (commandLine.length > 1 && commandLine[1].indexOf('/') === 0) {
-                    let aThing = {};
-                    aThing.key = minecraftFullHelp.length;
-                    aThing.command = commandLine[1];
-                    this.properties.fullHelp.push(aThing);
-                    let commandLineSpaces = commandLine[1].split(' ');
-                    let args = [];
-                    let commands = [];
-    
-                    command = {
-                        command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
-                    };
-    
-                    commandLineSpaces.shift();
-    
-                    if (commandLine[1].indexOf(' OR ') !== -1) {
-                        commands = commandLine[1].split(' OR ');
-                    } else {
-                        commands.push(commandLine[1]);
-                    }
-    
-                    args.length = 0;
-                    for (let c of commands) {
-                        let things = this.getCommand(c, true, false);
-                        for (let thing of things) {
-                            args.push(thing);
-                        }
-                    }
-                    if (args.length) {
-                        let requiredArgs = new Set(args);
-                        command['requiredArgs'] = Array.from(requiredArgs);
-                    }
-    
-                    args.length = 0;
-                    for (let c of commands) {
-                        let things = this.getCommand(c, false, true);
-                        for (let thing of things) {
-                            args.push(thing);
-                        }
-                    }
-                    if (args.length) {
-                        let optionalArgs = new Set(args);
-                        command['optionalArgs'] = Array.from(optionalArgs);
-                    }
-    
-                    properties.allowedCommands.push(command);
+        await this.log('Parsing help output.');
+        let properties = this.properties;
+        let minecraftFullHelp = properties.fullHelp;
+        let minecraftOutput = properties.serverOutput;
+        let line;
+
+        while ( (line = minecraftOutput.shift()) !== undefined ) {
+            let command = {};
+            let commandLine = line.split(' [Server thread/INFO]: ');
+
+            if (commandLine.length > 1 && commandLine[1].indexOf('/') === 0) {
+                let aThing = {
+                    key: minecraftFullHelp.length,
+                    command: commandLine[1]
+                };
+                this.properties.fullHelp.push(aThing);
+                let commandLineSpaces = commandLine[1].split(' ');
+                let args = [];
+                let commands = [];
+
+                command = {
+                    command: commandLineSpaces[0].substr(commandLineSpaces[0].indexOf('/') + 1)
+                };
+
+                commandLineSpaces.shift();
+
+                if (commandLine[1].indexOf(' OR ') !== -1) {
+                    commands = commandLine[1].split(' OR ');
+                } else {
+                    commands.push(commandLine[1]);
                 }
+
+                args.length = 0;
+                for (let c of commands) {
+                    let things = this.getCommand(c, true, false);
+                    for (let thing of things) {
+                        args.push(thing);
+                    }
+                }
+                if (args.length) {
+                    let requiredArgs = new Set(args);
+                    command['requiredArgs'] = Array.from(requiredArgs);
+                }
+
+                args.length = 0;
+                for (let c of commands) {
+                    let things = this.getCommand(c, false, true);
+                    for (let thing of things) {
+                        args.push(thing);
+                    }
+                }
+                if (args.length) {
+                    let optionalArgs = new Set(args);
+                    command['optionalArgs'] = Array.from(optionalArgs);
+                }
+
+                properties.allowedCommands.push(command);
             }
-            // await this.log(`Got fullHelp: ${JSON.stringify(this.properties.fullHelp)}`);
-            resolve();
-        });
+        }
+        // await this.log(`Got fullHelp: ${JSON.stringify(this.properties.fullHelp)}`);
     }
 
     /**
@@ -1186,155 +1169,148 @@ class MinecraftServer {
      * @param {object} newProperties Contains the new properties to save to disk.
      */
     async saveProperties (newProperties) {
-        return new Promise(async (resolve, reject) => {
-            await this.log('Saving new Minecraft server.properties file.');
-    
-            let contents = Util.convertObjectsToProperties(newProperties);
-            let properties = this.properties;
-            let settings = properties.settings;
-            let backupDir = path.resolve(properties.settings.backups.path);
-            let minecraftDirectory = settings.minecraftDirectory;
-            let propertiesFile = path.resolve(path.join(minecraftDirectory, 'server.properties'));
-            let backupPropertiesFileName = `${Util.getDateTime()}-server.properties`;
-            let backupPropertiesFile = path.join(backupDir, backupPropertiesFileName);
-            let minecraftWasRunning = false;
-    
-            if (properties.started) {
-                minecraftWasRunning = true;
-                await this.stop();
-            }
-    
-            try {
-                // Backup current properties file
-                await fs.copyFile(propertiesFile, backupPropertiesFile);
-                await fs.writeFile(propertiesFile, contents);
-                if (minecraftWasRunning) {
-                    await this.start();
-                }
-                resolve();
-            } catch (err) {
-                await this.log('An error occurred backing up the current properties file.');
-                await this.log(err);
-                reject(err);
-            }
-        });
+        await this.log('Saving new Minecraft server.properties file.');
+
+        let contents = Util.convertObjectsToProperties(newProperties);
+        let properties = this.properties;
+        let settings = properties.settings;
+        let backupDir = path.resolve(properties.settings.backups.path);
+        let minecraftDirectory = settings.minecraftDirectory;
+        let propertiesFile = path.resolve(path.join(minecraftDirectory, 'server.properties'));
+        let backupPropertiesFileName = `${Util.getDateTime()}-server.properties`;
+        let backupPropertiesFile = path.join(backupDir, backupPropertiesFileName);
+        let minecraftWasRunning = false;
+
+        if (properties.started) {
+            minecraftWasRunning = true;
+            await this.stop();
+        }
+
+        // Backup current properties file
+        await fs.copyFile(propertiesFile, backupPropertiesFile);
+        await fs.writeFile(propertiesFile, contents);
+        if (minecraftWasRunning) {
+            await this.start();
+        }
     }
 
     /**
      * Starts the Minecraft server process.
      */
     async start () {
-        return new Promise(async (resolve, reject) => {
-            let properties = this.properties;
-            let settings = properties.settings;
-            let minecraftDirectory = settings.minecraftDirectory;
-            let serverJar = settings.serverJar;
-            let serverProcess = properties.serverProcess;
-            let starting = properties.starting;
-            if (properties.installed) {
-                if (serverProcess && serverProcess.pid) {
-                    resolve(`Minecraft is already running.`);
-                }
-    
-                if (settings.javaPath) {
-                    if (!starting) {
-                        try {
-                            await this.log(`Starting MinecraftServer with ${settings.memory.maximum}${settings.memory.units}B memory...`);
-                            // TODO: Make the Java + args configurable
-                            properties.serverProcess = spawn(settings.javaPath, [
-                                `-Xmx${settings.memory.maximum}${settings.memory.units}`,
-                                `-Xms${settings.memory.minimum}${settings.memory.units}`,
-                                '-jar',
-                                serverJar,
-                                'nogui'
-                            ], {
-                                cwd: minecraftDirectory,
-                                stdio: [
-                                    'pipe', // Use parent's stdin for child stdin
-                                    'pipe', // Pipe child's stdout to parent stdout
-                                    'pipe'  // Direct child's stderr to parent stderr
-                                ]
-                            });
-                            
-                            starting = true;
-                            
-                            await this.checkForMinecraftToBeStarted();
-                            await this.getEula();
-                            await this.updateStatus();
-                            await this.listCommands();
-                            await this.log('MinecraftServer.start: Minecraft started.');
-                            resolve();
-                        } catch (err) {
-                            reject(err);
-                        }
-                    } else {
-                        await this.log('Minecraft is already starting up.');
-                        resolve('Minecraft is already starting up.');
+        let properties = this.properties;
+        let settings = properties.settings;
+        let minecraftDirectory = settings.minecraftDirectory;
+        let serverJar = settings.serverJar;
+        let serverProcess = properties.serverProcess;
+        let starting = properties.starting;
+        if (properties.installed) {
+            if (serverProcess && serverProcess.pid) {
+                return {
+                    message: `Minecraft is already running.`
+                };
+            }
+
+            if (settings.javaPath) {
+                if (!starting) {
+                    await this.log(`Starting MinecraftServer with ${settings.memory.maximum}${settings.memory.units}B memory...`);
+                    // TODO: Make the Java + args configurable
+                    properties.serverProcess = spawn(settings.javaPath, [
+                        `-Xmx${settings.memory.maximum}${settings.memory.units}`,
+                        `-Xms${settings.memory.minimum}${settings.memory.units}`,
+                        '-jar',
+                        serverJar,
+                        'nogui'
+                    ], {
+                        cwd: minecraftDirectory,
+                        stdio: [
+                            'pipe', // Use parent's stdin for child stdin
+                            'pipe', // Pipe child's stdout to parent stdout
+                            'pipe'  // Direct child's stderr to parent stderr
+                        ]
+                    });
+                    
+                    starting = true;
+                    
+                    await this.checkForMinecraftToBeStarted();
+                    await this.getEula();
+                    await this.updateStatus();
+                    if (properties.started) {
+                        await this.listCommands();
                     }
+                    await this.log(`MinecraftServer.start: Minecraft started.`);
+                    return {
+                        message: `Minecraft started.`
+                    };
                 } else {
-                    await this.log(`Java not detected.`);
-                    reject(new Error(`Java not detected.`));
+                    await this.log(`Minecraft is already starting up.`);
+                    return {
+                        message: `Minecraft is already starting up.`
+                    };
                 }
             } else {
-                reject(new Error('Minecraft is not installed.'));
+                await this.log(`Java not detected.`);
+                throw Error(`Java not detected.`);
             }
-        });
+        } else {
+            throw Error(`Minecraft is not installed.`);
+        }
     }
 
     /**
      * Stops the Minecraft server process.
      */
     async stop (force = false) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                await this.log('Stopping MinecraftServer...');
-        
-                let properties = this.properties;
-                let serverProcess = properties.serverProcess;
-                let started = properties.started;
-                let stopping = properties.stopping;
-    
-                if (properties.starting) {
-                    force = true;
-                }
-        
-                if (started) {
-                    // Gracefully stop Minecraft.
-                    if (!stopping) {
-                        stopping = true;
-                        await this.attachToMinecraft();
-                        serverProcess.stdin.write(`/stop${os.EOL}`);
-                        await this.waitForBufferToBeFull(5);
-                        await this.checkForMinecraftToBeStopped();
-                        await this.detachFromMinecraft();
-                        await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
-                        stopping = false;
-                        started = false;
-                        properties.stopped = true;
-                    } else {
-                        reject(new Error('Minecraft is already shutting down.'));
-                    }
-                } else if (force) {
-                    // Kill all the things.
-                    await this.log('Forcing shutdown of MinecraftServer.');
-                    await this.detachFromMinecraft();
-                    await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
-                    serverProcess.kill();
-                    stopping = false;
-                    starting = false;
-                    started = false;
-                    properties.stopped = true;
-                    await this.log('Force shutdown complete.');
-                } else {
-                    // Already shut down.
-                    stopping = false;
-                    properties.stopped = true;
-                }
-                resolve();
-            } catch (err) {
-                reject(err);
+        await this.log('Stopping MinecraftServer...');
+
+        let properties = this.properties;
+        let serverProcess = properties.serverProcess;
+        let started = properties.started;
+        let starting = properties.starting;
+        let stopping = properties.stopping;
+
+        if (starting) {
+            force = true;
+        }
+
+        if (started && !force) {
+            // Gracefully stop Minecraft.
+            if (!stopping) {
+                stopping = true;
+                await this.attachToMinecraft();
+                serverProcess.stdin.write(`/stop${os.EOL}`);
+                await this.waitForBufferToBeFull(5);
+                await this.checkForMinecraftToBeStopped();
+                await this.detachFromMinecraft();
+                await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
+                stopping = false;
+                started = false;
+                starting = false;
+                properties.stopped = true;
+            } else {
+                return {
+                    message: `Minecraft is already shutting down.`
+                };
             }
-        });
+        } else if (force) {
+            // Kill all the things.
+            await this.log('Forcing shutdown of MinecraftServer.');
+            await this.detachFromMinecraft();
+            await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
+            serverProcess.kill();
+            stopping = false;
+            starting = false;
+            started = false;
+            properties.stopped = true;
+            await this.log('Force shutdown complete.');
+        } else if (properties.stopped) {
+            // Already shut down.
+            stopping = false;
+            properties.stopped = true;
+        }
+        return {
+            message: `Minecraft stopped.`
+        };
     }
 
     /**
@@ -1366,34 +1342,26 @@ class MinecraftServer {
         // TODO: Figure out a blocking+retry mechanism... for example listPlayers and runCommand could race here.
         // potentially a `return attached` that the caller can wait for. still might have a race condition though...
         // and that may break methods that call here twice (checkForMinecraftToBeStarted is one).
-        try {
-            let properties = this.properties;
-            if (properties.serverProcess && properties.serverProcess.pid && !properties.serverOutputCaptured) {
-                await this.log('Attaching to Minecraft output.');
-                properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
-                properties.serverOutput.length = 0;
-                properties.serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
-                properties.serverOutputCaptured = true;
-            } else {
-                return Promise.reject(new Error('Already attached to Minecraft.'));
-            }
-        } catch (err) {
-            throw(err);
+        let properties = this.properties;
+        if (properties.serverProcess && properties.serverProcess.pid && !properties.serverOutputCaptured) {
+            await this.log('Attaching to Minecraft output.');
+            properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
+            properties.serverOutput.length = 0;
+            properties.serverProcess.stdout.addListener('data', this.bufferMinecraftOutput);
+            properties.serverOutputCaptured = true;
+        } else {
+            return Promise.reject(new Error('Already attached to Minecraft.'));
         }
     }
     
     async detachFromMinecraft () {
-        try {
-            let properties = this.properties;
-            await this.log('Detaching from Minecraft output.');
-            if (properties.serverProcess && properties.serverProcess.pid) {
-                properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
-            }
-            properties.serverOutput.length = 0;
-            properties.serverOutputCaptured = false;
-        } catch (err) {
-            throw(err);
+        let properties = this.properties;
+        await this.log('Detaching from Minecraft output.');
+        if (properties.serverProcess && properties.serverProcess.pid) {
+            properties.serverProcess.stdout.removeListener('data', this.bufferMinecraftOutput);
         }
+        properties.serverOutput.length = 0;
+        properties.serverOutputCaptured = false;
     }
 
     bufferMinecraftOutput (data) {
@@ -1432,22 +1400,14 @@ class MinecraftServer {
      * @param {string} data The data to log.
      */
     async log (data) {
-        try {
-            await Util.log(data, 'minecraft-server.log');
-        } catch (err) {
-            throw(err);
-        }
+        await Util.log(data, 'minecraft-server.log');
     }
 
     /**
      * Clears the log file.
      */
     async clearLog () {
-        try {
-            await Util.clearLog('minecraft-server.log');
-        } catch (err) {
-            throw(err);
-        }
+        await Util.clearLog('minecraft-server.log');
     }
 }
 

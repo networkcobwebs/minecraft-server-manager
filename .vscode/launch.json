@@ -15,11 +15,12 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/src/test",
+                "--recursive",
+                "${workspaceFolder}/test",
                 "--reporter",
                 "mochawesome",
                 "--reporter-options",
-                "reportDir=${workspaceFolder}/src/test/results"
+                "reportDir=${workspaceFolder}/test-results"
             ],
             "internalConsoleOptions": "openOnSessionStart"
         },

@@ -1,3 +1,4 @@
+const { describe, it, before } = require('mocha');
 const expect = require('expect');
 const os = require('os');
 const path = require('path');
@@ -35,14 +36,14 @@ describe('minecraft-server tests', () => {
         it('should log', async () => {
             await minecraftServer.clearLog();
             await minecraftServer.log('Test log.');
-            let logFile = path.resolve('minecraft-server.log');
+            let logFile = path.join(path.join(os.homedir(), 'minecraft-server-manager'), 'minecraft-server.log');
             let logContents = await fs.readFile(logFile, "utf8");
             expect(logContents).toBe(`Test log.${os.EOL}`);
         });
         it('should clear the log', async () => {
             await minecraftServer.clearLog();
             await minecraftServer.log('Test log.');
-            let logFile = path.resolve('minecraft-server.log');
+            let logFile = path.join(path.join(os.homedir(), 'minecraft-server-manager'), 'minecraft-server.log');
             let logContents = await fs.readFile(logFile, "utf8");
             expect(logContents).not.toBe("");
             await minecraftServer.clearLog();
@@ -65,8 +66,9 @@ describe('minecraft-server tests', () => {
         });
         it('should backup the world and list backups', async () => {
             await minecraftServer.clearLog();
-            await minecraftServer.backupWorld();
-            expect(minecraftServer.properties.backupList.length).toBeGreaterThan(0);
+            let currentBackups = minecraftServer.properties.backupList.length;
+            let backups = await minecraftServer.backupWorld();
+            expect(backups.length).toBeGreaterThan(currentBackups);
         });
         it('should delete world backups and list backups', async () => {
             await minecraftServer.clearLog();
@@ -81,7 +83,7 @@ describe('minecraft-server tests', () => {
             expect(versions.latest).not.toBe(null);
             expect(versions.release).not.toBe(null);
             expect(versions.snapshot).not.toBe(null);
-            for (v = 0; v < versions.release.length; v++) {
+            for (let v = 0; v < versions.release.length; v++) {
                 if (versions.release[v].id === '1.11.2') {
                     found1112 = true;
                     break;
@@ -100,11 +102,11 @@ describe('minecraft-server tests', () => {
             expect(minecraftServer.properties.started).toBe(false);
             await minecraftServer.clearLog();
             await minecraftServer.init();
-            await minecraftServer.start();
+            let startStatus = await minecraftServer.start();
+            expect(startStatus.message).not.toBe("");
             expect(minecraftServer.properties.started).toBe(true);
             expect(minecraftServer.properties.stopped).toBe(false);
             expect(minecraftServer.properties.detectedVersion).not.toBe("");
-            expect(minecraftServer.properties.eulaFound).toBe(true);
             expect(minecraftServer.properties.fullHelp.length).toBeGreaterThan(0);
         });
         it('should list players', async function () {
