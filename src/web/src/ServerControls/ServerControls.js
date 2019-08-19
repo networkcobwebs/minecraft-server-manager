@@ -214,7 +214,7 @@ class ServerControls extends React.Component {
                             <TableCell>
                                 <Button
                                     onClick={ this.startMinecraft }
-                                    disabled={ minecraftProperties.started }
+                                    disabled={ !minecraftProperties.settings.javaHome || !minecraftProperties.settings.javaPath || minecraftProperties.started }
                                     variant="contained"
                                     color="primary">
                                     <Start />
