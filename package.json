@@ -15,10 +15,10 @@
   "proxy": "http://localhost:3001",
   "repository": {
     "type": "git",
-    "url": "git@github.com:nickrnet/minecraft-server-manager.git"
+    "url": "git@github.com:networkcobwebs/minecraft-server-manager.git"
   },
   "bugs": {
-    "url": "https://github.com/nickrnet/minecraft-server-manager/issues"
+    "url": "https://github.com/networkcobwebs/minecraft-server-manager/issues"
   },
   "keywords": [
     "nodejs",
