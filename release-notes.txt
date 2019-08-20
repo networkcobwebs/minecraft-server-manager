@@ -6,5 +6,6 @@ High-level user interface (web app) features (in order completed):
 - About page containing link to Minecraft end user license agreement.
 - Backup the current world. Creating a new world prompts for backup confirmation.
 - Install Minecraft server if not found.
+- Accept the Minecraft end user license agreement.
 - Notify of Minecraft server version updates, and allow installation of specific versions. Note: Current world is deleted.
 - Minecraft server properties are editable on the Server Controls page.
