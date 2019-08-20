@@ -141,6 +141,12 @@ installation. ;)
 - The Restore Backup button of the World Controls is permanently disabled while
 work on that feature continues.
 
+- The Check for Updates button of the Server Controls is permanently disabled while
+work on that feature continues.
+
+- Sometimes server events (players joining/leaving, op commands, etc.) show up as rows in the
+Players lists. These go away eventually but momentarily clutter the UI.
+
 There are more, but these are the most annoying ones discovered to date.
 
 See the [release notes](release-notes.txt) for additional information.
