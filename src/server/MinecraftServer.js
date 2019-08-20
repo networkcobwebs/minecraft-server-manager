@@ -869,6 +869,7 @@ class MinecraftServer {
             summary: '',
             players: []
         };
+        let foundCachedPlayer = false;
         let players;
         let minecraftLogTimeRegex = /\[[0-2]?[0-9]:[0-5]?[0-9]:[0-5]?[0-9]\] /;
         let minecraftLogPrefixRegex = /\[\w*\s\w*\/\w*\]:/;
@@ -876,7 +877,7 @@ class MinecraftServer {
         let outputString = '';
         try {
             await this.log('Listing Minecraft players.');
-            if (started) {
+            if (started && properties.serverProcess && properties.serverProcess.pid) {
                 // debugger; // to go join for testing
                 await this.attachToMinecraft();
                 serverProcess.stdin.write(`/list${os.EOL}`);
@@ -937,10 +938,14 @@ class MinecraftServer {
                     cachedPlayer.online = false;
 
                     if (playersList.players.length) {
+                        foundCachedPlayer = false;
                         for (let player of playersList.players) {
-                            if (cachedPlayer.name !== player.name) {
-                                playersList.players.push(cachedPlayer);
+                            if (cachedPlayer.name === player.name) {
+                                foundCachedPlayer = true;
                             }
+                        }
+                        if (!foundCachedPlayer) {
+                            playersList.players.push(cachedPlayer);
                         }
                     } else {
                         playersList.players.push(cachedPlayer);
@@ -948,6 +953,7 @@ class MinecraftServer {
                 }
             }
         } catch (err) {
+            await this.detachFromMinecraft();
             await this.log('An error occurred listing Minecraft players.');
             await this.log(err);
             playersList = {players: [], summary: ""};
