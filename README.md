@@ -123,7 +123,7 @@ not been tested.
 
 There are no doubt bugs waiting to be discovered, and features missing outright.
 Feel free to check the
-[minecraft-server-manager issues](https://github.com/nickrnet/minecraft-server-manager/issues)
+[minecraft-server-manager issues](https://github.com/networkcobwebs/minecraft-server-manager/issues)
 page and log an issue if it doesn't exist as issues are discovered. Realize that
 there is no schedule for this project, so a bug fix or enhancement will be
 completed as time allows, regardless of severity, crash, or payment, at the
