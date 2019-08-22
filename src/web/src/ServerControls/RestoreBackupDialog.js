@@ -12,56 +12,58 @@ import Select from '@material-ui/core/Select';
 import BackupItem from './BackupItem';
 
 export default class RestoreBackupDialog extends Component {
-    constructor (props) {
-        super(props);
-        this.state = {
-            backupValue: ""
-        };
-    }
+  constructor (props) {
+    super(props);
+    this.state = {
+      backupValue: ''
+    };
+  }
 
-    displayBackupItems (backup) {
-        return (
-            <BackupItem
-                key = { backup.fileName }
-                backup = { backup }
-            />
-        );
-    }
+  displayBackupItems (backup) {
+    return (
+      <BackupItem
+        key={backup.fileName}
+        backup={backup}
+      />
+    );
+  }
 
-    render () {
-        let potentialBackups = this.props.potentialBackups;
-        
-        return (
-            <Dialog
-                open = { this.props.open }>
-                <DialogContent>
-                    <FormControl>
-                        <Select
-                            native
-                            inputProps = {{
-                                id: 'backup',
-                            }}
-                            value = { this.state.backupValue } >
-                            { potentialBackups.map(this.displayBackupItems) }
-                        </Select>
-                    </FormControl>
-                    <FormHelperText>Choose a backup to restore</FormHelperText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick = { this.props.onClose } color="primary">
+  render () {
+    const potentialBackups = this.props.potentialBackups;
+
+    return (
+      <Dialog
+        open={this.props.open}
+      >
+        <DialogContent>
+          <FormControl>
+            <Select
+              native
+              inputProps={{
+                id: 'backup'
+              }}
+              value={this.state.backupValue}
+            >
+              {potentialBackups.map(this.displayBackupItems)}
+            </Select>
+          </FormControl>
+          <FormHelperText>Choose a backup to restore</FormHelperText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={this.props.onClose} color='primary'>
                         Cancel
-                    </Button>
-                    <Button onClick = { this.props.onClose } color="primary" autoFocus>
+          </Button>
+          <Button onClick={this.props.onClose} color='primary' autoFocus>
                         Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        );
-    }
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 }
 
 RestoreBackupDialog.propTypes = {
-    onClose: PropTypes.func.isRequired,
-    open: PropTypes.bool.isRequired,
-    potentialBackups: PropTypes.array.isRequired
+  onClose: PropTypes.func.isRequired,
+  open: PropTypes.bool.isRequired,
+  potentialBackups: PropTypes.array.isRequired
 };

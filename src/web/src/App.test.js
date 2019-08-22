@@ -10,15 +10,15 @@ it('renders without crashing', () => {
 });
 
 it('gets minecraft status', () => {
-  axios(`/api/properties`).then(res => {
+  axios('/api/properties').then(res => {
     let minecraftServerProperties = res.data;
     minecraftServerProperties = minecraftServerProperties.properties;
     expect(minecraftServerProperties.length).not.toBe(0);
   },
   err => {
-      // throw err;
-      console.log('Minecraft online?')
+    // throw err;
+    console.log('Minecraft online?');
   }).catch(e => {
-      throw e;
+    throw e;
   });
-})
+});
