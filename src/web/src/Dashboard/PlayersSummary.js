@@ -12,62 +12,62 @@ import Typography from '@material-ui/core/Typography';
 import PlayerListItem from './PlayerListItem';
 
 const styles = {
-    container: {
-        margin: 10,
-        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-        fontSize: '0.95rem'
-    }
+  container: {
+    margin: 10,
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontSize: '0.95rem'
+  }
 };
 
 export default class PlayersSummary extends React.Component {
-    displayPlayerListItems (player) {
-        if (player.online) {
-            return (
-                <PlayerListItem
-                    key = { player.key }
-                    player = { player }
-                />
-            );
-        }
+  displayPlayerListItems (player) {
+    if (player.online) {
+      return (
+        <PlayerListItem
+          key={player.key}
+          player={player}
+        />
+      );
+    }
+  }
+
+  render () {
+    const minecraftProperties = this.props.minecraftProperties;
+    const playerInfo = minecraftProperties.playerInfo;
+    let players = [];
+    let summary = '';
+
+    if (playerInfo) {
+      players = playerInfo.players;
+      summary = playerInfo.summary;
     }
 
-    render () {
-        let minecraftProperties = this.props.minecraftProperties;
-        let playerInfo = minecraftProperties.playerInfo;
-        let players = [];
-        let summary = '';
-
-        if (playerInfo) {
-            players = playerInfo.players;
-            summary = playerInfo.summary;
-        }
-        
-        return (
-            <div style = { styles.container }>
-                <Typography variant="subtitle1">
+    return (
+      <div style={styles.container}>
+        <Typography variant='subtitle1'>
                     Connected Players
+        </Typography>
+        <Table size='small'>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <Typography variant='subtitle2'>
+                  {summary || 'Waiting on Minecraft server...'}
                 </Typography>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>
-                                <Typography variant="subtitle2">
-                                    { summary ? summary : 'Waiting on Minecraft server...' }
-                                </Typography>
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                </Table>
-                <Table>
-                    <TableBody>
-                        { players.map(this.displayPlayerListItems) }
-                    </TableBody>
-                </Table>
-            </div>
-        );
-    }
+              </TableCell>
+            </TableRow>
+          </TableHead>
+        </Table>
+        <Table>
+          <TableBody>
+            {players.map(this.displayPlayerListItems)}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
 }
 
 PlayersSummary.propTypes = {
-    minecraftProperties: PropTypes.object.isRequired
+  minecraftProperties: PropTypes.object.isRequired
 };
