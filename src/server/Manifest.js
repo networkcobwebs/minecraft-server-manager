@@ -29,6 +29,17 @@ class Manifest extends Map {
   }
 
   /**
+   * @param  {String} type Type of id which to search for
+   * @return {String} Latest version id found of given type or overall
+   */
+  latest (type) {
+    // We assume that versions are in chronological order with latest first
+    return type && Manifest.types.has(type)
+      ? [...this.keys()].find(id => this.get(id).type === type)
+      : this.keys().next().value;
+  }
+
+  /**
    * Fetches the Minecraft version manifest from "this.url" and parses it
    * @return {Promise} Resolves to 'this' or rejects with an Error object
    */
