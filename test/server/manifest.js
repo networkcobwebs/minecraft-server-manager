@@ -48,6 +48,7 @@ describe('Manifest', function () {
   });
   describe('instance', function () {
     before(async function () {
+      this.id = '1.9-pre4';
       this.manifest = await Manifest.default;
     });
     it('should extend Map', function () {
@@ -82,6 +83,17 @@ describe('Manifest', function () {
           const filtered = [...this.manifest.keys()].filter(id => this.manifest.get(id).type === type);
           assert.equal(this.manifest.latest(type), filtered.reduce(reducer));
         });
+      });
+    });
+    describe('update()', function () {
+      it('should return latest snapshot when given a snapshot id', function () {
+        assert.equal(this.manifest.update(this.id), this.manifest.latest('snapshot'));
+      });
+      it('should return latest release when given a release type', function () {
+        assert.equal(this.manifest.update(`${this.id}@release`), this.manifest.latest('release'));
+      });
+      it('should return latest version when given an invalid id', function () {
+        assert.equal(this.manifest.update('latest'), this.manifest.latest());
       });
     });
     describe('fetch()', function () {
