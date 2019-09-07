@@ -40,6 +40,16 @@ class Manifest extends Map {
   }
 
   /**
+   * See "downlod()" for version syntax
+   * @param  {String} version Version which to update
+   * @return {Promise} Resolves to latest version id of given / evaluated type
+   */
+  update (version) {
+    const [id, type] = version.split('@');
+    return this.latest(type || (this.get(id) || { type: false }).type);
+  }
+
+  /**
    * Fetches the Minecraft version manifest from "this.url" and parses it
    * @return {Promise} Resolves to 'this' or rejects with an Error object
    */
