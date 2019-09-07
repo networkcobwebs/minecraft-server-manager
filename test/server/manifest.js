@@ -1,6 +1,7 @@
 const { describe, it, before, after } = require('mocha');
 const assert = require('assert').strict;
 const mock = require('mock-fs');
+const fs = require('fs-extra');
 const https = require('https');
 const nock = require('nock');
 const path = require('path');
@@ -101,6 +102,53 @@ describe('Manifest', function () {
         nock(Manifest.url.origin).get(Manifest.url.pathname).reply(200, this.mcm);
         // Kind of tests that returned data is still sane
         assert.deepEqual(this.manifest, await this.manifest.fetch());
+      });
+    });
+    describe('download()', function () {
+      before(function () {
+        mock();
+        this.content = 'server contents';
+        this.nock = version => {
+          nock(Manifest.url.origin)
+            // Simplified response, with only relevant values intact
+            .get((new URL(this.manifest.get(version).url)).pathname).reply(200, {
+              id: version,
+              downloads: {
+                server: {
+                  sha1: '81931219108be3f491caa9769cc4d6a653ab53c6',
+                  url: `${Manifest.url.origin}/server.jar`
+                }
+              }
+            })
+            .get('/server.jar').reply(200, this.content);
+        };
+      });
+      after(mock.restore);
+      it('should download with a version id', async function () {
+        const file = path.resolve('id.jar');
+        this.nock(this.id);
+        assert.equal(await this.manifest.download(this.id, file), this.id);
+        assert.equal(await fs.readFile(file, 'utf8'), this.content);
+      });
+      it('should download with a version type', async function () {
+        const version = this.manifest.latest('release');
+        const file = path.resolve('type.jar');
+        this.nock(version);
+        assert.equal(await this.manifest.download('@release', file), version);
+        assert.equal(await fs.readFile(file, 'utf8'), this.content);
+      });
+      it('should download latest by default', async function () {
+        const version = this.manifest.latest();
+        const file = path.resolve('latest.jar');
+        this.nock(version);
+        assert.equal(await this.manifest.download('latest', file), version);
+        assert.equal(await fs.readFile(file, 'utf8'), this.content);
+      });
+      it('should reject with an Error if wrong file hash', async function () {
+        const file = path.resolve('error.jar');
+        this.content = 'bad data';
+        this.nock(this.id);
+        await assert.rejects(this.manifest.download(this.id, file), { message: 'File hash mismatch!' });
       });
     });
   });
