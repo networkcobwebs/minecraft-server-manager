@@ -1,4 +1,6 @@
 const https = require('https');
+const fs = require('fs-extra');
+const crypto = require('crypto');
 /**
  * Map, that can fetch, parse, download and update Minecraft Server versions
  * @extends Map
@@ -68,6 +70,40 @@ class Manifest extends Map {
         });
       }).on('error', reject);
     });
+  }
+
+  /**
+   * Downloads the requested version of Minecraft Server into the the given path
+   * Given version is split in two at "@", resulting in the version id and type
+   * One of these is required, but not both, with the id taking precedence
+   * @param  {String} version Version which to download or latest if invalid
+   * @param  {String} path An absolute file path where to write the downloaded file
+   * @return {Promise} Resolves to downloads version id or rejects with an Error object
+   */
+  download (version, path) {
+    return new Promise((resolve, reject) => {
+      const [id, type] = version.split('@');
+      const url = (this.get(id) || this.get(this.latest(type))).url;
+      https.get(new URL(url), (response) => {
+        let data = '';
+        response.on('data', chunk => { data += chunk; });
+        response.on('end', () => { resolve(data); });
+      }).on('error', reject);
+    }).then(data => new Promise((resolve, reject) => {
+      const fileStream = fs.createWriteStream(path);
+      const hash = crypto.createHash('sha1');
+      const executable = JSON.parse(data);
+      https.get(new URL(executable.downloads.server.url), (response) => {
+        response.pipe(fileStream).pipe(hash);
+        response.on('data', chunk => { hash.update(chunk); });
+        response.on('end', () => {
+          if (executable.downloads.server.sha1 !== hash.digest('hex')) {
+            reject(new Error('File hash mismatch!'));
+          }
+        });
+        fileStream.on('finish', () => { resolve(executable.id); });
+      }).on('error', reject);
+    }));
   }
 }
 // Default manifest URL string, so as not to store copies in every instance
