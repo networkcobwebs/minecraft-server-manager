@@ -46,4 +46,30 @@ describe('Manifest', function () {
       });
     });
   });
+  describe('instance', function () {
+    before(async function () {
+      this.manifest = await Manifest.default;
+    });
+    it('should extend Map', function () {
+      assert.ok(this.manifest instanceof Map);
+    });
+    it('should hold hold type, url and age of version', async function () {
+      this.manifest.forEach(({ type, url, age }, id) => {
+        assert.ok(Manifest.types.has(type));
+        assert.equal(new URL(url).href, url);
+        assert.ok(Number.isSafeInteger(age));
+      });
+    });
+    describe('url', function () {
+      it('should store a custom URL', function () {
+        const url = new URL('https://not.quite.mojang/mc/game/manifest.json');
+        this.manifest.url = url;
+        assert.equal(this.manifest.url, url);
+      });
+      it('should not store the default URL', function () {
+        this.manifest.url = Manifest.url;
+        assert.equal(this.manifest.url, Manifest.url);
+      });
+    });
+  });
 });
