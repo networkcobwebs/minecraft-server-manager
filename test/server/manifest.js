@@ -71,6 +71,19 @@ describe('Manifest', function () {
         assert.equal(this.manifest.url, Manifest.url);
       });
     });
+    describe('latest()', function () {
+      it('should return latest id overall when invalid type', async function () {
+        const reducer = (latest, id) => this.manifest.get(id).age > this.manifest.get(latest).age ? id : latest;
+        assert.equal(this.manifest.latest(), [...this.manifest.keys()].reduce(reducer));
+      });
+      it('should return latest ids for all "Manifest.types"', async function () {
+        const reducer = (latest, id) => this.manifest.get(id).age > this.manifest.get(latest).age ? id : latest;
+        Manifest.types.forEach(type => {
+          const filtered = [...this.manifest.keys()].filter(id => this.manifest.get(id).type === type);
+          assert.equal(this.manifest.latest(type), filtered.reduce(reducer));
+        });
+      });
+    });
     describe('fetch()', function () {
       it('should return own instance', async function () {
         nock(Manifest.url.origin).get(Manifest.url.pathname).reply(200, this.mcm);
