@@ -5,6 +5,16 @@ const https = require('https');
  */
 class Manifest extends Map {
   /**
+   * Lazy getter for a cached instance with prefetched versions from default URL
+   * @return {Promise}
+   */
+  static get default () {
+    delete Manifest.default;
+    Manifest.default = (new Manifest()).fetch();
+    return Manifest.default;
+  }
+
+  /**
    * @param  {URL} url
    */
   set url (url) {
