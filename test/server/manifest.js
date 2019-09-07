@@ -71,5 +71,12 @@ describe('Manifest', function () {
         assert.equal(this.manifest.url, Manifest.url);
       });
     });
+    describe('fetch()', function () {
+      it('should return own instance', async function () {
+        nock(Manifest.url.origin).get(Manifest.url.pathname).reply(200, this.mcm);
+        // Kind of tests that returned data is still sane
+        assert.deepEqual(this.manifest, await this.manifest.fetch());
+      });
+    });
   });
 });
