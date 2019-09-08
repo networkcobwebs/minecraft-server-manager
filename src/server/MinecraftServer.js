@@ -123,8 +123,6 @@ class MinecraftServer {
     const minecraftDirectory = properties.settings.minecraftDirectory;
     let minecraftWasRunning = false;
     const backupDir = path.resolve(properties.settings.backups.path);
-    let archive;
-    let output;
 
     worldName = worldName || 'world';
     if (properties.started) {
@@ -133,8 +131,8 @@ class MinecraftServer {
     }
 
     await fs.ensureDir(backupDir, { recursive: true });
-    output = await fs.createWriteStream(path.join(backupDir, `${worldName}_${Util.getDateTime()}.zip`));
-    archive = archiver('zip', {
+    const output = await fs.createWriteStream(path.join(backupDir, `${worldName}_${Util.getDateTime()}.zip`));
+    const archive = archiver('zip', {
       zlib: { level: 9 }
     });
     archive.pipe(output);
@@ -315,9 +313,9 @@ class MinecraftServer {
       if (release.full !== detectedVersion.full) {
         if (release.major > detectedVersion.major) {
           this.properties.updateAvailable = true;
-        } else if (release.major == detectedVersion.major && release.minor > detectedVersion.minor) {
+        } else if (release.major === detectedVersion.major && release.minor > detectedVersion.minor) {
           this.properties.updateAvailable = true;
-        } else if (release.major == detectedVersion.major && release.minor == detectedVersion.minor && release.release > detectedVersion.release) {
+        } else if (release.major === detectedVersion.major && release.minor === detectedVersion.minor && release.release > detectedVersion.release) {
           this.properties.updateAvailable = true;
         }
         await this.log(`Minecraft version ${release.full} available.`);
@@ -1387,7 +1385,7 @@ class MinecraftServer {
     await this.log('Waiting on Minecraft buffer...');
     await Util.wait(time);
     if (properties.serverOutputCaptured) {
-      if (serverOutput.length && serverOutput.length != length) {
+      if (serverOutput.length && serverOutput.length !== length) {
         await this.log(`Minecraft buffer appers to be full with ${serverOutput.length} entries.`);
       } else {
         if (time < max) {
