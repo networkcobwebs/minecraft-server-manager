@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 **Please complete the following information:**
  - OS: [e.g. iOS]
  - Browser [e.g. chrome, safari]
- - Minecraft Server Version [e.g. 1.14.5]
+ - Minecraft Server Version [e.g. 1.14.14, 1.11.2]
 
 **Additional context**
 Add any other context about the problem here. If you would like, please include the `minecraft-server-manager.log` file from your home directory and the `latest.log` Minecraft log file.
