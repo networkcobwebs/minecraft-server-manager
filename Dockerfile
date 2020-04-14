@@ -40,7 +40,7 @@ RUN echo 'export PATH=/home/minecraft/node_modules/.bin:$PATH' >> .bash_profile
 # Run Minecraft Server Manager
 ENTRYPOINT . /home/minecraft/.bash_profile; minecraft-server-manager
 
-# docker build  --label minecraft-server-manager - < Dockerfile
+# docker build --label minecraft-server-manager - < Dockerfile
 # docker build -t networkcobwebs/minecraft-server-manager:latest -t networkcobwebs/minecraft-server-manager:1.14.14 - < Dockerfile
 # docker run --name minecraft-server -p 3000:3000 -p 25565:25565 minecraft-server-manager
 # To use a volume that can be external to the container:
