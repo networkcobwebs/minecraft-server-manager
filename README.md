@@ -19,8 +19,24 @@ Node.js 10.x or greater LTS release.
 
 ## Installation
 
+### NodeJS
+
 ```
 npm install -g @networkcobwebs/minecraft-server-manager
+```
+
+### Docker Container
+
+```
+docker pull networkcobwebs/minecraft-server-manager
+docker run --name minecraft-server -p 3001:3001 -p 25565:25565 minecraft-server-manager
+```
+
+or to use a shared directory from your local machine with the Docker container (to preserve data):
+
+```
+docker volume create --name minecraft-server --label minecraft-server minecraft-server
+docker run -v minecraft-server:/home/minecraft/minecraft-server-manager -p 3001:3001 -p 25565:25565 minecraft-server-manager
 ```
 
 Dashboard
