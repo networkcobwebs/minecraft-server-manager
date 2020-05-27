@@ -55,6 +55,7 @@
     "passport": "^0.4.1",
     "permission": "^1.1.0",
     "prop-types": "^15.7.2",
+    "rcon.js": "^1.0.0",
     "react-scripts": "^3.4.1",
     "underscore": "^1.10.2"
   },
