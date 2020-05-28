@@ -8,6 +8,8 @@ const os = require('os');
 const path = require('path');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const crypto = require('crypto');
+const { RCONClient } = require('rcon.js');
 
 // minecraft-server-manager Imports
 const MSMUtil = require('../util/util');
@@ -40,6 +42,7 @@ const minecraftProperties = {
   eulaFound: false,
   eulaUrl: 'https://account.mojang.com/documents/minecraft_eula',
   fullHelp: [],
+  help: [],
   helpPages: 0,
   installed: false,
   installedVersions: [],
@@ -48,6 +51,7 @@ const minecraftProperties = {
   ops: [],
   osType: os.type(),
   playerInfo: { players: [], summary: '' },
+  rconClient: {},
   serverOutput: [],
   serverOutputCaptured: false,
   serverProperties: [],
@@ -87,8 +91,8 @@ class MinecraftServer {
     const properties = this.properties;
     try {
       await this.clearLog();
-      properties.settings = await Util.readSettings(properties.settingsFileName, properties.settings);
       await this.log('Initializing MinecraftServer...');
+      properties.settings = await Util.readSettings(properties.settingsFileName, properties.settings);
       await Promise.all([
         this.detectJavaHome(),
         this.checkForMinecraftInstallation(),
@@ -161,6 +165,7 @@ class MinecraftServer {
         this.detectMinecraftJar(),
         this.getEula()
       ]);
+      await this.enableRemoteConsole();
     } catch (err) {
       if (err.code === 'ENOENT') {
         await this.log(`Creating directory at ${minecraftDirectory}...`);
@@ -668,13 +673,7 @@ class MinecraftServer {
       if (properties.installed) {
         const serverPropertiesFile = await fs.readFile(path.join(minecraftDirectory, 'server.properties'), 'utf8');
         properties.serverProperties = Util.convertPropertiesToObjects(serverPropertiesFile);
-        // Detect world name.
-        for (const item in properties.serverProperties) {
-          if (item.name === 'level-name') {
-            properties.worldName = item.value;
-            break;
-          }
-        }
+        properties.worldName = properties.serverProperties.find(item => item.name === 'level-name').value;
       } else {
         await this.log('Minecraft not installed.');
       }
@@ -799,67 +798,100 @@ class MinecraftServer {
     }
   }
 
+  /**
+   * Gets the Minecraft commands available via `/help`.
+   */
   async listCommands () {
-    const properties = this.properties;
-    const serverProcess = properties.serverProcess;
-    let line = '';
-    let outputString = '';
-    let outputLines = [];
-
-    properties.allowedCommands = [];
-
-    try {
-      if (properties.acceptedEula && !properties.needsInstallation) {
-        await this.log('Listing Minecraft commands...');
-        await this.attachToMinecraft();
-        serverProcess.stdin.write(`/help${os.EOL}`);
-        await this.waitForBufferToBeFull();
-
-        // Output buffer could be array of arrays, so combine into something usable.
-        if (Array.isArray(properties.serverOutput) && properties.serverOutput.length) {
-          outputString = properties.serverOutput.join('\n');
-          outputLines = outputString.split('\n');
-        }
-        for (line of outputLines) {
-          if (line.indexOf('Showing help page') !== -1) {
-            // Versions prior to 1.13 "page" the help
-            await this.detachFromMinecraft();
-
-            const part1 = line.split('Showing help page ');
-            const part2 = part1[1].split(' ');
-            properties.helpPages = parseInt(part2[2]);
-
-            await this.attachToMinecraft();
-            try {
-              for (let i = 1; i <= properties.helpPages; i++) {
-                // Get all of the help at once
-                serverProcess.stdin.write(`/help ${i}${os.EOL}`);
-              }
-            } catch (er) {
-              await this.log(er);
-            }
-            while (properties.serverOutput.length <= 0) {
-              await this.waitForBufferToBeFull();
-            }
-            await this.waitForBufferToBeFull();
-            await this.parseHelpOutput();
-            break;
-          } else {
-            // Versions 1.13 and later display all of the help at once, no need to page it
-            await this.waitForBufferToBeFull();
-            await this.parseHelpOutput();
-            break;
-          }
-        }
-        await this.detachFromMinecraft();
-      }
-    } catch (err) {
-      await this.detachFromMinecraft();
-      await this.log(err);
+    const rconPassword = this.properties.serverProperties.find(({name}) => name === 'rcon.password').value;
+    this.properties.fullHelp = [];
+    this.properties.rawHelp = [];
+    
+    if (!this.rconClient) {
+      this.getRconClient();
     }
+    await this.rconClient.login(rconPassword);
+
+    await this.log('Listing available Minecraft commands.');
+    let response = await this.rconClient.command('help');
+
+    // Versions prior to 1.13 "page" the help, so get it all at once.
+    if (response.body.indexOf('Showing help page') !== -1) {
+      const part1 = response.body.split('Showing help page ');
+      const part2 = part1[1].split(' ');
+      const helpPages = parseInt(part2[2]);
+
+      for (let page = 1; page <= helpPages; page++) {
+        // Get all of the help at once
+        let helpPage = await this.rconClient.command(`help ${page}`);
+        this.properties.rawHelp.push(helpPage.body);
+      }
+    } else {
+      this.properties.rawHelp.push(response.body);
+    }
+
+    await this.parseHelpOutput();
   }
 
+  /**
+   * Gets the connected players.
+   */
   async listPlayers () {
+    const rconPassword = this.properties.serverProperties.find(({name}) => name === 'rcon.password').value;
+    let outputLines = [];
+    let playersList = {
+      summary: '',
+      players: []
+    };
+    let playerCount = 0;
+
+    await this.log('Listing Minecraft players.');
+
+    if (!this.properties.userCache) {
+      await this.getUserCache();
+    }
+    if (!this.rconClient) {
+      this.getRconClient();
+    }
+    await this.rconClient.login(rconPassword);
+    let response = await this.rconClient.command('list');
+    outputLines = response.body;
+
+    if (outputLines.indexOf('players online:') !== -1) {
+      let playersSummary = outputLines.split('players online:');
+      if (playersSummary) {
+        playersList.summary = `${playersSummary[0]} players online`;
+        let players = playersSummary[1].split(',');
+        players.forEach(async playerName => {
+          if (playerName) {
+            playerCount++;
+            let player = {
+              key: playerCount,
+              name: playerName.trim(),
+              online: true
+            };
+            if (this.properties.userCache && this.properties.userCache.length) {
+              this.properties.userCache.forEach(cachedPlayer => {
+                if (cachedPlayer.name === player.name) {
+                  player.key = cachedPlayer.uuid;
+                }
+              });
+            }
+            player.banned = await this.determineBanStatus(player);
+            player.opped = await this.determineOpStatus(player);
+            player.whitelisted = await this.determineWhitelistStatus(player);
+            playersList.players.push(player);
+          }
+        });
+      }
+    } else {
+      playersList.summary = outputLines.trim().slice(0, -1);
+    }
+
+    this.properties.playerInfo = playersList;
+    return playersList;
+  }
+
+  async listPlayersViaStdOut () {
     const properties = this.properties;
     const serverProcess = properties.serverProcess;
     const started = properties.started;
@@ -1059,7 +1091,42 @@ class MinecraftServer {
   async parseHelpOutput () {
     await this.log('Parsing help output.');
     const properties = this.properties;
-    const minecraftFullHelp = properties.fullHelp;
+    const minecraftRawHelp = properties.rawHelp;
+    let helpLine = 0;
+    
+    minecraftRawHelp.forEach(lineOfHelp => {
+      // lineOfHelp = "--- Showing help page 1 of 9 (/help <page>) ---/achievement <give|take> <name|*> [player]/ban <name> [reason ...]/ban-ip <address|name> [reason ...]/banlist [ips|players]/blockdata <x> <y> <z> <dataTag>/clear [player] [item] [data] [maxCount] [dataTag]/clone <x1> <y1> <z1> <x2> <y2> <z2> <x> <y> <z> [maskMode] [cloneMode]Tip: Use the <tab> key while typing a command to auto-complete the command or its arguments"
+      if (lineOfHelp) {
+        const commandSets = lineOfHelp.split('---');
+        commandSets.forEach(commandSet => {
+          // "/achievement <give|take> <name|*> [player]/ban <name> [reason ...]/ban-ip <address|name> [reason ...]/banlist [ips|players]/blockdata <x> <y> <z> <dataTag>/clear [player] [item] [data] [maxCount] [dataTag]/clone <x1> <y1> <z1> <x2> <y2> <z2> <x> <y> <z> [maskMode] [cloneMode]Tip: Use the <tab> key while typing a command to auto-complete the command or its arguments"
+          if (commandSet && commandSet.indexOf('/') === 0) {
+            const commandsInTheLine = commandSet.split(/\//);
+            commandsInTheLine.forEach(command => {
+              if (command && command.indexOf(' OR ') === -1) {
+                // Some commands have alternate optional arguments. Skip getting those for now.
+                helpLine++;
+                const aCommand = {
+                  key: helpLine,
+                  command: `/${command}`
+                };
+                this.properties.fullHelp.push(aCommand);
+              }
+            });
+          }
+        });
+      }
+    });
+    await this.log(`Done parsing help output. Got ${this.properties.fullHelp.length} entries.`);
+  }
+
+  /**
+   * Parses extra help formats.
+   */
+  async parseOptionalHelpOutput () {
+    await this.log('Parsing help output.');
+    const properties = this.properties;
+    const minecraftFullHelp = properties.rawHelp;
     const minecraftOutput = properties.serverOutput;
     let line;
 
@@ -1126,6 +1193,31 @@ class MinecraftServer {
      */
   async runCommand (command) {
     // TODO: make sure command passed is valid
+    const rconPassword = this.properties.serverProperties.find(({name}) => name === 'rcon.password').value;
+    const properties = this.properties;
+    const started = properties.started;
+    let outputLines = [];
+
+    if (started) {
+      if (!this.rconClient) {
+        this.getRconClient();
+      }
+      await this.log(`Running Minecraft command: ${command}`);
+      await this.rconClient.login(rconPassword);
+      let response = await this.rconClient.command(`${command}`);  
+      return response.body;
+    } else {
+      return Promise.reject(new Error('Minecraft is not running.'));
+    }
+  }
+
+  /**
+     * Executes a Minecraft command against the Minecraft server.
+     * @param {string} command - A Minecraft command to execute.
+     * @return {string} output - The output from the command.
+     */
+  async runCommandFromStdOut (command) {
+    // TODO: make sure command passed is valid
     const properties = this.properties;
     const serverOutput = properties.serverOutput;
     const serverProcess = properties.serverProcess;
@@ -1169,9 +1261,9 @@ class MinecraftServer {
   }
 
   /**
-     * Saves server properties to disk for use on Minecraft server start.
-     * @param {object} newProperties Contains the new properties to save to disk.
-     */
+   * Saves server properties to disk for use on Minecraft server start.
+   * @param {object} newProperties Contains the new properties to save to disk.
+   */
   async saveProperties (newProperties) {
     await this.log('Saving new Minecraft server.properties file.');
 
@@ -1198,9 +1290,106 @@ class MinecraftServer {
     }
   }
 
-  /**
-     * Starts the Minecraft server process.
+  async enableRemoteConsole () {
+    /**
+     * Enables the remote console feature of the Minecraft Server for better command handling.
+     * Generates a random password for connections.
+     * Sets the port to listen on to 25575.
      */
+    let serverProperties = this.properties.serverProperties;
+    let foundRcon = null;
+    let foundRconPassword = null;
+    let foundRconPort = null;
+    let changedSetting = false;
+
+    if (!serverProperties || !serverProperties.length) {
+      await this.getServerProperties();
+      serverProperties = this.properties.serverProperties;
+    }
+
+    if (serverProperties && serverProperties.length) {
+      const password = crypto.randomBytes(32).toString('hex');
+      foundRcon = serverProperties.find(({name}) => name === 'enable-rcon');
+      foundRconPassword = serverProperties.find(({name}) => name === 'rcon.password');
+      foundRconPort = serverProperties.find(({name}) => name === 'rcon.port');
+      
+      if (foundRcon && !foundRcon.value) {
+        foundRcon.value = true;
+        changedSetting = true;
+      }
+      if (foundRconPassword && foundRconPassword.value == null) {
+        foundRconPassword.value = password;
+        changedSetting = true;
+      }
+      if (foundRconPort && foundRconPort.value != 25575) {
+        foundRconPort.value = 25575
+        changedSetting = true;
+      }
+
+      if (!foundRcon) {
+        serverProperties.push({name: 'enable-rcon', value: 'true'});
+        changedSetting = true;
+      }
+      if (!foundRconPassword) {
+        serverProperties.push({name: 'rcon.password', value: password});
+        changedSetting = true;
+      }
+      if (!foundRconPort) {
+        serverProperties.push({name: 'rcon.port', value: 25575});
+        changedSetting = true;
+      }
+      if (changedSetting) {
+        await this.log('Enabling remote console...');
+        await this.saveProperties(serverProperties);
+      }
+    }
+  }
+
+  /**
+   * Disables the remote console feature of the Minecraft Server.
+   */
+  async disableRemoteConsole () {
+    let serverProperties = this.properties.serverProperties;
+    let foundRcon = false;
+    let changedSetting = false;
+    for (let item in serverProperties) {
+      if (item.name === 'enable-rcon') {
+        foundRcon = true;
+        if (!item.value) {
+          item.value = false;
+          changedSetting = true;
+        }
+      }
+    }
+    if (!foundRcon) {
+      serverProperties.push({name: 'enable-rcon', value: 'false'});
+      changedSetting = true;
+    }
+    if (changedSetting) {
+      await this.saveProperties(serverProperties);
+    }
+  }
+
+  /**
+   * Gets a RCON client.
+   */
+  getRconClient () {
+    const rconPassword = this.properties.serverProperties.find(({name}) => name === 'rcon.password').value;
+    const rconPort = this.properties.serverProperties.find(({name}) => name === 'rcon.port').value;
+    this.rconClient = new RCONClient({host: '127.0.0.1', port: rconPort, password: rconPassword});
+  }
+
+  /**
+   * Returns if RCON is enabled in the Minecraft Server configuration.
+   */
+  rconEnabled () {
+    foundRcon = this.properties.serverProperties.find(({name}) => name === 'enable-rcon');
+    return foundRcon.value;
+  }
+
+  /**
+   * Starts the Minecraft server process.
+   */
   async start () {
     const properties = this.properties;
     const settings = properties.settings;
@@ -1238,7 +1427,7 @@ class MinecraftServer {
 
           await this.checkForMinecraftToBeStarted();
           await this.getEula();
-          await this.updateStatus();
+          // await this.updateStatus();
           if (properties.started) {
             await this.listCommands();
           }
@@ -1262,8 +1451,8 @@ class MinecraftServer {
   }
 
   /**
-     * Stops the Minecraft server process.
-     */
+   * Stops the Minecraft server process.
+   */
   async stop (force = false) {
     await this.log('Stopping MinecraftServer...');
 
@@ -1334,6 +1523,9 @@ class MinecraftServer {
         this.getBannedPlayers(),
         this.getWhitelist()
       ]);
+      if (!this.rconEnabled) {
+        await this.enableRemoteConsole();
+      }
       if (properties.started && properties.serverProcess && properties.serverProcess.pid) {
         await this.listPlayers();
       }
