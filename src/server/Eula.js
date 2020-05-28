@@ -15,6 +15,13 @@ class Eula {
   get url () {
     return this.customUrl ? this.customUrl : Eula.url;
   }
+  
+  /**
+   * @return {String}
+   */
+  get contents () {
+    return this.contents ? this.contents : Eula.contents;
+  }
 
   /**
    * @return {String}
@@ -65,7 +72,13 @@ class Eula {
   */
   async accept (serverPath) {
     const filePath = path.join(serverPath, this.file);
-    const lines = (await fs.readFile(filePath, 'utf8'));
+    let lines;
+    try {
+      lines = (await fs.readFile(filePath, 'utf8'));
+    } catch {
+      await fs.writeFile(this.file, this.contents);
+      lines = (await fs.readFile(filePath, 'utf8'));
+    }
     if (!JSON.parse(lines.match(Eula.regexp.state)[0])) {
       await fs.writeFile(filePath, lines.replace(Eula.regexp.state, 'true'));
     }
@@ -80,5 +93,10 @@ Eula.regexp = {
 // Default URL and filename strings, so as not to store copies in every instance
 Eula.url = 'https://account.mojang.com/documents/minecraft_eula';
 Eula.file = 'eula.txt';
+// Default contents
+Eula.contents =
+`#By changing the setting below to TRUE you are indicating your agreement to our EULA (${Eula.url}).
+#Thu Jan 01 00:00:00 UTC 1970
+eula=false`;
 
 module.exports = Eula;
