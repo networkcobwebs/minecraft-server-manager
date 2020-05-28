@@ -56,25 +56,6 @@ describe('minecraft-server tests', () => {
       expect(minecraftServer.properties.settings.javaHome).not.toBe('');
       expect(minecraftServer.properties.settings.javaPath).not.toBe('');
     });
-    it('should detect a minecraft jar', async () => {
-      await minecraftServer.clearLog();
-      const jar = await minecraftServer.detectMinecraftJar();
-      expect(jar).not.toBe('');
-      expect(minecraftServer.properties.serverJar).not.toBe('');
-      expect(minecraftServer.properties.installed).toBe(true);
-      expect(minecraftServer.properties.needsInstallation).toBe(false);
-    });
-    it('should backup the world and list backups', async () => {
-      await minecraftServer.clearLog();
-      const currentBackups = minecraftServer.properties.backupList.length;
-      const backups = await minecraftServer.backupWorld();
-      expect(backups.length).toBeGreaterThan(currentBackups);
-    });
-    it('should delete world backups and list backups', async () => {
-      await minecraftServer.clearLog();
-      await minecraftServer.deleteWorldBackups();
-      expect(minecraftServer.properties.backupList.length).toBe(0);
-    });
     it('should get release versions', async () => {
       await minecraftServer.clearLog();
       const versions = await minecraftServer.getMinecraftVersions();
@@ -92,16 +73,31 @@ describe('minecraft-server tests', () => {
       expect(found1112).toBe(true);
     });
     it('should download the latest minecraft server jar', async function () {
-      this.timeout(5000);
+      this.timeout(10000);
       await minecraftServer.clearLog();
       await minecraftServer.downloadRelease('latest');
       expect(minecraftServer.properties.versions.installed.length).toBeGreaterThan(0);
     });
+    it('should install the latest minecraft server jar', async function () {
+      this.timeout(5000);
+      await minecraftServer.clearLog();
+      await minecraftServer.install('latest');
+      expect(minecraftServer.properties.versions.installed.length).toBeGreaterThan(0);
+    });
+    it('should detect a minecraft jar', async () => {
+      await minecraftServer.clearLog();
+      const jar = await minecraftServer.detectMinecraftJar();
+      expect(jar).not.toBe('');
+      expect(minecraftServer.properties.serverJar).not.toBe('');
+      expect(minecraftServer.properties.installed).toBe(true);
+      expect(minecraftServer.properties.needsInstallation).toBe(false);
+    });
     it('should start minecraft', async function () {
-      this.timeout(30000);
+      this.timeout(60000);
       expect(minecraftServer.properties.started).toBe(false);
       await minecraftServer.clearLog();
       await minecraftServer.init();
+      await minecraftServer.acceptEula();
       const startStatus = await minecraftServer.start();
       expect(startStatus.message).not.toBe('');
       expect(minecraftServer.properties.started).toBe(true);
@@ -123,7 +119,7 @@ describe('minecraft-server tests', () => {
       await minecraftServer.clearLog();
       const output = await minecraftServer.runCommand('/gamerule keepInventory true');
       expect(output.length).toBeGreaterThan(0);
-      expect(output).toBe('Game rule keepInventory has been updated to true');
+      expect(output).toBe('Gamerule keepInventory is now set to: true');
     });
     it('should stop minecraft', async function () {
       this.timeout(15000);
@@ -131,6 +127,17 @@ describe('minecraft-server tests', () => {
       await minecraftServer.stop();
       expect(minecraftServer.properties.started).toBe(false);
       expect(minecraftServer.properties.stopped).toBe(true);
+    });
+    it('should backup the world and list backups', async () => {
+      await minecraftServer.clearLog();
+      const currentBackups = minecraftServer.properties.backupList.length;
+      const backups = await minecraftServer.backupWorld();
+      expect(backups.length).toBeGreaterThan(currentBackups);
+    });
+    it('should delete world backups and list backups', async () => {
+      await minecraftServer.clearLog();
+      await minecraftServer.deleteWorldBackups();
+      expect(minecraftServer.properties.backupList.length).toBe(0);
     });
   });
 });
