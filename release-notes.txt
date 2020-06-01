@@ -10,3 +10,5 @@ High-level user interface (web app) features (in order completed):
 - Notify of Minecraft server version updates, and allow installation of specific versions. Note: Current world is deleted.
 - Minecraft server properties are editable on the Server Controls page.
 - Docker container support.
+- Use Minecraft RCON service to send commands and query players and such.
+- Various startup timing fixes, especially seen when running in Docker.

@@ -46,7 +46,7 @@ changes.
 All pull requests should be completed on their own branches. This makes it easier to make changes
 before merge, and prevents rebasing problems.
 
-To get the code for development purposes, visit https://github.com/nickrnet/minecraft-server-manager
+To get the code for development purposes, visit https://github.com/networkcobwebs/minecraft-server-manager
 and click the `Fork` button at the top of the page.
 
 Then in a Terminal or Command Prompt execute
@@ -54,7 +54,7 @@ Then in a Terminal or Command Prompt execute
 ```
     git clone <your fork url>
     pushd minecraft-server-manager
-    git remote add upstream git@github.com:nickrnet/minecraft-server-manager.git
+    git remote add upstream git@github.com:networkcobwebs/minecraft-server-manager.git
     npm install
     pushd src/web
     npm install
@@ -182,6 +182,6 @@ web interface may be impacted.
 
 There are no doubt bugs waiting to be discovered, and features missing outright.
 The
-[minecraft-server-manager issues](https://github.com/nickrnet/minecraft-server-manager/issues)
+[minecraft-server-manager issues](https://github.com/networkcobwebs/minecraft-server-manager/issues)
 page may or may not have up to date things to work on. Realize that
 there is no schedule for this project, so any pull requests may take some time to be merged.

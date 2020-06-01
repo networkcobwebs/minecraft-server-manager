@@ -31,57 +31,40 @@ class About extends React.Component {
           </TableBody>
         </Table>
         <Table size='small'>
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <Typography variant='subtitle2'>
-                                    Contributors
-                </Typography>
-              </TableCell>
-              <TableCell> </TableCell>
-            </TableRow>
-          </TableHead>
           <TableBody>
             <TableRow>
               <TableCell>
                 <Typography variant='subtitle2'>
-                                    Project Owner
+                  Project Owner
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography>
-                                    nickrnet
+                  nickrnet
                 </Typography>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell>
                 <Typography variant='subtitle2'>
-                                    Authors
+                  Contributors
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography>
-                                    nickrnet, DevBonBon
+                  DevBonBon
                 </Typography>
               </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <Typography variant='subtitle2'>
-                                    Testing
-                </Typography>
-              </TableCell>
-              <TableCell> </TableCell>
             </TableRow>
           </TableBody>
         </Table>
+        <p></p>
         <Table size='small'>
           <TableHead>
             <TableRow>
               <TableCell>
                 <Typography variant='subtitle2'>
-                                    System Information
+                  System Information
                 </Typography>
               </TableCell>
               <TableCell> </TableCell>
@@ -92,7 +75,7 @@ class About extends React.Component {
             <TableRow>
               <TableCell>
                 <Typography variant='subtitle2'>
-                                    CPU
+                  CPU
                 </Typography>
               </TableCell>
               <TableCell>
@@ -109,7 +92,7 @@ class About extends React.Component {
             <TableRow>
               <TableCell>
                 <Typography variant='subtitle2'>
-                                    RAM
+                  RAM
                 </Typography>
               </TableCell>
               <TableCell>
@@ -122,7 +105,7 @@ class About extends React.Component {
             <TableRow>
               <TableCell>
                 <Typography variant='subtitle2'>
-                                    NodeJS Version
+                  NodeJS Version
                 </Typography>
               </TableCell>
               <TableCell>

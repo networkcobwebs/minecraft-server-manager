@@ -29,11 +29,13 @@ describe('minecraft-api tests', () => {
   });
   describe('minecraft-api methods', () => {
     it('should start and stop', async () => {
+      const minecraftApi = new MinecraftApi();
+      await minecraftApi.init();
       minecraftApi.properties.settings.autoStartMinecraft = false;
       await minecraftApi.start();
       expect(minecraftApi.app).not.toBe(null);
       await minecraftApi.stop();
-      minecraftApi.properties.webServer.close();
+      // minecraftApi.properties.webServer.close();
     });
   });
 });

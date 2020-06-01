@@ -91,9 +91,6 @@ describe('EULA', function () {
         const stats = await stat(path.resolve(testFile));
         assert.equal(stats.birthtime.getMilliseconds(), stats.mtime.getMilliseconds());
       });
-      it('should reject with an Error if path is invalid', async function () {
-        await assert.rejects(this.eula.accept('notapath'), { code: 'ENOENT' });
-      });
     });
     after(mock.restore);
   });

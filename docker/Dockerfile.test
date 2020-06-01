@@ -1,0 +1,22 @@
+FROM networkcobwebs/minecraft-server-manager:base
+USER root
+# Install Minecraft Server Manager source
+WORKDIR /home/minecraft/minecraft-server-manager
+COPY --chown=minecraft:minecraft . /home/minecraft/minecraft-server-manager
+RUN chown -R minecraft:minecraft /home/minecraft
+# Install Node modules
+USER minecraft
+WORKDIR /home/minecraft/minecraft-server-manager
+RUN . /home/minecraft/.bash_profile; npm install
+WORKDIR /home/minecraft/minecraft-server-manager/web/src
+RUN . /home/minecraft/.bash_profile; npm install
+
+# Run Minecraft Server Manager
+WORKDIR /home/minecraft/minecraft-server-manager
+ENTRYPOINT . /home/minecraft/.bash_profile; node ./index.js
+
+# docker build -t networkcobwebs/minecraft-server-manager:test --label minecraft-server-manager-test -f docker/Dockerfile.test .
+# docker run --name msm-test -p 3001:3001 -p 25565:25565 minecraft-server-manager-test
+# docker exec msm-test -it /bin/bash
+# docker container rm msm-test
+# DO NOT mount a volume that can be external to the container in the test image as it includes source code.

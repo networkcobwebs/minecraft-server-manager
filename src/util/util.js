@@ -17,17 +17,45 @@ class Util {
      */
   convertPropertiesToObjects (lines) {
     const properties = [];
+    let value = null;
     // Split at newlines and loop through the results
     for (const line of lines.split(new RegExp(os.EOL))) {
       // Skip empty and commented out lines
       if (line && !line.match(/^#/)) {
         const pair = line.split('=');
-        // A basic check to see if line is a 'name=value' pair
-        if (pair.length === 2) {
-          properties.push({ name: pair[0], value: pair[1] });
+        // Convert values to native JS objects if possible
+        if (pair[1] === 'true') {
+          value = true;
         }
+        else if (pair[1] === 'false') {
+          value = false;
+        }
+        else if (Number(pair[1])) {
+          value = Number(pair[1]);
+        }
+        else if (!pair[1]) {
+          value = null;
+        }
+        else {
+          value = pair[1];
+        }
+        properties.push({ name: pair[0], value: value });
       }
     }
+
+    properties.sort(function(a, b) {
+      var nameA = a.name.toUpperCase(); // ignore upper and lowercase
+      var nameB = b.name.toUpperCase(); // ignore upper and lowercase
+      if (nameA < nameB) {
+        return -1;
+      }
+      if (nameA > nameB) {
+        return 1;
+      }
+    
+      // names must be equal
+      return 0;
+    });
 
     return properties;
   }
@@ -40,7 +68,14 @@ class Util {
   convertObjectsToProperties (properties) {
     let lines = '';
     for (const property of properties) {
-      lines += `${property.name}=${property.value}${os.EOL}`;
+      let value = '';
+      if (property.value == null) {
+        value = '';
+      }
+      else {
+        value = property.value;
+      }
+      lines += `${property.name}=${value}${os.EOL}`;
     }
 
     return lines;
@@ -84,7 +119,7 @@ class Util {
      */
   async log (data = '', file = '') {
     if (!file) {
-      return Promise.reject('Invalid filename specified.');
+      throw new Error('Invalid filename specified.');
     }
     try {
       const logFilePath = path.join(homeDir, file);
@@ -95,7 +130,7 @@ class Util {
       await fs.appendFile(logFilePath, `${util.format(data)}${os.EOL}`);
       return logFilePath;
     } catch (err) {
-      return Promise.reject(err);
+      throw err;
     }
   }
 
@@ -105,7 +140,7 @@ class Util {
      */
   async clearLog (file = '') {
     if (!file) {
-      return Promise.reject(new Error('Invalid filename specified.'));
+      throw new Error('Invalid filename specified.');
     }
     try {
       const logFilePath = path.join(homeDir, file);
@@ -118,7 +153,7 @@ class Util {
       logFile.close();
       return logFilePath;
     } catch (err) {
-      return Promise.reject(err);
+      throw err;
     }
   }
 
@@ -137,7 +172,7 @@ class Util {
       return settings;
     } catch (err) {
       if (!defaults) {
-        return Promise.reject(new Error('No default settings given.'));
+        throw new Error('No default settings given.');
       }
       // Overwrite with sane defaults.
       return await this.saveSettings(filename, defaults);
@@ -159,7 +194,7 @@ class Util {
       await fs.writeFile(settingsFile, JSON.stringify(settings, null, 4));
       return settings;
     } catch (err) {
-      return Promise.reject(err);
+      throw err;
     }
   }
 

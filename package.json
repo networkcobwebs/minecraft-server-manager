@@ -8,7 +8,7 @@
     "start": "node index.js",
     "start-dev": "pushd src/web && react-scripts start && popd",
     "build-web": "pushd src/web && react-scripts build && popd",
-    "test-backend": "npm run lint && nyc mocha --recursive --reporter mochawesome --reporter-options reportDir=./test-results",
+    "test-backend": "nyc mocha --recursive --reporter mochawesome --reporter-options reportDir=./test-results",
     "test-web": "pushd src/web && react-scripts test --env=jsdom && popd",
     "eject": "pushd src/web && react-scripts eject && popd",
     "lint": "semistandard",
@@ -55,6 +55,7 @@
     "passport": "^0.4.1",
     "permission": "^1.1.0",
     "prop-types": "^15.7.2",
+    "rcon.js": "^1.0.0",
     "react-scripts": "^3.4.1",
     "underscore": "^1.10.2"
   },
@@ -65,7 +66,10 @@
     "mochawesome": "^4.1.0",
     "mock-fs": "^4.11.0",
     "nyc": "^14.1.1",
-    "semistandard": "^14.0.1"
+    "semistandard": "^14.0.1",
+    "tslint": "^6.1.2",
+    "typescript": "^3.9.3",
+    "wtfnode": "^0.8.1"
   },
   "engines": {
     "node": ">=10.16.0"
