@@ -101,9 +101,13 @@ class MinecraftServer {
         this.checkForMinecraftInstallation(),
         this.getMinecraftVersions()
       ]).catch(err => {
+        await this.log('An error occurred during initialization.');
+        await this.log(err.stack);
         throw err;
       });
-    } catch(err) {
+    } catch (err) {
+      await this.log('An error occurred during initialization.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -117,13 +121,9 @@ class MinecraftServer {
         this.properties.acceptedEula = true;
       }
     } catch (err) {
-      try {
-        await this.log(`An error occurred accepting the Minecraft EULA. ${err}`);
-        await this.log(err.stack);
-        throw err;
-      } catch (err) {
-        throw err;
-      }
+      await this.log(`An error occurred accepting the Minecraft EULA. ${err}`);
+      await this.log(err.stack);
+      throw err;
     }
   }
 
@@ -157,6 +157,8 @@ class MinecraftServer {
       }
       return this.properties.backupList;
     } catch (err) {
+      await this.log('An error occurred backing up the world.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -178,9 +180,12 @@ class MinecraftServer {
           this.properties.installed = false;
         } catch (er) {
           await this.log('An error occurred creating the Minecraft server directory.');
+          await this.log(er.stack);
           throw er;
         }
       } else {
+        await this.log('An error occurred checking for Minecraft installation.');
+        await this.log(err.stack);
         throw err;
       }
     }
@@ -255,6 +260,9 @@ class MinecraftServer {
         await this.checkForMinecraftToBeStarted();
       }
     } catch (err) {
+      await this.detachFromMinecraft();
+      await this.log('An error occurred determining Minecraft start state.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -330,6 +338,8 @@ class MinecraftServer {
       }
       await this.log('Done checking for Minecraft server update.');
     } catch (err) {
+      await this.log('An error occurred checking for Minecraft server updates.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -362,6 +372,8 @@ class MinecraftServer {
         return this.properties.settings.javaHome;
       }
     } catch (err) {
+      await this.log('An error occurred detecting JAVA_HOME.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -506,6 +518,8 @@ class MinecraftServer {
         });
       }
     } catch (err) {
+      await this.log('An error occurred downloading the requested release.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -626,6 +640,7 @@ class MinecraftServer {
       return this.properties.versions;
     } catch (err) {
       await this.log('An error occurred getting release information from Minecraft.');
+      await this.log(err.stack);
       throw err;
     }
   }
@@ -1067,7 +1082,7 @@ class MinecraftServer {
         }
       }
     } catch (err) {
-      await this.log('ERROR: An error occurred creating a new world.');
+      await this.log('An error occurred creating a new world.');
       await this.log(err.stack);
       throw (err);
     }
@@ -1413,9 +1428,6 @@ class MinecraftServer {
 
           await this.checkForMinecraftToBeStarted();
           await this.log('MinecraftServer.start: Minecraft started.');
-          return {
-            message: 'Minecraft started.'
-          };
         } else {
           await this.log('Minecraft is already starting up.');
           return {
@@ -1441,7 +1453,8 @@ class MinecraftServer {
       await this.getEula();
       await this.listCommands();
     } catch (err) {
-      debugger;
+      await this.log('An error occurred starting the Minecraft server.');
+      await this.log(err.stack);
       throw err;
     }
   }
