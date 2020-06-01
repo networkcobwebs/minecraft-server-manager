@@ -15,19 +15,19 @@ class Eula {
   get url () {
     return this.customUrl ? this.customUrl : Eula.url;
   }
-  
-  /**
-   * @return {String}
-   */
-  get contents () {
-    return this.contents ? this.contents : Eula.contents;
-  }
 
   /**
    * @return {String}
    */
   get file () {
     return this.customFile ? this.customFile : Eula.file;
+  }
+
+  /**
+   * @return {String}
+   */
+  get contents () {
+    return this.customContents ? this.customContents : Eula.contents;
   }
 
   /**
@@ -44,6 +44,24 @@ class Eula {
    */
   set file (file) {
     this.customFile = file !== this.file ? file : this.customFile;
+  }
+
+  /**
+   * Non-string values result in undefined behaviour
+   * @param  {String} file
+   */
+  set contents (contents) {
+    this.customContents = contents !== this.customContents ? contents : this.customContents;
+  }
+
+  /**
+   * Reads EULA file and stores it
+   * @param  {String} serverPath Path to Minecraft Server executables folder
+   * @return {Promise} Resolves to URL string or rejects with an Error object
+   */
+  async getContents (serverPath) {
+    this.contents = (await fs.readFile(path.join(serverPath, this.file), 'utf8'));
+    return this.contents;
   }
 
   /**
@@ -72,16 +90,19 @@ class Eula {
   */
   async accept (serverPath) {
     const filePath = path.join(serverPath, this.file);
-    let lines;
+    let lines, newContents;
     try {
       lines = (await fs.readFile(filePath, 'utf8'));
     } catch {
-      await fs.writeFile(this.file, this.contents);
+      await fs.ensureDir(serverPath);
+      await fs.writeFile(filePath, this.contents);
       lines = (await fs.readFile(filePath, 'utf8'));
     }
     if (!JSON.parse(lines.match(Eula.regexp.state)[0])) {
-      await fs.writeFile(filePath, lines.replace(Eula.regexp.state, 'true'));
+      newContents = lines.replace(Eula.regexp.state, 'true');
+      await fs.writeFile(filePath, newContents);
     }
+    this.contents = newContents;
   }
 }
 // Expose regular expressions used in methods to be changed if needed
@@ -94,8 +115,7 @@ Eula.regexp = {
 Eula.url = 'https://account.mojang.com/documents/minecraft_eula';
 Eula.file = 'eula.txt';
 // Default contents
-Eula.contents =
-`#By changing the setting below to TRUE you are indicating your agreement to our EULA (${Eula.url}).
+Eula.contents = `#By changing the setting below to TRUE you are indicating your agreement to our EULA (${Eula.url}).
 #Thu Jan 01 00:00:00 UTC 1970
 eula=false`;
 

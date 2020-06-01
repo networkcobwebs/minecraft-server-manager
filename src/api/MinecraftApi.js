@@ -412,7 +412,7 @@ class MinecraftApi {
       //     console.log('Web application running at ' + url);
       // });
     } catch (err) {
-      // TODO ???
+      throw err;
     }
   }
 
@@ -426,7 +426,7 @@ class MinecraftApi {
       await Util.saveSettings(this.properties.settingsFileName, this.properties.settings);
       console.log('MinecraftApi stopped.');
     } catch (err) {
-      // TODO ???
+      throw err;
     }
   }
 

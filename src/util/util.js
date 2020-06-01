@@ -119,7 +119,7 @@ class Util {
      */
   async log (data = '', file = '') {
     if (!file) {
-      return Promise.reject('Invalid filename specified.');
+      throw new Error('Invalid filename specified.');
     }
     try {
       const logFilePath = path.join(homeDir, file);
@@ -130,7 +130,7 @@ class Util {
       await fs.appendFile(logFilePath, `${util.format(data)}${os.EOL}`);
       return logFilePath;
     } catch (err) {
-      return Promise.reject(err);
+      throw err;
     }
   }
 
@@ -140,7 +140,7 @@ class Util {
      */
   async clearLog (file = '') {
     if (!file) {
-      return Promise.reject(new Error('Invalid filename specified.'));
+      throw new Error('Invalid filename specified.');
     }
     try {
       const logFilePath = path.join(homeDir, file);
@@ -153,7 +153,7 @@ class Util {
       logFile.close();
       return logFilePath;
     } catch (err) {
-      return Promise.reject(err);
+      throw err;
     }
   }
 
@@ -172,7 +172,7 @@ class Util {
       return settings;
     } catch (err) {
       if (!defaults) {
-        return Promise.reject(new Error('No default settings given.'));
+        throw new Error('No default settings given.');
       }
       // Overwrite with sane defaults.
       return await this.saveSettings(filename, defaults);
@@ -194,7 +194,7 @@ class Util {
       await fs.writeFile(settingsFile, JSON.stringify(settings, null, 4));
       return settings;
     } catch (err) {
-      return Promise.reject(err);
+      throw err;
     }
   }
 
