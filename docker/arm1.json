@@ -1,0 +1,79 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerGroups_test02_name": {
+            "defaultValue": "test02",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2018-10-01",
+            "name": "[parameters('containerGroups_test02_name')]",
+            "location": "centralus",
+            "properties": {
+                "containers": [
+                    {
+                        "name": "[parameters('containerGroups_test02_name')]",
+                        "properties": {
+                            "image": "networkcobwebs/minecraft-server-manager",
+                            "ports": [
+                                {
+                                    "protocol": "TCP",
+                                    "port": 3001
+                                },
+                                {
+                                    "protocol": "TCP",
+                                    "port": 25565
+                                }
+                            ],
+                            "environmentVariables": [],
+                            "resources": {
+                                "requests": {
+                                    "memoryInGB": 1.5,
+                                    "cpu": 1
+                                }
+                            },
+                            "volumeMounts": [
+                                {
+                                    "name": "azurefile",
+                                    "mountPath": "/home/minecraft/minecraft-server-manager"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "restartPolicy": "OnFailure",
+                "ipAddress": {
+                    "ports": [
+                        {
+                            "protocol": "TCP",
+                            "port": 3001
+                        },
+                        {
+                            "protocol": "TCP",
+                            "port": 25565
+                        }
+                    ],
+                    "ip": "13.89.116.204",
+                    "type": "Public",
+                    "dnsNameLabel": "nickrnetmsm"
+                },
+                "osType": "Linux",
+                "volumes": [
+                    {
+                        "name": "azurefile",
+                        "azureFile": {
+                            "shareName": "[parameters('containerGroups_test02_name')]",
+                            "storageAccountName": "centralstorage001",
+                            "storageAccountKey": "ICO/U82dJEmBI4ZXVYiPlR/1A/gddrkCVanJkxwWt0gjVU6I6oSo9e3pjKSf/+1K/NtLmQtxjBCBg5e61I3ywQ=="
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

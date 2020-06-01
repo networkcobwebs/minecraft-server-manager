@@ -229,7 +229,7 @@ class MinecraftApi {
         response.contentType('json');
         try {
           await minecraftServer.acceptEula();
-          await this.startMinecraft();
+          // await this.startMinecraft();
           response.json({
             response: 'eula accepted'
           });
@@ -278,7 +278,7 @@ class MinecraftApi {
         response.contentType('json');
         try {
           await minecraftServer.install(request.query.version);
-          await this.startMinecraft();
+          // await this.startMinecraft();
           response.json({
             response: 'installed'
           });
@@ -507,6 +507,7 @@ class MinecraftApi {
     } catch (err) {
       console.log('Unable to start MinecraftServer.');
       console.log(err.message);
+      this.stopMinecraftPoller();
     }
   }
 
@@ -535,6 +536,7 @@ class MinecraftApi {
       await this.startMinecraft();
     } catch (err) {
       console.log(err.message);
+      this.stopMinecraftPoller();
     }
   }
 
