@@ -100,7 +100,7 @@ class MinecraftServer {
         this.detectJavaHome(),
         this.checkForMinecraftInstallation(),
         this.getMinecraftVersions()
-      ]).catch(err => {
+      ]).catch(async err => {
         await this.log('An error occurred during initialization.');
         await this.log(err.stack);
         throw err;

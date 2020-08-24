@@ -56,7 +56,7 @@
     "permission": "^1.1.0",
     "prop-types": "^15.7.2",
     "rcon.js": "^1.0.0",
-    "react-scripts": "^3.4.1",
+    "react-scripts": "^3.4.3",
     "underscore": "^1.10.2"
   },
   "devDependencies": {
