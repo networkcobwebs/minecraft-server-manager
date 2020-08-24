@@ -37,7 +37,7 @@
             "name": "Minecraft Server + API",
             "program": "${workspaceFolder}/index.js",
             "env": {"JAVA_HOME": "/opt/java"},
-            "runtimeVersion": "10.16.2",
+            "runtimeVersion": "12.18.0",
             "args": []
         },
         {  
@@ -46,7 +46,7 @@
             "name": "React",
             "program": "${workspaceRoot}/src/web/node_modules/react-scripts/bin/react-scripts.js",
             "args": ["start"],
-            "runtimeVersion": "10.16.2",
+            "runtimeVersion": "12.18.0",
             "cwd": "${workspaceFolder}/src/web",
             "env": {
                 "BROWSER": "none"

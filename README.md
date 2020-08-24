@@ -15,7 +15,7 @@ end user license agreement](https://account.mojang.com/documents/minecraft_eula)
 
 ## Requirements
 
-Node.js 10.x or greater LTS release.
+Node.js 12.x or greater LTS release.
 
 ## Installation
 
