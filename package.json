@@ -1,6 +1,6 @@
 {
   "name": "@networkcobwebs/minecraft-server-manager",
-  "version": "1.15.3",
+  "version": "1.16.0",
   "description": "Minecraft Server Manager",
   "main": "src/api/MinecraftApi.js",
   "bin": "./index.js",
