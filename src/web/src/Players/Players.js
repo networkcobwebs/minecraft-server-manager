@@ -48,7 +48,7 @@ export default class Players extends React.Component {
         method: 'post',
         url: '/api/command',
         params: {
-          command: '/ban ' + player
+          command: 'ban ' + player
         }
       }).then(() => {
 
@@ -74,7 +74,7 @@ export default class Players extends React.Component {
         method: 'post',
         url: '/api/command',
         params: {
-          command: '/pardon ' + player
+          command: 'pardon ' + player
         }
       }).then(() => {
 
@@ -100,7 +100,7 @@ export default class Players extends React.Component {
         method: 'post',
         url: '/api/command',
         params: {
-          command: '/kick ' + player
+          command: 'kick ' + player
         }
       }).then(() => {
 
@@ -126,7 +126,7 @@ export default class Players extends React.Component {
         method: 'post',
         url: '/api/command',
         params: {
-          command: '/op ' + player
+          command: 'op ' + player
         }
       }).then(() => {
 
@@ -152,7 +152,7 @@ export default class Players extends React.Component {
         method: 'post',
         url: '/api/command',
         params: {
-          command: '/deop ' + player
+          command: 'deop ' + player
         }
       }).then(() => {
 
@@ -167,7 +167,7 @@ export default class Players extends React.Component {
     let found = false;
     const players = this.props.minecraftProperties.playerInfo.players;
 
-    players.forEach(p => {
+    players.forEach(p => {    
       if (p.name === player) {
         found = true;
       }
@@ -178,7 +178,7 @@ export default class Players extends React.Component {
         method: 'post',
         url: '/api/command',
         params: {
-          command: '/whitelist ' + player
+          command: 'whitelist add ' + player
         }
       }).then(() => {
 
