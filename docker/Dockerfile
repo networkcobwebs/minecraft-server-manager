@@ -1,6 +1,12 @@
 FROM networkcobwebs/minecraft-server-manager:base
 
 ### Do everything in this image as the Minecraft user created by minecraft-server-manager:base ###
+
+#Minecraft 1.18 needs java17 to run
+USER root
+RUN apt-get update -y && apt-get install openjdk-17-jdk -y
+RUN update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+
 USER minecraft
 WORKDIR /home/minecraft
 
